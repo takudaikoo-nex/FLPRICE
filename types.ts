@@ -1,64 +1,25 @@
-export type PlanCategory = 'funeral' | 'cremation';
-
-export type PlanId = 'a' | 'b' | 'c' | 'd' | 'e';
+export type PlanId = string;
 
 export interface Plan {
   id: PlanId;
   name: string;
-  price: number;
-  category: PlanCategory;
+  price: number; // 税込
   description: string;
-}
-
-export type AttendeeTier = 'A' | 'B' | 'C' | 'D';
-
-export interface AttendeeOption {
-  tier: AttendeeTier;
-  label: string;
-  description: string;
-}
-
-// Item Types
-export type ItemType = 'included' | 'checkbox' | 'dropdown' | 'tier_dependent' | 'free_input';
-
-export interface DropdownOption {
-  id: string;
-  name: string;
-  price: number;
-  allowedPlans: PlanId[];
-}
-
-export interface ItemDetail {
-  title?: string;
-  description: string;
-  imagePath?: string;
 }
 
 export interface Item {
   id: number;
   name: string;
-  description: string; // Used for modal
+  description: string;
   displayOrder?: number;
-  type: ItemType;
-  allowedPlans: PlanId[]; // Which plans show this item
-
-  // Pricing strategies
-  basePrice?: number; // For checkboxes
-  options?: DropdownOption[]; // For dropdowns
-  tierPrices?: Record<AttendeeTier, number>; // For tier dependent items
-
-  // Extended details for modal
-  details?: ItemDetail[];
-
-  // New flag for included items to use dropdown
-  useDropdown?: boolean;
+  basePrice: number; // デフォルト値（通常0、ユーザーが金額を入力）
+  allowedPlans: PlanId[];
 }
 
-
 export interface CustomerInfo {
-  deathDate: string; // YYYY-MM-DD
+  deathDate: string;
   deceasedName: string;
-  birthDate: string; // YYYY-MM-DD
+  birthDate: string;
   age?: string;
   address: string;
   honseki: string;
@@ -97,10 +58,6 @@ export interface Estimate {
 }
 
 export interface SelectedState {
-  category: PlanCategory;
   planId: PlanId;
-  attendeeTier: AttendeeTier;
-  attendeeCountText: string;
-  selectedOptions: Set<number>; // Set of Item IDs (for checkboxes)
-  selectedGrades: Map<number, string>; // Item ID -> Dropdown Option ID
+  optionValues: Map<number, number>; // Item ID -> 金額
 }

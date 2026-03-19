@@ -51,7 +51,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ item, selectedGrade, onClose 
       description: item.description,
       isMain: true
     },
-    ...(item.details || []).map(detail => ({
+    ...((item as any).details || []).map((detail: any) => ({
       type: 'detail',
       title: detail.title || '',
       image: detail.imagePath,

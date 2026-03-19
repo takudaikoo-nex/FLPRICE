@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Edit } from 'lucide-react';
-import { AttendeeOption } from '../../types';
+interface AttendeeOption {
+    tier: string;
+    label: string;
+    description: string;
+}
 
 const AttendeesManager: React.FC = () => {
     const [attendees, setAttendees] = useState<AttendeeOption[]>([]);

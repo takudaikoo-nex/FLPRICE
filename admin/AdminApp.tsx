@@ -45,7 +45,7 @@ const AdminApp: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-100 flex">
             {/* Sidebar */}
-            <aside className="w-64 bg-white border-r border-gray-200 flex-shrink-0">
+            <aside className="w-64 bg-white border-r border-gray-200 flex-shrink-0 relative">
                 <div className="p-6 border-b border-gray-100">
                     <h1 className="text-xl font-bold text-emerald-700 flex items-center gap-2">
                         <LayoutDashboard size={24} />

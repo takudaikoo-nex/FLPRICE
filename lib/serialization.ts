@@ -1,33 +1,21 @@
-import { Plan, Item, AttendeeTier } from '../types';
+import { Plan, Item } from '../types';
 
 export interface PrintData {
     plan: Plan;
     items: Item[];
-    selectedOptions: number[]; // serialized Set
-    selectedGrades: [number, string][]; // serialized Map
-    attendeeTier: AttendeeTier;
-    customAttendeeCount: string;
-    freeInputValues: [number, number][]; // serialized Map
+    optionValues: [number, number][]; // serialized Map
     totalCost: number;
-    attendeeLabel: string;
-    customerInfo?: any; // strict typing later if needed, avoiding circular imports annoyance for now or just import types
+    customerInfo?: any;
     estimateId?: number;
     logoType?: 'FL' | 'LS';
     documentType?: 'quote' | 'invoice';
 }
 
-
-
 export const serializePrintData = (
     plan: Plan,
     items: Item[],
-    selectedOptions: Set<number>,
-    selectedGrades: Map<number, string>,
-    attendeeTier: AttendeeTier,
-    customAttendeeCount: string,
-    freeInputValues: Map<number, number>,
+    optionValues: Map<number, number>,
     totalCost: number,
-    attendeeLabel: string,
     customerInfo?: any,
     estimateId?: number,
     logoType?: 'FL' | 'LS',
@@ -36,13 +24,8 @@ export const serializePrintData = (
     const data: PrintData = {
         plan,
         items,
-        selectedOptions: Array.from(selectedOptions),
-        selectedGrades: Array.from(selectedGrades.entries()),
-        attendeeTier,
-        customAttendeeCount,
-        freeInputValues: Array.from(freeInputValues.entries()),
+        optionValues: Array.from(optionValues.entries()),
         totalCost,
-        attendeeLabel,
         customerInfo,
         estimateId,
         logoType,
@@ -54,13 +37,8 @@ export const serializePrintData = (
 export const deserializePrintData = (json: string): {
     plan: Plan;
     items: Item[];
-    selectedOptions: Set<number>;
-    selectedGrades: Map<number, string>;
-    attendeeTier: AttendeeTier;
-    customAttendeeCount: string;
-    freeInputValues: Map<number, number>;
+    optionValues: Map<number, number>;
     totalCost: number;
-    attendeeLabel: string;
     customerInfo?: any;
     estimateId?: number;
     logoType?: 'FL' | 'LS';
@@ -71,13 +49,8 @@ export const deserializePrintData = (json: string): {
         return {
             plan: data.plan,
             items: data.items,
-            selectedOptions: new Set(data.selectedOptions),
-            selectedGrades: new Map(data.selectedGrades),
-            attendeeTier: data.attendeeTier,
-            customAttendeeCount: data.customAttendeeCount,
-            freeInputValues: new Map(data.freeInputValues),
+            optionValues: new Map(data.optionValues),
             totalCost: data.totalCost,
-            attendeeLabel: data.attendeeLabel,
             customerInfo: data.customerInfo,
             estimateId: data.estimateId,
             logoType: data.logoType,

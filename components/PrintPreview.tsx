@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import QuoteDocument from './QuoteDocument';
 import InvoiceDocument from './InvoiceDocument';
 import { deserializePrintData } from '../lib/serialization';
-import { Plan, Item, AttendeeTier } from '../types';
+import { Plan, Item } from '../types';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
@@ -10,13 +10,8 @@ const PrintPreview: React.FC = () => {
     const [data, setData] = useState<{
         plan: Plan;
         items: Item[];
-        selectedOptions: Set<number>;
-        selectedGrades: Map<number, string>;
-        attendeeTier: AttendeeTier;
-        customAttendeeCount: string;
-        freeInputValues: Map<number, number>;
+        optionValues: Map<number, number>;
         totalCost: number;
-        attendeeLabel: string;
         customerInfo?: any;
         estimateId?: number;
         logoType?: 'FL' | 'LS';
@@ -32,7 +27,6 @@ const PrintPreview: React.FC = () => {
             const parsed = deserializePrintData(stored);
             if (parsed) {
                 setData(parsed);
-                // Auto-print removed per user request
             }
         }
     }, []);
@@ -48,7 +42,7 @@ const PrintPreview: React.FC = () => {
                 useCORS: true,
                 logging: false,
                 backgroundColor: '#ffffff',
-                windowWidth: 1200 // Ensure desktop-like rendering for canvas
+                windowWidth: 1200
             });
 
             const imgData = canvas.toDataURL('image/png');
@@ -89,6 +83,16 @@ const PrintPreview: React.FC = () => {
         );
     }
 
+    const documentProps = {
+        plan: data.plan,
+        items: data.items,
+        optionValues: data.optionValues,
+        totalCost: data.totalCost,
+        customerInfo: data.customerInfo,
+        estimateId: data.estimateId,
+        logoType: data.logoType || 'FL' as const,
+    };
+
     return (
         <div className="min-h-screen bg-gray-500 flex flex-col items-center py-8 print:bg-white print:py-0 print:block">
 
@@ -110,11 +114,7 @@ const PrintPreview: React.FC = () => {
                             disabled={isGeneratingPdf}
                             className="w-full bg-emerald-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                         >
-                            {isGeneratingPdf ? (
-                                <><span>作成中...</span></>
-                            ) : (
-                                <><span>📥 PDFを保存</span></>
-                            )}
+                            {isGeneratingPdf ? '作成中...' : '📥 PDFを保存'}
                         </button>
                         <button
                             onClick={() => window.close()}
@@ -150,40 +150,13 @@ const PrintPreview: React.FC = () => {
                 </>
             )}
 
-            {/* A4 Container */}
             {/* A4 Content Container */}
             <div className={`w-full ${!isMobile ? 'overflow-x-auto pb-8 px-4 md:px-0 scrollbar-hide flex justify-center' : 'fixed top-0 left-0 -z-10'}`}>
                 <div id="print-content" className="bg-white shadow-2xl print:shadow-none mx-auto print:mx-0 print:w-full min-w-[210mm]">
                     {data.documentType === 'invoice' ? (
-                        <InvoiceDocument
-                            plan={data.plan}
-                            items={data.items}
-                            selectedOptions={data.selectedOptions}
-                            selectedGrades={data.selectedGrades}
-                            attendeeTier={data.attendeeTier}
-                            customAttendeeCount={data.customAttendeeCount}
-                            freeInputValues={data.freeInputValues}
-                            totalCost={data.totalCost}
-                            attendeeLabel={data.attendeeLabel}
-                            customerInfo={data.customerInfo}
-                            estimateId={data.estimateId}
-                            logoType={data.logoType || 'FL'}
-                        />
+                        <InvoiceDocument {...documentProps} />
                     ) : (
-                        <QuoteDocument
-                            plan={data.plan}
-                            items={data.items}
-                            selectedOptions={data.selectedOptions}
-                            selectedGrades={data.selectedGrades}
-                            attendeeTier={data.attendeeTier}
-                            customAttendeeCount={data.customAttendeeCount}
-                            freeInputValues={data.freeInputValues}
-                            totalCost={data.totalCost}
-                            attendeeLabel={data.attendeeLabel}
-                            customerInfo={data.customerInfo}
-                            estimateId={data.estimateId}
-                            logoType={data.logoType || 'FL'}
-                        />
+                        <QuoteDocument {...documentProps} />
                     )}
                 </div>
             </div>
@@ -193,12 +166,13 @@ const PrintPreview: React.FC = () => {
             size: A4 portrait;
             margin: 0;
           }
-          body {
-            background: white;
-            margin: 0;
-            padding: 0;
+          @media print {
+            body {
+              background: white;
+              margin: 0;
+              padding: 0;
+            }
           }
-        }
       `}</style>
         </div>
     );

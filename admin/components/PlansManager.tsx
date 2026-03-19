@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { supabase, Plan, Item } from '../../lib/supabase';
-import { Edit, Trash2, Plus, Save, X } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { Item, Plan, PlanId } from '../../types';
+import { Edit, Trash2, Plus, X } from 'lucide-react';
+import Drawer from '../../components/ui/Drawer';
+import VirtualItemSelector from '../../components/ui/VirtualItemSelector';
+import { convertDbItem } from '../../lib/converter';
 
 const PlansManager: React.FC = () => {
     const [plans, setPlans] = useState<Plan[]>([]);
@@ -9,6 +13,7 @@ const PlansManager: React.FC = () => {
     const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
     const [linkedItems, setLinkedItems] = useState<Set<number>>(new Set());
     const [isNew, setIsNew] = useState(false);
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -25,23 +30,8 @@ const PlansManager: React.FC = () => {
             if (plansResult.error) throw plansResult.error;
             if (itemsResult.error) throw itemsResult.error;
 
-            setPlans(plansResult.data || []);
-
-            // Convert snake_case to camelCase for items
-            const convertedItems = (itemsResult.data || []).map((item: any) => ({
-                id: item.id,
-                name: item.name,
-                description: item.description,
-                displayOrder: item.display_order || 0,
-                type: item.type,
-                basePrice: item.base_price,
-                allowedPlans: item.allowed_plans,
-                tierPrices: item.tier_prices,
-                options: item.options,
-                details: item.details,
-                useDropdown: item.use_dropdown,
-            }));
-            setItems(convertedItems);
+            setPlans(plansResult.data as Plan[] || []);
+            setItems((itemsResult.data || []).map(convertDbItem));
 
         } catch (error) {
             console.error('Error fetching data:', error);
@@ -138,10 +128,9 @@ const PlansManager: React.FC = () => {
 
     const startNew = () => {
         setEditingPlan({
-            id: '',
+            id: '' as PlanId,
             name: '',
             price: 0,
-            category: 'funeral',
             description: ''
         });
         setLinkedItems(new Set());
@@ -158,14 +147,7 @@ const PlansManager: React.FC = () => {
         setLinkedItems(newLinked);
     };
 
-    // Group items by type for display
-    const groupedItems = {
-        included: items.filter(i => i.type === 'included'),
-        checkbox: items.filter(i => i.type === 'checkbox'),
-        dropdown: items.filter(i => i.type === 'dropdown'),
-        tier_dependent: items.filter(i => i.type === 'tier_dependent'),
-        free_input: items.filter(i => i.type === 'free_input'),
-    };
+    // Items are now all the same type (free_input options)
 
     if (loading) return <div className="p-4">読み込み中...</div>;
 
@@ -183,154 +165,124 @@ const PlansManager: React.FC = () => {
             </div>
 
             {editingPlan && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl p-6 h-[90vh] flex flex-col">
-                        <div className="flex justify-between items-center mb-4 pb-4 border-b">
-                            <h3 className="text-xl font-bold">
-                                {isNew ? '新規プラン作成' : 'プラン編集'}
-                            </h3>
-                            <button onClick={() => setEditingPlan(null)} className="text-gray-400 hover:text-gray-600">
-                                <X size={24} />
-                            </button>
-                        </div>
+                <>
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl p-6 h-[90vh] flex flex-col">
+                            <div className="flex justify-between items-center mb-4 pb-4 border-b">
+                                <h3 className="text-xl font-bold">
+                                    {isNew ? '新規プラン作成' : 'プラン編集'}
+                                </h3>
+                                <button onClick={() => setEditingPlan(null)} className="text-gray-400 hover:text-gray-600">
+                                    <X size={24} />
+                                </button>
+                            </div>
 
-                        <div className="flex-1 overflow-y-auto pr-2">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                {/* Left Column: Plan Details */}
-                                <div className="space-y-4">
-                                    <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">基本情報</h4>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">ID (アルファベット)</label>
-                                        <input
-                                            type="text"
-                                            value={editingPlan.id}
-                                            onChange={e => setEditingPlan({ ...editingPlan, id: e.target.value })}
-                                            disabled={!isNew}
-                                            className="w-full p-2 border rounded bg-gray-50 disabled:text-gray-500"
-                                            placeholder="例: a"
-                                        />
+                            <div className="flex-1 overflow-y-auto pr-2">
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                    {/* Left Column: Plan Details */}
+                                    <div className="space-y-4">
+                                        <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">基本情報</h4>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">ID (アルファベット)</label>
+                                            <input
+                                                type="text"
+                                                value={editingPlan.id}
+                                                onChange={e => setEditingPlan({ ...editingPlan, id: e.target.value as PlanId })}
+                                                disabled={!isNew}
+                                                className="w-full p-2 border rounded bg-gray-50 disabled:text-gray-500"
+                                                placeholder="例: a"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">プラン名</label>
+                                            <input
+                                                type="text"
+                                                value={editingPlan.name}
+                                                onChange={e => setEditingPlan({ ...editingPlan, name: e.target.value })}
+                                                className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">価格 (税抜)</label>
+                                            <input
+                                                type="number"
+                                                value={editingPlan.price}
+                                                onChange={e => setEditingPlan({ ...editingPlan, price: parseInt(e.target.value) || 0 })}
+                                                className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">説明</label>
+                                            <textarea
+                                                value={editingPlan.description}
+                                                onChange={e => setEditingPlan({ ...editingPlan, description: e.target.value })}
+                                                className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none h-24"
+                                            />
+                                        </div>
                                     </div>
 
+                                    {/* Right Column: Linked Options */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">プラン名</label>
-                                        <input
-                                            type="text"
-                                            value={editingPlan.name}
-                                            onChange={e => setEditingPlan({ ...editingPlan, name: e.target.value })}
-                                            className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">価格 (税抜)</label>
-                                        <input
-                                            type="number"
-                                            value={editingPlan.price}
-                                            onChange={e => setEditingPlan({ ...editingPlan, price: parseInt(e.target.value) || 0 })}
-                                            className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">カテゴリー</label>
-                                        <select
-                                            value={editingPlan.category}
-                                            onChange={e => setEditingPlan({ ...editingPlan, category: e.target.value as 'funeral' | 'cremation' })}
-                                            className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
-                                        >
-                                            <option value="funeral">葬儀プラン</option>
-                                            <option value="cremation">火葬のみプラン</option>
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">説明</label>
-                                        <textarea
-                                            value={editingPlan.description}
-                                            onChange={e => setEditingPlan({ ...editingPlan, description: e.target.value })}
-                                            className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none h-24"
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Right Column: Linked Options */}
-                                <div>
-                                    <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 border-b pb-2">
-                                        連携オプション設定
-                                        <span className="text-xs font-normal normal-case ml-2 text-gray-500">
-                                            このプランで選択可能にするアイテムを選んでください
-                                        </span>
-                                    </h4>
-
-                                    <div className="space-y-6">
-                                        {Object.entries(groupedItems).map(([type, typeItems]) => {
-                                            if (typeItems.length === 0) return null;
-                                            const typeLabels: Record<string, string> = {
-                                                included: '基本セット (プランに含まれる)',
-                                                checkbox: '追加オプション',
-                                                dropdown: 'グレード選択 (棺・祭壇など)',
-                                                tier_dependent: '人数連動項目 (料理・返礼品など)',
-                                                free_input: '自由入力項目'
-                                            };
-
-                                            return (
-                                                <div key={type}>
-                                                    <h5 className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded inline-block mb-2">
-                                                        {typeLabels[type]}
-                                                    </h5>
-                                                    <div className="space-y-2 pl-2">
-                                                        {typeItems.map(item => (
-                                                            <label
-                                                                key={item.id}
-                                                                className={`flex items-start gap-3 p-2 rounded hover:bg-gray-50 cursor-pointer border border-transparent transition-colors ${linkedItems.has(item.id) ? 'bg-blue-50/50 border-blue-100' : ''
-                                                                    }`}
-                                                            >
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={linkedItems.has(item.id)}
-                                                                    onChange={() => toggleItemLink(item.id)}
-                                                                    className="mt-1 accent-blue-600 w-4 h-4 shrink-0"
-                                                                />
-                                                                <div>
-                                                                    <div className="text-sm font-bold text-gray-800">{item.name}</div>
-                                                                    <div className="text-xs text-gray-400 line-clamp-1">{item.description}</div>
-                                                                </div>
-                                                            </label>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
+                                        <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 border-b pb-2">
+                                            連携オプション設定
+                                        </h4>
+                                        <div className="bg-gray-50 p-4 rounded-lg text-center">
+                                            <p className="text-sm text-gray-500 mb-4">
+                                                現在 <span className="font-bold text-emerald-600 text-lg">{linkedItems.size}</span> 個のアイテムが選択されています
+                                            </p>
+                                            <button
+                                                onClick={() => setIsDrawerOpen(true)}
+                                                className="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 transition-colors font-bold shadow-sm"
+                                            >
+                                                アイテムを選択・編集する
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-                            <button
-                                onClick={() => setEditingPlan(null)}
-                                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-                            >
-                                キャンセル
-                            </button>
-                            <button
-                                onClick={handleSave}
-                                className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-bold shadow-sm"
-                            >
-                                保存する
-                            </button>
+                            <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+                                <button
+                                    onClick={() => setEditingPlan(null)}
+                                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                                >
+                                    キャンセル
+                                </button>
+                                <button
+                                    onClick={handleSave}
+                                    className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-bold shadow-sm"
+                                >
+                                    保存する
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
+
+                    <Drawer
+                        isOpen={isDrawerOpen}
+                        onClose={() => setIsDrawerOpen(false)}
+                        title="連携アイテムの選択"
+                        width="md:w-[600px]"
+                    >
+                        <VirtualItemSelector
+                            items={items}
+                            selectedIds={linkedItems}
+                            onToggle={toggleItemLink}
+                            height={800} // Viewport height approximation
+                        />
+                    </Drawer>
+                </>
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {plans.map(plan => (
                     <div key={plan.id} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
                         <div className="flex justify-between items-start mb-2">
-                            <span className={`text-xs font-bold px-2 py-1 rounded ${plan.category === 'funeral' ? 'bg-emerald-100 text-emerald-700' : 'bg-purple-100 text-purple-700'
-                                }`}>
-                                {plan.category === 'funeral' ? '葬儀プラン' : '火葬のみ'}
+                            <span className="text-xs font-bold px-2 py-1 rounded bg-emerald-100 text-emerald-700">
+                                プラン
                             </span>
                             <div className="flex gap-2">
                                 <button

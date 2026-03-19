@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { Item } from '../../types';
 import { Edit, Trash2, Plus, Search, ArrowUp, ArrowDown } from 'lucide-react';
 import ItemEditor from './ItemEditor';
+import { convertDbItem, convertItemToDb } from '../../lib/converter';
 
 const ItemsManager: React.FC = () => {
     const [items, setItems] = useState<Item[]>([]);
@@ -24,23 +25,7 @@ const ItemsManager: React.FC = () => {
                 .order('display_order', { ascending: true });
 
             if (error) throw error;
-
-            // Convert snake_case to camelCase
-            const convertedItems = (data || []).map((item: any) => ({
-                id: item.id,
-                name: item.name,
-                description: item.description,
-                displayOrder: item.display_order || 0,
-                type: item.type,
-                basePrice: item.base_price,
-                allowedPlans: item.allowed_plans,
-                tierPrices: item.tier_prices,
-                options: item.options,
-                details: item.details,
-                useDropdown: item.use_dropdown,
-            }));
-
-            setItems(convertedItems);
+            setItems((data || []).map(convertDbItem));
         } catch (error) {
             console.error('Error fetching items:', error);
             alert('アイテムの取得に失敗しました');
@@ -51,22 +36,7 @@ const ItemsManager: React.FC = () => {
 
     const handleSave = async (savedItem: Item) => {
         try {
-            // Convert camelCase back to snake_case for DB
-            const dbItem = {
-                id: savedItem.id,
-                name: savedItem.name,
-                description: savedItem.description,
-                display_order: savedItem.displayOrder,
-                type: savedItem.type,
-                base_price: savedItem.basePrice || 0,
-                allowed_plans: savedItem.allowedPlans,
-                tier_prices: savedItem.tierPrices,
-                options: savedItem.options,
-                details: savedItem.details,
-                use_dropdown: savedItem.useDropdown,
-            };
-
-            console.log('Saving item to DB:', dbItem);
+            const dbItem = convertItemToDb(savedItem);
 
             if (isNew) {
                 const { error } = await supabase
@@ -153,12 +123,8 @@ const ItemsManager: React.FC = () => {
             name: '',
             description: '',
             displayOrder: maxOrder + 1,
-            type: 'checkbox',
             basePrice: 0,
-            allowedPlans: ['a', 'b', 'c', 'd', 'e'],
-            options: [], // Initialize options
-            details: [], // Initialize details
-            tierPrices: { A: 0, B: 0, C: 0, D: 0 } // Initialize tierPrices
+            allowedPlans: [],
         });
         setIsNew(true);
     };
@@ -216,8 +182,7 @@ const ItemsManager: React.FC = () => {
                             <th className="p-4 w-12 text-center">順序</th>
                             <th className="p-4 w-16">ID</th>
                             <th className="p-4">名前</th>
-                            <th className="p-4 w-32">タイプ</th>
-                            <th className="p-4 w-32 text-right">価格</th>
+                            <th className="p-4 w-32 text-right">初期額</th>
                             <th className="p-4 w-48">対象プラン</th>
                             <th className="p-4 w-24 text-center">操作</th>
                         </tr>
@@ -250,17 +215,8 @@ const ItemsManager: React.FC = () => {
                                         {item.description}
                                     </div>
                                 </td>
-                                <td className="p-4">
-                                    <span className={`text-xs px-2 py-1 rounded-full ${item.type === 'included' ? 'bg-blue-100 text-blue-700' :
-                                        item.type === 'checkbox' ? 'bg-green-100 text-green-700' :
-                                            item.type === 'dropdown' ? 'bg-purple-100 text-purple-700' :
-                                                'bg-orange-100 text-orange-700'
-                                        }`}>
-                                        {item.type}
-                                    </span>
-                                </td>
                                 <td className="p-4 text-right font-mono text-sm">
-                                    {item.basePrice ? `¥${item.basePrice.toLocaleString()}` : '-'}
+                                    {item.basePrice ? `¥${item.basePrice.toLocaleString()}` : '¥0'}
                                 </td>
                                 <td className="p-4">
                                     <div className="flex gap-1">
