@@ -131,6 +131,7 @@ const PlansManager: React.FC = () => {
             id: '' as PlanId,
             name: '',
             price: 0,
+            category: 'funeral' as const,
             description: ''
         });
         setLinkedItems(new Set());

@@ -5,6 +5,23 @@
   box-sizing: border-box;
 }
 
+body {
+  font-family: 'Zen Maru Gothic', sans-serif;
+}
+
+@media print {
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  #root {
+    height: auto !important;
+    overflow: visible !important;
+  }
+}
+
 :root {
   --emerald-50: #ecfdf5;
   --emerald-200: #a7f3d0;

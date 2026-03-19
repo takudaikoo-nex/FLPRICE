@@ -3,7 +3,9 @@ import { Plan, Item } from '../types';
 export interface PrintData {
     plan: Plan;
     items: Item[];
-    optionValues: [number, number][]; // serialized Map
+    selectedOptions: number[];
+    selectedGrades: [number, string][];
+    freeInputValues: [number, number][];
     totalCost: number;
     customerInfo?: any;
     estimateId?: number;
@@ -14,7 +16,9 @@ export interface PrintData {
 export const serializePrintData = (
     plan: Plan,
     items: Item[],
-    optionValues: Map<number, number>,
+    selectedOptions: Set<number>,
+    selectedGrades: Map<number, string>,
+    freeInputValues: Map<number, number>,
     totalCost: number,
     customerInfo?: any,
     estimateId?: number,
@@ -24,7 +28,9 @@ export const serializePrintData = (
     const data: PrintData = {
         plan,
         items,
-        optionValues: Array.from(optionValues.entries()),
+        selectedOptions: Array.from(selectedOptions),
+        selectedGrades: Array.from(selectedGrades.entries()),
+        freeInputValues: Array.from(freeInputValues.entries()),
         totalCost,
         customerInfo,
         estimateId,
@@ -34,22 +40,15 @@ export const serializePrintData = (
     return JSON.stringify(data);
 };
 
-export const deserializePrintData = (json: string): {
-    plan: Plan;
-    items: Item[];
-    optionValues: Map<number, number>;
-    totalCost: number;
-    customerInfo?: any;
-    estimateId?: number;
-    logoType?: 'FL' | 'LS';
-    documentType?: 'quote' | 'invoice';
-} | null => {
+export const deserializePrintData = (json: string) => {
     try {
         const data: PrintData = JSON.parse(json);
         return {
             plan: data.plan,
             items: data.items,
-            optionValues: new Map(data.optionValues),
+            selectedOptions: new Set(data.selectedOptions),
+            selectedGrades: new Map<number, string>(data.selectedGrades),
+            freeInputValues: new Map<number, number>(data.freeInputValues),
             totalCost: data.totalCost,
             customerInfo: data.customerInfo,
             estimateId: data.estimateId,

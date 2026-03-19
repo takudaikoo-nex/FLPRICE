@@ -123,8 +123,10 @@ const ItemsManager: React.FC = () => {
             name: '',
             description: '',
             displayOrder: maxOrder + 1,
+            type: 'free_input',
             basePrice: 0,
             allowedPlans: [],
+            includedInPlans: [],
         });
         setIsNew(true);
     };

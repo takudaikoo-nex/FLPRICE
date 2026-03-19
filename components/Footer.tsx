@@ -13,7 +13,7 @@ const Footer: React.FC<FooterProps> = ({ total, onInputClick, onOutputClick, onI
     <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] py-5 px-8 z-40 print:hidden">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="text-gray-800 flex items-baseline">
-          <span className="text-3xl font-bold mr-4">お見積り概算額 (税込)</span>
+          <span className="text-3xl font-bold mr-4">お見積り概算額 (税抜)</span>
           <span className="font-extrabold text-emerald-700 tracking-tight leading-none" style={{ fontSize: '3.5rem' }}>¥{total.toLocaleString()}</span>
         </div>
         <div className="flex gap-4">
