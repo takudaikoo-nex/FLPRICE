@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Item, Plan, PlanId } from '../../types';
+import { Item, Plan, PlanCategory, PlanId } from '../../types';
 import { Edit, Trash2, Plus, X } from 'lucide-react';
 import Drawer from '../../components/ui/Drawer';
 import VirtualItemSelector from '../../components/ui/VirtualItemSelector';
-import { convertDbItem } from '../../lib/converter';
+import { convertDbItem, convertDbPlan } from '../../lib/converter';
 
 const PlansManager: React.FC = () => {
     const [plans, setPlans] = useState<Plan[]>([]);
@@ -12,6 +12,7 @@ const PlansManager: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
     const [linkedItems, setLinkedItems] = useState<Set<number>>(new Set());
+    const [includedItems, setIncludedItems] = useState<Set<number>>(new Set());
     const [isNew, setIsNew] = useState(false);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
@@ -30,7 +31,7 @@ const PlansManager: React.FC = () => {
             if (plansResult.error) throw plansResult.error;
             if (itemsResult.error) throw itemsResult.error;
 
-            setPlans(plansResult.data as Plan[] || []);
+            setPlans((plansResult.data || []).map(convertDbPlan));
             setItems((itemsResult.data || []).map(convertDbItem));
 
         } catch (error) {
@@ -59,31 +60,32 @@ const PlansManager: React.FC = () => {
                 if (error) throw error;
             }
 
-            // 2. Update Item Linkages
-            // We need to compare linkedItems state with original items state
-            // OR just update all items based on current linkedItems set.
-            // A more efficient way: find changed items.
-
+            // 2. Update Item Linkages (allowedPlans + includedInPlans)
             const updates = items.map(item => {
                 const isLinked = linkedItems.has(item.id);
-                const wasLinked = item.allowedPlans.includes(editingPlan.id as any);
+                const wasLinked = item.allowedPlans.includes(editingPlan.id);
+                const isIncluded = includedItems.has(item.id);
+                const wasIncluded = item.includedInPlans.includes(editingPlan.id);
 
-                if (isLinked && !wasLinked) {
-                    // Add link
-                    return { ...item, allowedPlans: [...item.allowedPlans, editingPlan.id] };
-                } else if (!isLinked && wasLinked) {
-                    // Remove link
-                    return { ...item, allowedPlans: item.allowedPlans.filter(p => p !== editingPlan.id) };
+                if (isLinked !== wasLinked || isIncluded !== wasIncluded) {
+                    const newAllowed = isLinked
+                        ? (wasLinked ? item.allowedPlans : [...item.allowedPlans, editingPlan.id])
+                        : item.allowedPlans.filter(p => p !== editingPlan.id);
+                    // includedInPlans はallowedPlansに含まれるもののみ
+                    const newIncluded = isIncluded && isLinked
+                        ? (wasIncluded ? item.includedInPlans : [...item.includedInPlans, editingPlan.id])
+                        : item.includedInPlans.filter(p => p !== editingPlan.id);
+                    return { ...item, allowedPlans: newAllowed, includedInPlans: newIncluded };
                 }
                 return null;
             }).filter(Boolean);
 
             if (updates.length > 0) {
                 await Promise.all(updates.map(async (item: any) => {
-                    const dbItem = {
-                        allowed_plans: item.allowedPlans
-                    };
-                    await supabase.from('items').update(dbItem).eq('id', item.id);
+                    await supabase.from('items').update({
+                        allowed_plans: item.allowedPlans,
+                        included_in_plans: item.includedInPlans,
+                    }).eq('id', item.id);
                 }));
             }
 
@@ -115,14 +117,18 @@ const PlansManager: React.FC = () => {
 
     const startEdit = (plan: Plan) => {
         setEditingPlan({ ...plan });
-        // Initialize linked items
         const linked = new Set<number>();
+        const included = new Set<number>();
         items.forEach(item => {
-            if (item.allowedPlans.includes(plan.id as any)) {
+            if (item.allowedPlans.includes(plan.id)) {
                 linked.add(item.id);
+            }
+            if (item.includedInPlans.includes(plan.id)) {
+                included.add(item.id);
             }
         });
         setLinkedItems(linked);
+        setIncludedItems(included);
         setIsNew(false);
     };
 
@@ -131,10 +137,11 @@ const PlansManager: React.FC = () => {
             id: '' as PlanId,
             name: '',
             price: 0,
-            category: 'funeral' as const,
+            category: 'cremation' as PlanCategory,
             description: ''
         });
         setLinkedItems(new Set());
+        setIncludedItems(new Set());
         setIsNew(true);
     };
 
@@ -142,13 +149,25 @@ const PlansManager: React.FC = () => {
         const newLinked = new Set(linkedItems);
         if (newLinked.has(itemId)) {
             newLinked.delete(itemId);
+            // allowedから外れたらincludedも外す
+            const newIncluded = new Set(includedItems);
+            newIncluded.delete(itemId);
+            setIncludedItems(newIncluded);
         } else {
             newLinked.add(itemId);
         }
         setLinkedItems(newLinked);
     };
 
-    // Items are now all the same type (free_input options)
+    const toggleItemIncluded = (itemId: number) => {
+        const newIncluded = new Set(includedItems);
+        if (newIncluded.has(itemId)) {
+            newIncluded.delete(itemId);
+        } else {
+            newIncluded.add(itemId);
+        }
+        setIncludedItems(newIncluded);
+    };
 
     if (loading) return <div className="p-4">読み込み中...</div>;
 
@@ -191,7 +210,7 @@ const PlansManager: React.FC = () => {
                                                 onChange={e => setEditingPlan({ ...editingPlan, id: e.target.value as PlanId })}
                                                 disabled={!isNew}
                                                 className="w-full p-2 border rounded bg-gray-50 disabled:text-gray-500"
-                                                placeholder="例: a"
+                                                placeholder="例: plan_01"
                                             />
                                         </div>
 
@@ -203,6 +222,18 @@ const PlansManager: React.FC = () => {
                                                 onChange={e => setEditingPlan({ ...editingPlan, name: e.target.value })}
                                                 className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
                                             />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">カテゴリ</label>
+                                            <select
+                                                value={editingPlan.category}
+                                                onChange={e => setEditingPlan({ ...editingPlan, category: e.target.value as PlanCategory })}
+                                                className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
+                                            >
+                                                <option value="cremation">火葬式 (cremation)</option>
+                                                <option value="funeral">葬儀 (funeral)</option>
+                                            </select>
                                         </div>
 
                                         <div>
@@ -231,8 +262,9 @@ const PlansManager: React.FC = () => {
                                             連携オプション設定
                                         </h4>
                                         <div className="bg-gray-50 p-4 rounded-lg text-center">
-                                            <p className="text-sm text-gray-500 mb-4">
-                                                現在 <span className="font-bold text-emerald-600 text-lg">{linkedItems.size}</span> 個のアイテムが選択されています
+                                            <p className="text-sm text-gray-500 mb-2">
+                                                対象: <span className="font-bold text-emerald-600 text-lg">{linkedItems.size}</span> 個
+                                                ／ 含む: <span className="font-bold text-blue-600 text-lg">{includedItems.size}</span> 個
                                             </p>
                                             <button
                                                 onClick={() => setIsDrawerOpen(true)}
@@ -268,12 +300,41 @@ const PlansManager: React.FC = () => {
                         title="連携アイテムの選択"
                         width="md:w-[600px]"
                     >
-                        <VirtualItemSelector
-                            items={items}
-                            selectedIds={linkedItems}
-                            onToggle={toggleItemLink}
-                            height={800} // Viewport height approximation
-                        />
+                        <div className="space-y-2 p-2">
+                            {items.map(item => {
+                                const isLinked = linkedItems.has(item.id);
+                                const isIncluded = includedItems.has(item.id);
+                                return (
+                                    <div key={item.id} className={`p-3 rounded-lg border ${isLinked ? 'border-emerald-200 bg-emerald-50' : 'border-gray-200 bg-white'}`}>
+                                        <div className="flex items-center gap-3">
+                                            <input
+                                                type="checkbox"
+                                                checked={isLinked}
+                                                onChange={() => toggleItemLink(item.id)}
+                                                className="accent-emerald-600 w-4 h-4"
+                                            />
+                                            <div className="flex-1">
+                                                <span className="font-medium text-sm">{item.name}</span>
+                                                <span className="text-xs text-gray-400 ml-2">ID: {item.id}</span>
+                                            </div>
+                                            {isLinked && (
+                                                <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isIncluded}
+                                                        onChange={() => toggleItemIncluded(item.id)}
+                                                        className="accent-blue-600 w-3.5 h-3.5"
+                                                    />
+                                                    <span className={isIncluded ? 'text-blue-600 font-bold' : 'text-gray-400'}>
+                                                        含む
+                                                    </span>
+                                                </label>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </Drawer>
                 </>
             )}
@@ -282,8 +343,12 @@ const PlansManager: React.FC = () => {
                 {plans.map(plan => (
                     <div key={plan.id} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
                         <div className="flex justify-between items-start mb-2">
-                            <span className="text-xs font-bold px-2 py-1 rounded bg-emerald-100 text-emerald-700">
-                                プラン
+                            <span className={`text-xs font-bold px-2 py-1 rounded ${
+                                plan.category === 'cremation'
+                                    ? 'bg-orange-100 text-orange-700'
+                                    : 'bg-emerald-100 text-emerald-700'
+                            }`}>
+                                {plan.category === 'cremation' ? '火葬式' : '葬儀'}
                             </span>
                             <div className="flex gap-2">
                                 <button

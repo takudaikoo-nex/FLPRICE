@@ -151,9 +151,16 @@ export const useEstimateSystem = () => {
             if (!content) { alert('データの形式が正しくありません'); return false; }
 
             if (content.plan?.id) {
-                setSelectedPlanId(content.plan.id);
                 const planDef = plans.find(p => p.id === content.plan.id);
-                if (planDef) setCategory(planDef.category);
+                if (planDef) {
+                    setSelectedPlanId(content.plan.id);
+                    setCategory(planDef.category);
+                } else {
+                    // 旧プランIDが現行PLANSに存在しない場合のフォールバック
+                    alert('プラン構成が変更されました。デフォルトプランで読み込みます。');
+                    setSelectedPlanId('plan_01');
+                    setCategory('cremation');
+                }
             }
             if (content.selectedOptions) setSelectedOptions(new Set(content.selectedOptions));
             if (content.selectedGrades) setSelectedGrades(new Map<number, string>(content.selectedGrades));

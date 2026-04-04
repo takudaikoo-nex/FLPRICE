@@ -1,34 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Item } from '../../types';
+import { Item, Plan } from '../../types';
 import { Edit, Trash2, Plus, Search, ArrowUp, ArrowDown } from 'lucide-react';
 import ItemEditor from './ItemEditor';
-import { convertDbItem, convertItemToDb } from '../../lib/converter';
+import { convertDbItem, convertItemToDb, convertDbPlan } from '../../lib/converter';
 
 const ItemsManager: React.FC = () => {
     const [items, setItems] = useState<Item[]>([]);
+    const [plans, setPlans] = useState<Plan[]>([]);
     const [loading, setLoading] = useState(true);
     const [editingItem, setEditingItem] = useState<Item | null>(null);
     const [isNew, setIsNew] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
-        fetchItems();
+        fetchData();
     }, []);
 
-    const fetchItems = async () => {
+    const fetchData = async () => {
         setLoading(true);
         try {
-            const { data, error } = await supabase
-                .from('items')
-                .select('*')
-                .order('display_order', { ascending: true });
+            const [itemsResult, plansResult] = await Promise.all([
+                supabase.from('items').select('*').order('display_order', { ascending: true }),
+                supabase.from('plans').select('*').order('id'),
+            ]);
 
-            if (error) throw error;
-            setItems((data || []).map(convertDbItem));
+            if (itemsResult.error) throw itemsResult.error;
+            if (plansResult.error) throw plansResult.error;
+
+            setItems((itemsResult.data || []).map(convertDbItem));
+            setPlans((plansResult.data || []).map(convertDbPlan));
         } catch (error) {
-            console.error('Error fetching items:', error);
-            alert('アイテムの取得に失敗しました');
+            console.error('Error fetching data:', error);
+            alert('データの取得に失敗しました');
         } finally {
             setLoading(false);
         }
@@ -51,7 +55,7 @@ const ItemsManager: React.FC = () => {
                 if (error) throw error;
             }
 
-            await fetchItems();
+            await fetchData();
             setEditingItem(null);
             setIsNew(false);
         } catch (error: any) {
@@ -69,7 +73,6 @@ const ItemsManager: React.FC = () => {
         const targetItem = items[targetIndex];
 
         try {
-            // Swap display orders
             const { error: error1 } = await supabase
                 .from('items')
                 .update({ display_order: targetItem.displayOrder })
@@ -84,7 +87,7 @@ const ItemsManager: React.FC = () => {
 
             if (error2) throw error2;
 
-            await fetchItems();
+            await fetchData();
         } catch (error) {
             console.error('Error reordering items:', error);
             alert('並び替えに失敗しました');
@@ -101,7 +104,7 @@ const ItemsManager: React.FC = () => {
                 .eq('id', id);
 
             if (error) throw error;
-            await fetchItems();
+            await fetchData();
         } catch (error) {
             console.error('Error deleting item:', error);
             alert('削除に失敗しました');
@@ -109,14 +112,13 @@ const ItemsManager: React.FC = () => {
     };
 
     const startEdit = (item: Item) => {
-        setEditingItem(JSON.parse(JSON.stringify(item))); // Deep copy
+        setEditingItem(JSON.parse(JSON.stringify(item)));
         setIsNew(false);
     };
 
     const startNew = () => {
-        // Find max ID to suggest next ID
         const maxId = items.reduce((max, item) => Math.max(max, item.id), 0);
-        const maxOrder = items.reduce((max, item) => Math.max(max, item.displayOrder), 0);
+        const maxOrder = items.reduce((max, item) => Math.max(max, item.displayOrder || 0), 0);
 
         setEditingItem({
             id: maxId + 1,
@@ -146,6 +148,7 @@ const ItemsManager: React.FC = () => {
                 isNew={isNew}
                 onSave={handleSave}
                 onCancel={() => setEditingItem(null)}
+                plans={plans}
             />
         );
     }
@@ -186,6 +189,7 @@ const ItemsManager: React.FC = () => {
                             <th className="p-4">名前</th>
                             <th className="p-4 w-32 text-right">初期額</th>
                             <th className="p-4 w-48">対象プラン</th>
+                            <th className="p-4 w-48">含むプラン</th>
                             <th className="p-4 w-24 text-center">操作</th>
                         </tr>
                     </thead>
@@ -221,9 +225,18 @@ const ItemsManager: React.FC = () => {
                                     {item.basePrice ? `¥${item.basePrice.toLocaleString()}` : '¥0'}
                                 </td>
                                 <td className="p-4">
-                                    <div className="flex gap-1">
+                                    <div className="flex gap-1 flex-wrap">
                                         {item.allowedPlans.map(p => (
                                             <span key={p} className="text-xs bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200 uppercase">
+                                                {p}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </td>
+                                <td className="p-4">
+                                    <div className="flex gap-1 flex-wrap">
+                                        {item.includedInPlans.map(p => (
+                                            <span key={p} className="text-xs bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200 text-blue-700 uppercase">
                                                 {p}
                                             </span>
                                         ))}

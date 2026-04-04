@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Item } from '../../types';
+import { Item, Plan } from '../../types';
 import { ArrowLeft } from 'lucide-react';
 
 interface ItemEditorProps {
@@ -7,9 +7,10 @@ interface ItemEditorProps {
     isNew: boolean;
     onSave: (item: Item) => Promise<void>;
     onCancel: () => void;
+    plans: Plan[];
 }
 
-const ItemEditor: React.FC<ItemEditorProps> = ({ item, isNew, onSave, onCancel }) => {
+const ItemEditor: React.FC<ItemEditorProps> = ({ item, isNew, onSave, onCancel, plans }) => {
     const [editingItem, setEditingItem] = useState<Item>(JSON.parse(JSON.stringify(item)));
 
     const handleSave = async () => {
@@ -105,25 +106,57 @@ const ItemEditor: React.FC<ItemEditorProps> = ({ item, isNew, onSave, onCancel }
                             <label className="block text-sm font-medium text-gray-700 mb-2">利用可能プラン</label>
                             <p className="text-xs text-gray-400 mb-2">※ 空の場合は全プランで表示されます</p>
                             <div className="flex flex-wrap gap-4">
-                                {['plan_01', 'plan_02', 'plan_03', 'plan_04', 'plan_05', 'plan_06', 'plan_07', 'plan_08'].map(planId => (
-                                    <label key={planId} className={`
+                                {plans.map(plan => (
+                                    <label key={plan.id} className={`
                                         flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition-all
-                                        ${editingItem.allowedPlans.includes(planId)
+                                        ${editingItem.allowedPlans.includes(plan.id)
                                             ? 'bg-emerald-50 border-emerald-200 text-emerald-700 font-bold shadow-sm'
                                             : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}
                                     `}>
                                         <input
                                             type="checkbox"
-                                            checked={editingItem.allowedPlans.includes(planId)}
+                                            checked={editingItem.allowedPlans.includes(plan.id)}
                                             onChange={e => {
                                                 const newPlans = e.target.checked
-                                                    ? [...editingItem.allowedPlans, planId]
-                                                    : editingItem.allowedPlans.filter(p => p !== planId);
-                                                setEditingItem({ ...editingItem, allowedPlans: newPlans });
+                                                    ? [...editingItem.allowedPlans, plan.id]
+                                                    : editingItem.allowedPlans.filter(p => p !== plan.id);
+                                                // allowedから外れたらincludedも外す
+                                                const newIncluded = e.target.checked
+                                                    ? editingItem.includedInPlans
+                                                    : editingItem.includedInPlans.filter(p => p !== plan.id);
+                                                setEditingItem({ ...editingItem, allowedPlans: newPlans, includedInPlans: newIncluded });
                                             }}
                                             className="accent-emerald-600 w-4 h-4"
                                         />
-                                        <span className="text-sm">{planId}</span>
+                                        <span className="text-sm">{plan.name}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">プラン料金に含む</label>
+                            <p className="text-xs text-gray-400 mb-2">※ 利用可能プランの中から、プラン料金に含まれるプランを選択</p>
+                            <div className="flex flex-wrap gap-4">
+                                {plans.filter(plan => editingItem.allowedPlans.includes(plan.id)).map(plan => (
+                                    <label key={plan.id} className={`
+                                        flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition-all
+                                        ${editingItem.includedInPlans.includes(plan.id)
+                                            ? 'bg-blue-50 border-blue-200 text-blue-700 font-bold shadow-sm'
+                                            : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}
+                                    `}>
+                                        <input
+                                            type="checkbox"
+                                            checked={editingItem.includedInPlans.includes(plan.id)}
+                                            onChange={e => {
+                                                const newIncluded = e.target.checked
+                                                    ? [...editingItem.includedInPlans, plan.id]
+                                                    : editingItem.includedInPlans.filter(p => p !== plan.id);
+                                                setEditingItem({ ...editingItem, includedInPlans: newIncluded });
+                                            }}
+                                            className="accent-blue-600 w-4 h-4"
+                                        />
+                                        <span className="text-sm">{plan.name}</span>
                                     </label>
                                 ))}
                             </div>
