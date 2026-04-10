@@ -56,24 +56,9 @@ const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({
     const taxAmount = Math.floor(taxableSubtotal * TAX_RATE);
     const finalTotal = taxableSubtotal + taxAmount + nonTaxableTotal;
 
-    const getGradeLabel = (item: Item): string => {
-        const gradeId = selectedGrades.get(item.id);
-        if (gradeId && item.options) return item.options.find(o => o.id === gradeId)?.name || '';
-        return '';
-    };
-
-    const includedItems = items.filter(i => i.allowedPlans.includes(planId) && i.includedInPlans.includes(planId));
-
-    const allRows = [
-        { name: `基本プラン (${plan.name})`, price: plan.price, detail: '', isIncluded: false, nonTaxable: false },
-        ...includedItems.map(i => ({ name: i.name, price: 0, detail: '', isIncluded: true, nonTaxable: i.nonTaxable })),
-        ...taxableOptions.map(i => ({ name: i.name, price: getPrice(i), detail: getGradeLabel(i), isIncluded: false, nonTaxable: false })),
-        ...nonTaxableOptions.map(i => ({ name: i.name, price: getPrice(i), detail: getGradeLabel(i), isIncluded: false, nonTaxable: true })),
-    ];
-
     // Determine plan category name (e.g., 火葬式, 家族葬)
     const categoryName = plan.category === 'cremation' ? '火葬式' : 'お葬式';
-    const deceasedNameText = customerInfo?.deceasedName ? `故 ${customerInfo.deceasedName}` : '故 〇〇 〇〇';
+    const deceasedNameText = customerInfo?.deceasedName ? `故 ${customerInfo.deceasedName}` : '';
     
     // Automatically format remarks to fulfill requirements
     const userRemarks = customerInfo?.remarks || '';
@@ -84,116 +69,98 @@ const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({
         <div id="receipt-document" className="w-[210mm] h-[297mm] bg-white text-gray-900 overflow-hidden relative leading-relaxed flex flex-col"
             style={{ padding: '15mm 20mm', boxSizing: 'border-box', fontFamily: '"Yu Mincho", "YuMincho", serif', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
 
-            {/* Header Area matching the receipt image */}
-            <div className="flex justify-between items-end border-b-4 border-blue-800 pb-2 mb-8 !print-color-adjust-exact">
-                <div className="flex items-center gap-6">
-                    <span className="text-3xl font-bold bg-blue-800 text-white px-8 py-2 tracking-widest !print-color-adjust-exact">領 収 書</span>
-                    <span className="text-xl font-bold">{deceasedNameText} 様</span>
-                    <span className="text-xl font-bold">{categoryName}</span>
-                </div>
-                <div className="text-sm">発行日: {formattedIssueDate}</div>
-            </div>
-
-            <div className="flex justify-between mb-6">
-                <div className="flex-1 pr-4">
-                    <div className="mb-2">
-                        <div className="text-xl font-bold border-b border-black inline-block pr-12 pb-1 relative min-w-[200px]">
-                            {customerInfo?.applicantName || '　　　　'} 
-                            <span className="absolute right-0 bottom-1">様</span>
-                        </div>
-                    </div>
-                    <div className="text-sm leading-relaxed mb-4 min-h-[40px]">
-                        <div>〒{(customerInfo?.applicantAddress || customerInfo?.chiefMournerAddress)?.split(' ')[0]?.replace('〒', '') || '　　-　　'}</div>
-                        <div className="mt-1 break-words">{(customerInfo?.applicantAddress || customerInfo?.chiefMournerAddress)?.split(' ').slice(1).join(' ') || ''}</div>
-                    </div>
-                    
-                    <div className="mb-4">
-                        <span className="text-sm border-b border-black inline-block pr-8">葬祭日：{formattedFuneralDate}</span>
-                    </div>
-                    
-                    <div className="text-sm mb-2">下記の金額、正に領収いたしました。</div>
-                    
-                    <div className="inline-flex items-center bg-blue-100 !print-color-adjust-exact">
-                        <span className="bg-blue-800 text-white font-bold px-4 py-2 !print-color-adjust-exact">合計金額</span>
-                        <span className="font-bold text-3xl font-mono px-6">¥{finalTotal.toLocaleString()}-</span>
-                    </div>
+            <div className="flex justify-between items-start mb-16 mt-8">
+                <div></div> {/* Left Spacer */}
+                
+                {/* Title */}
+                <div className="text-center">
+                    <h1 className="text-4xl font-bold tracking-[0.5em] border-b-2 border-black pb-2 px-12 mb-2">領収証</h1>
                 </div>
                 
-                <div className="w-[280px] text-right relative pl-4">
-                    <div className="font-bold text-lg mb-1">{info.name}</div>
-                    <div className="text-xs leading-relaxed text-gray-600">
-                        <div>{info.address}</div><div>{info.contact}</div><div className="mt-1">{info.rep}</div>
-                        {(info as any).registrationNumber && <div className="mt-1 text-[10px] text-gray-500">事業者登録番号: {(info as any).registrationNumber}</div>}
-                    </div>
-                    {info.stamp && <img src={info.stamp} alt="Stamp" className="absolute object-contain opacity-80" style={{ width: '70px', height: '70px', right: '0px', top: '10px' }} />}
+                {/* Issue Date */}
+                <div className="text-right text-lg">
+                    {formattedIssueDate}
                 </div>
             </div>
 
-            <div className="text-xs text-gray-500 mb-1">＜ 領収明細 ＞</div>
-            
-            <div className="border border-blue-800 text-sm mb-6 flex-1 flex flex-col">
-                <div className="flex bg-blue-800 text-white font-bold !print-color-adjust-exact">
-                    <div className="w-10 text-center py-2 px-1 border-r border-white">No.</div>
-                    <div className="flex-1 text-left py-2 px-2 border-r border-white">商品名 / 品名</div>
-                    <div className="w-20 text-center py-2 px-1 border-r border-white">数 量</div>
-                    <div className="w-28 text-center py-2 px-2 border-r border-white">単 価</div>
-                    <div className="w-32 text-center py-2 px-2">金 額</div>
+            <div className="flex justify-between items-start mb-16">
+                {/* Left side: Addressee */}
+                <div className="flex-1 mt-6">
+                    <div className="text-3xl font-bold border-b border-black inline-block pr-16 pb-2 relative min-w-[300px]">
+                        {customerInfo?.applicantName || '　　　　'} 
+                        <span className="absolute right-2 bottom-2 text-xl tracking-widest">様</span>
+                    </div>
                 </div>
-                <div className="flex-1 min-h-[300px]">
-                    {allRows.map((row, i) => (
-                        <div key={i} className={`flex border-b border-blue-200 ${i % 2 === 1 ? 'bg-blue-50' : ''} !print-color-adjust-exact`}>
-                            <div className="w-10 text-center py-2 px-1 border-r border-blue-200">{i + 1}</div>
-                            <div className="flex-1 text-left py-2 px-2 border-r border-blue-200 truncate">
-                                {row.name} {row.detail ? `(${row.detail})` : ''} {row.nonTaxable ? '(非課税)' : ''}
-                            </div>
-                            <div className="w-20 text-center py-2 px-1 border-r border-blue-200 font-mono">1 回</div>
-                            <div className="w-28 text-right py-2 px-2 border-r border-blue-200 font-mono text-gray-600">
-                                {row.isIncluded ? '-' : row.price.toLocaleString()}
-                            </div>
-                            <div className="w-32 text-right py-2 px-2 font-mono">
-                                {row.isIncluded ? 'プラン内' : row.price.toLocaleString()}
-                            </div>
-                        </div>
-                    ))}
-                    {/* Fill empty rows if needed (optional visual padding) */}
-                    {Array.from({ length: Math.max(0, 15 - allRows.length) }).map((_, i) => (
-                        <div key={`empty-${i}`} className={`flex border-b border-blue-200 h-9 ${(i + allRows.length) % 2 === 1 ? 'bg-blue-50' : ''} !print-color-adjust-exact`}>
-                            <div className="w-10 border-r border-blue-200"></div>
-                            <div className="flex-1 border-r border-blue-200"></div>
-                            <div className="w-20 border-r border-blue-200"></div>
-                            <div className="w-28 border-r border-blue-200"></div>
-                            <div className="w-32"></div>
-                        </div>
-                    ))}
+
+                {/* Right side: Issuer info */}
+                <div className="w-[300px] text-right relative pt-2">
+                    <div className="font-bold text-xl mb-2">{info.name}</div>
+                    <div className="text-sm leading-relaxed text-gray-700">
+                        <div>{info.address}</div>
+                        <div>{info.contact}</div>
+                        <div className="mt-1">{info.rep}</div>
+                        {(info as any).registrationNumber && <div className="mt-1 text-xs text-gray-500">登録番号: {(info as any).registrationNumber}</div>}
+                    </div>
+                    {info.stamp && <img src={info.stamp} alt="Stamp" className="absolute object-contain opacity-90" style={{ width: '85px', height: '85px', right: '-10px', top: '20px' }} />}
                 </div>
             </div>
 
-            <div className="flex justify-end mb-6 text-sm">
-                <div className="w-64">
-                    <div className="flex justify-between py-1 border-b border-gray-300">
-                        <span className="font-bold">小計 (税抜)</span><span className="font-mono">¥{taxableSubtotal.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between py-1 border-b border-gray-300">
-                        <span className="font-bold">消費税 (10%)</span><span className="font-mono">¥{taxAmount.toLocaleString()}</span>
-                    </div>
-                    {nonTaxableTotal > 0 && <div className="flex justify-between py-1 border-b border-gray-300">
-                        <span className="font-bold">非課税計</span><span className="font-mono">¥{nonTaxableTotal.toLocaleString()}</span>
-                    </div>}
-                    <div className="flex justify-between py-2 border-b-2 border-blue-800 font-bold border-t border-t-gray-300">
-                        <span>合 計 (税込)</span><span className="font-mono">¥{finalTotal.toLocaleString()}</span>
+            {/* Total Amount Area */}
+            <div className="mb-10 w-full">
+                <div className="bg-blue-50 border border-blue-200 py-8 px-10 text-center relative shadow-sm !print-color-adjust-exact">
+                    <div className="absolute top-3 left-4 text-sm text-blue-900 tracking-widest font-bold">金額</div>
+                    <div className="flex items-end justify-center gap-4">
+                        <span className="text-4xl font-bold leading-none font-serif text-blue-900 pr-2">¥</span>
+                        <span className="text-5xl font-bold tracking-widest font-mono text-blue-900 leading-none">{finalTotal.toLocaleString()}</span>
+                        <span className="text-3xl font-bold leading-none text-blue-900 pl-2">-</span>
                     </div>
                 </div>
             </div>
 
-            <div className="mt-auto border-t-2 border-blue-800 pt-4">
-                <div className="flex">
-                    <div className="font-bold text-sm w-16">備考欄: </div>
-                    <div className="flex-1 text-sm whitespace-pre-wrap">{finalRemarks}</div>
-                </div>
+            {/* Tax Breakdown */}
+            <div className="mb-16">
+                <table className="w-[350px] ml-auto border-collapse text-sm">
+                    <tbody>
+                        <tr className="border-b border-gray-300">
+                            <td className="w-1/2 py-2 text-gray-600">税抜金額</td>
+                            <td className="w-1/2 py-2 text-right font-mono">¥{taxableSubtotal.toLocaleString()}</td>
+                        </tr>
+                        <tr className="border-b border-gray-300">
+                            <td className="w-1/2 py-2 text-gray-600">消費税等額 (10%)</td>
+                            <td className="w-1/2 py-2 text-right font-mono">¥{taxAmount.toLocaleString()}</td>
+                        </tr>
+                        {nonTaxableTotal > 0 && (
+                            <tr className="border-b border-gray-300">
+                                <td className="w-1/2 py-2 text-gray-600">非課税金額</td>
+                                <td className="w-1/2 py-2 text-right font-mono">¥{nonTaxableTotal.toLocaleString()}</td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
             </div>
-            
-            <div className="border-b-4 border-blue-800 mt-8 mb-2"></div>
-            <div className="border-b border-blue-800 mb-8"></div>
+
+            {/* Remarks Area */}
+            <div className="border border-black p-4 min-h-[160px] flex flex-col relative w-full">
+                <div className="absolute top-[-10px] left-4 bg-white px-2 font-bold text-sm tracking-widest">
+                    但し書き
+                </div>
+                <div className="mt-4 text-base leading-relaxed pl-2 whitespace-pre-wrap">
+                    {finalRemarks}
+                </div>
+                {deceasedNameText && (
+                    <div className="mt-4 pl-2 text-sm text-gray-700">
+                        ({deceasedNameText} 様 {categoryName}： 葬祭日 {formattedFuneralDate})
+                    </div>
+                )}
+            </div>
+
+            <div className="flex-1 min-h-[20px]"></div>
+
+            {/* Footer space */}
+            <div className="text-center text-sm text-gray-400 mt-12 pb-8">
+                この領収証は再発行いたしませんので大切に保管してください。
+            </div>
+
         </div>
     );
 };

@@ -92,6 +92,9 @@ const PrintPreview: React.FC = () => {
                         <h1 className="font-bold text-gray-700">印刷プレビュー ({data.documentType === 'receipt' ? '領収書' : data.documentType === 'invoice' ? '請求書' : '見積書'})</h1>
                         <div className="flex gap-4">
                             <button onClick={() => window.close()} className="px-6 py-3 rounded border border-gray-300 hover:bg-gray-100 text-lg">閉じる</button>
+                            <button onClick={handleDownloadPDF} disabled={isGeneratingPdf} className="px-6 py-3 rounded bg-blue-600 text-white hover:bg-blue-700 font-bold text-lg disabled:opacity-50">
+                                {isGeneratingPdf ? 'PDF生成中...' : 'PDFで保存'}
+                            </button>
                             <button onClick={() => window.print()} className="px-8 py-3 rounded bg-emerald-600 text-white hover:bg-emerald-700 font-bold text-lg">印刷する</button>
                         </div>
                     </div>
