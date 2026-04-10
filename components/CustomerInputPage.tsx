@@ -503,7 +503,7 @@ const CustomerInputPage: React.FC<CustomerInputPageProps> = ({ onBack, onSaveAnd
                                 type="button"
                                 disabled={isSaving}
                                 onClick={(e) => handlePrintClick(e, 'receipt')}
-                                className="px-6 py-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700 font-bold shadow-lg transition-all flex items-center gap-2"
+                                className="px-6 py-3 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 font-bold shadow-lg transition-all flex items-center gap-2"
                             >
                                 <Printer size={20} />領収書
                             </button>

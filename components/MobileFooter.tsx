@@ -47,7 +47,7 @@ const MobileFooter: React.FC<MobileFooterProps> = ({ total, onInputClick, onOutp
                     {/* Receipt Output Button */}
                     <button
                         onClick={onReceiptClick}
-                        className="flex-1 flex items-center justify-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-2 rounded-lg font-bold text-xs shadow-md active:scale-95 transition-all"
+                        className="flex-1 flex items-center justify-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-2 rounded-lg font-bold text-xs shadow-md active:scale-95 transition-all"
                     >
                         <Printer size={16} />
                         <span>領収</span>
