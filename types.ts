@@ -33,6 +33,7 @@ export interface Item {
 
 export interface CustomerInfo {
   deathDate: string;
+  funeralDate?: string;
   deceasedName: string;
   birthDate: string;
   age?: string;
@@ -55,6 +56,7 @@ export interface CustomerInfo {
   templeFax: string;
   remarks?: string;
   deathDateMode?: 'western' | 'japanese';
+  funeralDateMode?: 'western' | 'japanese';
   birthDateMode?: 'western' | 'japanese';
   applicantBirthDateMode?: 'western' | 'japanese';
 }

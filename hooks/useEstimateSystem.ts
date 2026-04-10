@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { PlanCategory, PlanId, Item, Plan, CustomerInfo } from '../types';
 import { serializePrintData } from '../lib/serialization';
 import { getItemPrice } from '../lib/pricing';
+import { convertDbItem, convertDbPlan } from '../lib/converter';
 import { PLANS, ITEMS } from '../constants';
 
 export const useEstimateSystem = () => {
@@ -33,11 +34,33 @@ export const useEstimateSystem = () => {
         }
         if (isPrintMode) return;
 
-        // ローカル定数をマスターデータとして使用
-        // （Supabase DBは見積保存・読込のみに利用）
-        setPlans(PLANS);
-        setItems(ITEMS);
-        setLoading(false);
+        const fetchData = async () => {
+            try {
+                const { data: plansData, error: plansError } = await supabase
+                    .from('plans').select('*');
+                if (plansError) throw plansError;
+                
+                const { data: itemsData, error: itemsError } = await supabase
+                    .from('items').select('*').order('display_order', { ascending: true });
+                if (itemsError) throw itemsError;
+
+                if (plansData && plansData.length > 0) {
+                    setPlans(plansData.map(convertDbPlan));
+                }
+                if (itemsData && itemsData.length > 0) {
+                    setItems(itemsData.map(convertDbItem));
+                }
+            } catch (error) {
+                console.error("Failed to fetch data from Supabase:", error);
+                // DBの読み込みに失敗した場合はハードコードされた定数を利用する
+                setPlans(PLANS);
+                setItems(ITEMS);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
     }, [isPrintMode]);
 
     // --- Handlers ---
@@ -106,7 +129,7 @@ export const useEstimateSystem = () => {
 
     const toggleLogo = () => setLogoType(prev => prev === 'FL' ? 'LS' : 'FL');
 
-    const handleSaveAndPrint = async (customerInfo: CustomerInfo, documentType: 'quote' | 'invoice' = 'quote') => {
+    const handleSaveAndPrint = async (customerInfo: CustomerInfo, documentType: 'quote' | 'invoice' | 'receipt' = 'quote') => {
         if (!currentPlan) return;
         try {
             setIsSaving(true);

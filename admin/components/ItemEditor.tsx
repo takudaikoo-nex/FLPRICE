@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Item, Plan } from '../../types';
-import { ArrowLeft } from 'lucide-react';
+import { Item, Plan, ItemType } from '../../types';
+import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 
 interface ItemEditorProps {
     item: Item;
@@ -88,8 +88,99 @@ const ItemEditor: React.FC<ItemEditorProps> = ({ item, isNew, onSave, onCancel, 
                 <section className="space-y-6">
                     <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider border-b pb-2">設定</h3>
                     <div className="space-y-6">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">アイテムの種類</label>
+                            <select
+                                value={editingItem.type}
+                                onChange={e => {
+                                    const newType = e.target.value as ItemType;
+                                    setEditingItem({
+                                        ...editingItem,
+                                        type: newType,
+                                        // options array should be initialized if converting to dropdown
+                                        options: newType === 'dropdown' ? (editingItem.options || []) : editingItem.options
+                                    });
+                                }}
+                                className="w-full md:w-64 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
+                            >
+                                <option value="checkbox">チェックボックス (追加オプション)</option>
+                                <option value="dropdown">プルダウン (複数の選択肢から選ぶ)</option>
+                                <option value="free_input">手入力 (金額を自由に打ち込む)</option>
+                            </select>
+                        </div>
+
+                        {editingItem.type === 'dropdown' && (
+                            <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
+                                <div className="flex justify-between items-center mb-3">
+                                    <label className="block text-sm font-medium text-emerald-800">プルダウン選択肢</label>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const newOption = {
+                                                id: `opt_${Date.now().toString(36)}`,
+                                                name: '',
+                                                price: 0,
+                                                allowedPlans: plans.map(p => p.id)
+                                            };
+                                            setEditingItem({
+                                                ...editingItem,
+                                                options: [...(editingItem.options || []), newOption]
+                                            });
+                                        }}
+                                        className="text-emerald-700 bg-white border border-emerald-300 px-3 py-1.5 rounded-lg text-sm hover:bg-emerald-100 flex items-center gap-1 transition-colors"
+                                    >
+                                        <Plus size={16} /> 追加
+                                    </button>
+                                </div>
+                                <div className="space-y-3">
+                                    {(editingItem.options || []).length === 0 ? (
+                                        <p className="text-xs text-emerald-600">※ 選択肢がありません。追加ボタンを押して追加してください。</p>
+                                    ) : (
+                                        (editingItem.options || []).map((opt, idx) => (
+                                            <div key={idx} className="flex gap-2 items-center bg-white p-2 rounded border border-emerald-100 shadow-sm">
+                                                <input
+                                                    type="text"
+                                                    value={opt.name}
+                                                    onChange={e => {
+                                                        const newOptions = [...(editingItem.options || [])];
+                                                        newOptions[idx].name = e.target.value;
+                                                        setEditingItem({ ...editingItem, options: newOptions });
+                                                    }}
+                                                    placeholder="選択肢名 (例: 椿グレード)"
+                                                    className="flex-1 p-2 border border-gray-200 rounded text-sm focus:ring-1 focus:ring-emerald-500 outline-none"
+                                                />
+                                                <div className="flex items-center gap-1 w-32 shrink-0">
+                                                    <span className="text-gray-500 text-sm">¥</span>
+                                                    <input
+                                                        type="number"
+                                                        value={opt.price}
+                                                        onChange={e => {
+                                                            const newOptions = [...(editingItem.options || [])];
+                                                            newOptions[idx].price = parseInt(e.target.value) || 0;
+                                                            setEditingItem({ ...editingItem, options: newOptions });
+                                                        }}
+                                                        className="w-full p-2 border border-gray-200 rounded text-sm text-right focus:ring-1 focus:ring-emerald-500 outline-none"
+                                                    />
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const newOptions = (editingItem.options || []).filter((_, i) => i !== idx);
+                                                        setEditingItem({ ...editingItem, options: newOptions });
+                                                    }}
+                                                    className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
                         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">デフォルト金額</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">ベース金額（追加オプションなど）</label>
                             <div className="relative w-48">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">¥</span>
                                 <input
@@ -99,7 +190,7 @@ const ItemEditor: React.FC<ItemEditorProps> = ({ item, isNew, onSave, onCancel, 
                                     className="w-full pl-8 p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none font-mono text-right"
                                 />
                             </div>
-                            <p className="text-xs text-gray-400 mt-2">※ ユーザーが金額を自由に入力します。ここではデフォルト値を設定します。</p>
+                            <p className="text-xs text-gray-400 mt-2">※ チェックボックス選択時の金額、または手入力時のデフォルト金額です。</p>
                         </div>
 
                         <div>

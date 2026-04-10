@@ -5,7 +5,7 @@ import { ArrowLeft, Printer, Save } from 'lucide-react';
 
 interface CustomerInputPageProps {
     onBack: () => void;
-    onSaveAndPrint: (info: CustomerInfo) => void;
+    onSaveAndPrint: (info: CustomerInfo, documentType: 'quote' | 'invoice' | 'receipt') => void;
     isSaving: boolean;
     initialData?: CustomerInfo | null;
 }
@@ -14,6 +14,8 @@ const CustomerInputPage: React.FC<CustomerInputPageProps> = ({ onBack, onSaveAnd
     const [formData, setFormData] = useState<CustomerInfo>(initialData || {
         deathDate: '',
         deathDateMode: 'western',
+        funeralDate: '',
+        funeralDateMode: 'western',
         deceasedName: '',
         birthDate: '',
         birthDateMode: 'western',
@@ -158,9 +160,9 @@ const CustomerInputPage: React.FC<CustomerInputPageProps> = ({ onBack, onSaveAnd
         });
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handlePrintClick = (e: React.MouseEvent, type: 'quote' | 'invoice' | 'receipt') => {
         e.preventDefault();
-        onSaveAndPrint(formData);
+        onSaveAndPrint(formData, type);
     };
 
     return (
@@ -181,7 +183,7 @@ const CustomerInputPage: React.FC<CustomerInputPageProps> = ({ onBack, onSaveAnd
 
             {/* Content */}
             <main className="flex-1 w-full max-w-4xl mx-auto p-4 md:p-8">
-                <form id="customer-form" onSubmit={handleSubmit} className="space-y-8">
+                <form id="customer-form" className="space-y-8">
 
                     {/* Deceased Info */}
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
@@ -196,6 +198,14 @@ const CustomerInputPage: React.FC<CustomerInputPageProps> = ({ onBack, onSaveAnd
                                     value={formData.deathDate}
                                     mode={formData.deathDateMode || 'western'}
                                     onChange={(val, mode) => handleDateChange('deathDate', 'deathDateMode', val, mode)}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1.5">お葬式の日程（葬祭日）</label>
+                                <DateInput
+                                    value={formData.funeralDate || ''}
+                                    mode={formData.funeralDateMode || 'western'}
+                                    onChange={(val, mode) => handleDateChange('funeralDate', 'funeralDateMode', val, mode)}
                                 />
                             </div>
                             <div>
@@ -464,28 +474,40 @@ const CustomerInputPage: React.FC<CustomerInputPageProps> = ({ onBack, onSaveAnd
                     </div>
 
                     {/* Footer Actions */}
-                    <div className="flex justify-end gap-4 pt-4 border-t border-gray-200">
+                    <div className="flex flex-wrap justify-end gap-4 pt-4 border-t border-gray-200">
                         <button
                             type="button"
                             onClick={onBack}
-                            className="px-8 py-3 rounded-full border-2 border-gray-300 text-gray-600 hover:bg-gray-100 font-bold transition-all"
+                            className="px-6 py-3 rounded-full border-2 border-gray-300 text-gray-600 hover:bg-gray-100 font-bold transition-all"
                         >
                             戻る
                         </button>
-                        <button
-                            type="submit"
-                            disabled={isSaving}
-                            className="px-10 py-3 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold shadow-lg shadow-emerald-200 transition-all flex items-center gap-3 transform hover:-translate-y-1"
-                        >
-                            {isSaving ? (
-                                <>保存中...</>
-                            ) : (
-                                <>
-                                    <Printer size={24} />
-                                    <span>保存して印刷プレビューへ</span>
-                                </>
-                            )}
-                        </button>
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                disabled={isSaving}
+                                onClick={(e) => handlePrintClick(e, 'quote')}
+                                className="px-6 py-3 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 font-bold shadow-lg transition-all flex items-center gap-2"
+                            >
+                                <Printer size={20} />見積書
+                            </button>
+                            <button
+                                type="button"
+                                disabled={isSaving}
+                                onClick={(e) => handlePrintClick(e, 'invoice')}
+                                className="px-6 py-3 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 font-bold shadow-lg transition-all flex items-center gap-2"
+                            >
+                                <Printer size={20} />請求書
+                            </button>
+                            <button
+                                type="button"
+                                disabled={isSaving}
+                                onClick={(e) => handlePrintClick(e, 'receipt')}
+                                className="px-6 py-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700 font-bold shadow-lg transition-all flex items-center gap-2"
+                            >
+                                <Printer size={20} />領収書
+                            </button>
+                        </div>
                     </div>
 
                 </form>

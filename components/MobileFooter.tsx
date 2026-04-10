@@ -6,9 +6,10 @@ interface MobileFooterProps {
     onInputClick: () => void;
     onOutputClick: () => void;
     onInvoiceClick: () => void;
+    onReceiptClick: () => void;
 }
 
-const MobileFooter: React.FC<MobileFooterProps> = ({ total, onInputClick, onOutputClick, onInvoiceClick }) => {
+const MobileFooter: React.FC<MobileFooterProps> = ({ total, onInputClick, onOutputClick, onInvoiceClick, onReceiptClick }) => {
     return (
         <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] py-3 px-4 z-40 print:hidden">
             <div className="flex flex-col gap-3">
@@ -41,6 +42,15 @@ const MobileFooter: React.FC<MobileFooterProps> = ({ total, onInputClick, onOutp
                     >
                         <Printer size={16} />
                         <span>請求</span>
+                    </button>
+
+                    {/* Receipt Output Button */}
+                    <button
+                        onClick={onReceiptClick}
+                        className="flex-1 flex items-center justify-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-2 rounded-lg font-bold text-xs shadow-md active:scale-95 transition-all"
+                    >
+                        <Printer size={16} />
+                        <span>領収</span>
                     </button>
                 </div>
             </div>

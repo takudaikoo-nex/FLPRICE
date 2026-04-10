@@ -9,6 +9,7 @@ interface MobileEstimatePageProps {
     system: ReturnType<typeof useEstimateSystem>;
     onOutputClick: () => Promise<void>;
     onInvoiceClick: () => Promise<void>;
+    onReceiptClick: () => Promise<void>;
     goToInputPage: () => void;
     onLoadClick: () => Promise<void>;
 }
@@ -18,7 +19,7 @@ const THEME = {
     funeral: { active: 'bg-emerald-600 text-white shadow-md', text: 'text-emerald-700', dot: 'bg-emerald-500', selectedBorder: 'border-emerald-500 text-emerald-700' },
 } as const;
 
-const MobileEstimatePage: React.FC<MobileEstimatePageProps> = ({ system, onOutputClick, onInvoiceClick, goToInputPage, onLoadClick }) => {
+const MobileEstimatePage: React.FC<MobileEstimatePageProps> = ({ system, onOutputClick, onInvoiceClick, onReceiptClick, goToInputPage, onLoadClick }) => {
     const {
         category, selectedPlanId,
         selectedOptions, selectedGrades, freeInputValues,
@@ -150,7 +151,7 @@ const MobileEstimatePage: React.FC<MobileEstimatePageProps> = ({ system, onOutpu
                 </section>
             </main>
 
-            <MobileFooter total={totalCost} onInputClick={goToInputPage} onOutputClick={onOutputClick} onInvoiceClick={onInvoiceClick} />
+            <MobileFooter total={totalCost} onInputClick={goToInputPage} onOutputClick={onOutputClick} onInvoiceClick={onInvoiceClick} onReceiptClick={onReceiptClick} />
             {modalItem && <DetailModal item={modalItem} onClose={() => setModalItem(null)} />}
         </div>
     );

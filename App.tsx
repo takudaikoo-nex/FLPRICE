@@ -87,6 +87,10 @@ const App: React.FC = () => {
     if (!currentPlan) { alert('プランが選択されていません。'); return; }
     await handleSaveAndPrint(loadedCustomerInfo || EMPTY_CUSTOMER_INFO, 'invoice');
   };
+  const handleReceiptClick = async () => {
+    if (!currentPlan) { alert('プランが選択されていません。'); return; }
+    await handleSaveAndPrint(loadedCustomerInfo || EMPTY_CUSTOMER_INFO, 'receipt');
+  };
   const handleLoadEstimate = async () => {
     const input = window.prompt('呼び出す見積番号を入力してください');
     if (!input) return;
@@ -121,7 +125,7 @@ const App: React.FC = () => {
   );
   if (viewMode === 'start') return <StartScreen onLoad={handleStartLoad} onCreateNew={handleStartNew} logoType={logoType} onToggleLogo={toggleLogo} />;
   if (viewMode === 'input') return <CustomerInputPage onBack={() => setViewMode('home')} onSaveAndPrint={handleSaveAndPrint} isSaving={isSaving} initialData={loadedCustomerInfo} />;
-  if (viewMode === 'home' && isMobile) return <MobileEstimatePage system={system} onOutputClick={handleOutputClick} onInvoiceClick={handleInvoiceClick} goToInputPage={goToInputPage} onLoadClick={handleLoadEstimate} />;
+  if (viewMode === 'home' && isMobile) return <MobileEstimatePage system={system} onOutputClick={handleOutputClick} onInvoiceClick={handleInvoiceClick} onReceiptClick={handleReceiptClick} goToInputPage={goToInputPage} onLoadClick={handleLoadEstimate} />;
 
   const includedItems = items.filter(i => i.allowedPlans.includes(selectedPlanId) && i.includedInPlans.includes(selectedPlanId));
   const optionItems = items.filter(i => i.allowedPlans.includes(selectedPlanId) && !i.includedInPlans.includes(selectedPlanId));
@@ -329,7 +333,7 @@ const App: React.FC = () => {
           <div style={{ height: '180px' }} aria-hidden="true"></div>
         </main>
 
-        <Footer total={totalCost} onInputClick={goToInputPage} onOutputClick={handleOutputClick} onInvoiceClick={handleInvoiceClick} />
+        <Footer total={totalCost} onInputClick={goToInputPage} onOutputClick={handleOutputClick} onInvoiceClick={handleInvoiceClick} onReceiptClick={handleReceiptClick} />
         {modalItem && <DetailModal item={modalItem} onClose={() => setModalItem(null)} />}
       </div>
     </div>

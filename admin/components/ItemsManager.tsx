@@ -138,6 +138,37 @@ const ItemsManager: React.FC = () => {
         item.description.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const handleSyncFromConstants = async () => {
+        if (!confirm('本当に constants.ts のデータでデータベースを上書き同期しますか？\n（現在の管理画面での変更はリセットされます）')) return;
+        
+        try {
+            setLoading(true);
+            
+            // Delete all current items
+            const { error: delError } = await supabase.from('items').delete().gt('id', 0);
+            if (delError) throw delError;
+
+            // Import from constants.ts
+            // We need to dynamically import constants.ts to avoid circular dependencies if any
+            const { ITEMS } = await import('../../constants');
+            const dataToInsert = ITEMS.map((item, idx) => ({
+                ...convertItemToDb(item),
+                display_order: idx + 1
+            }));
+
+            const { error: insError } = await supabase.from('items').insert(dataToInsert);
+            if (insError) throw insError;
+
+            alert('データベースの初期化・同期が完了しました。');
+            await fetchData();
+        } catch (error: any) {
+            console.error('Error syncing items:', error);
+            alert(`同期に失敗しました: ${error.message}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     if (loading) return <div className="p-4">読み込み中...</div>;
 
     // Show Editor if editing
@@ -160,6 +191,12 @@ const ItemsManager: React.FC = () => {
                 <h3 className="text-lg font-bold text-gray-700">アイテム一覧</h3>
 
                 <div className="flex gap-4 w-full md:w-auto">
+                    <button
+                        onClick={handleSyncFromConstants}
+                        className="flex items-center gap-2 bg-blue-100 text-blue-700 font-medium px-4 py-2 rounded-lg hover:bg-blue-200 transition-colors whitespace-nowrap border border-blue-300"
+                    >
+                        データ初期化 (同期)
+                    </button>
                     <div className="relative flex-1 md:w-64">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                         <input

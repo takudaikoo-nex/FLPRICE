@@ -10,7 +10,7 @@ export interface PrintData {
     customerInfo?: any;
     estimateId?: number;
     logoType?: 'FL' | 'LS';
-    documentType?: 'quote' | 'invoice';
+    documentType?: 'quote' | 'invoice' | 'receipt';
 }
 
 export const serializePrintData = (
@@ -23,7 +23,7 @@ export const serializePrintData = (
     customerInfo?: any,
     estimateId?: number,
     logoType?: 'FL' | 'LS',
-    documentType: 'quote' | 'invoice' = 'quote'
+    documentType: 'quote' | 'invoice' | 'receipt' = 'quote'
 ): string => {
     const data: PrintData = {
         plan,
