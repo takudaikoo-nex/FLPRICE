@@ -99,91 +99,91 @@ const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({
 
     return (
         <div id="receipt-document" className="w-[210mm] h-[297mm] bg-white text-gray-900 overflow-hidden relative flex flex-col"
-            style={{ padding: '10mm 14mm', boxSizing: 'border-box', fontFamily: '"Yu Mincho", "YuMincho", serif', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact', fontSize: '10.5px', lineHeight: '1.4' }}>
+            style={{ padding: '12mm 16mm', boxSizing: 'border-box', fontFamily: '"Yu Mincho", "YuMincho", serif', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact', fontSize: '12px', lineHeight: '1.5' }}>
 
             {/* Header: Title + Deceased + Issue Date */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ backgroundColor: NAVY, color: 'white', padding: '5px 16px', fontWeight: 'bold', fontSize: '16px', letterSpacing: '0.3em' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ backgroundColor: NAVY, color: 'white', padding: '6px 20px', fontWeight: 'bold', fontSize: '20px', letterSpacing: '0.3em', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' } as React.CSSProperties}>
                         領 収 書
                     </div>
-                    <div style={{ fontSize: '15px', fontWeight: 'bold', letterSpacing: '0.05em' }}>
+                    <div style={{ fontSize: '18px', fontWeight: 'bold', letterSpacing: '0.05em' }}>
                         {deceasedName ? `故 ${deceasedName} 様　${categoryName}` : categoryName}
                     </div>
                 </div>
-                <div style={{ fontSize: '10px' }}>発行日：　{formattedIssueDate}</div>
+                <div style={{ fontSize: '12px' }}>発行日：　{formattedIssueDate}</div>
             </div>
 
             {/* Customer (left) + Company (right) */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                 <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-end', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 'bold', borderBottom: '1px solid black', paddingRight: '60px', paddingBottom: '2px' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-end', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '16px', fontWeight: 'bold', borderBottom: '1px solid black', paddingRight: '70px', paddingBottom: '3px' }}>
                             {applicantName}
                         </span>
-                        <span style={{ fontSize: '12px', marginLeft: '8px', marginBottom: '2px' }}>様</span>
+                        <span style={{ fontSize: '14px', marginLeft: '10px', marginBottom: '3px' }}>様</span>
                     </div>
                     {postalCode && (
-                        <div style={{ fontSize: '10px', marginTop: '4px' }}>〒{postalCode} {addressBody}</div>
+                        <div style={{ fontSize: '12px', marginTop: '5px' }}>〒{postalCode} {addressBody}</div>
                     )}
-                    <div style={{ fontSize: '10px', marginTop: '6px' }}>領収日：{formattedIssueDate}</div>
-                    <div style={{ fontSize: '10px', marginTop: '3px' }}>下記の金額、正に領収いたしました。</div>
+                    <div style={{ fontSize: '12px', marginTop: '8px' }}>領収日：{formattedIssueDate}</div>
+                    <div style={{ fontSize: '12px', marginTop: '4px' }}>下記の金額、正に領収いたしました。</div>
                 </div>
-                <div style={{ textAlign: 'right', position: 'relative', minWidth: '210px' }}>
-                    <div style={{ fontWeight: 'bold', fontSize: '12px', marginBottom: '4px' }}>{info.name}</div>
-                    <div style={{ fontSize: '9.5px', lineHeight: '1.6', color: '#374151' }}>
+                <div style={{ textAlign: 'right', position: 'relative', minWidth: '240px' }}>
+                    <div style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '6px' }}>{info.name}</div>
+                    <div style={{ fontSize: '11px', lineHeight: '1.7', color: '#374151' }}>
                         <div>{info.address}</div>
                         <div>{tel}</div>
                         <div>{fax}</div>
                     </div>
                     {info.stamp && (
                         <img src={info.stamp} alt="Stamp"
-                            style={{ position: 'absolute', width: '55px', height: '55px', right: '0', top: '8px', objectFit: 'contain', opacity: 0.85 }} />
+                            style={{ position: 'absolute', width: '70px', height: '70px', right: '-5px', top: '10px', objectFit: 'contain', opacity: 0.85 }} />
                     )}
                 </div>
             </div>
 
             {/* Total Amount Box */}
-            <div style={{ display: 'flex', alignItems: 'center', border: `2px solid ${NAVY}`, marginBottom: '8px', padding: '6px 12px' }}>
-                <span style={{ backgroundColor: NAVY, color: 'white', fontWeight: 'bold', fontSize: '11px', padding: '3px 10px', marginRight: '16px', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' } as React.CSSProperties}>
+            <div style={{ display: 'flex', alignItems: 'center', border: `2px solid ${NAVY}`, marginBottom: '12px', padding: '8px 16px' }}>
+                <span style={{ backgroundColor: NAVY, color: 'white', fontWeight: 'bold', fontSize: '13px', padding: '4px 14px', marginRight: '20px', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' } as React.CSSProperties}>
                     合計金額
                 </span>
-                <span style={{ fontSize: '22px', fontWeight: 'bold', fontFamily: 'monospace', letterSpacing: '0.1em' }}>
+                <span style={{ fontSize: '28px', fontWeight: 'bold', fontFamily: 'monospace', letterSpacing: '0.1em' }}>
                     ¥{finalTotal.toLocaleString()}-
                 </span>
             </div>
 
             {/* Detail Section Header */}
-            <div style={{ fontSize: '10px', fontWeight: 'bold', color: NAVY, marginBottom: '4px' }}>＜ 領収明細 ＞</div>
+            <div style={{ fontSize: '12px', fontWeight: 'bold', color: NAVY, marginBottom: '5px' }}>＜ 領収明細 ＞</div>
 
             {/* Items Table */}
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9.5px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
                 <thead>
                     <tr style={{ backgroundColor: NAVY, color: 'white', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' } as React.CSSProperties}>
-                        <th style={{ border: `1px solid ${NAVY}`, padding: '4px 2px', textAlign: 'center', width: '28px' }}>No.</th>
-                        <th style={{ border: `1px solid ${NAVY}`, padding: '4px 6px', textAlign: 'left' }}>商品名 / 品名</th>
-                        <th style={{ border: `1px solid ${NAVY}`, padding: '4px 2px', textAlign: 'center', width: '52px' }}>数 量</th>
-                        <th style={{ border: `1px solid ${NAVY}`, padding: '4px 2px', textAlign: 'center', width: '70px' }}>単 価</th>
-                        <th style={{ border: `1px solid ${NAVY}`, padding: '4px 2px', textAlign: 'center', width: '70px' }}>金 額</th>
+                        <th style={{ border: `1px solid ${NAVY}`, padding: '5px 4px', textAlign: 'center', width: '32px' }}>No.</th>
+                        <th style={{ border: `1px solid ${NAVY}`, padding: '5px 8px', textAlign: 'left' }}>商品名 / 品名</th>
+                        <th style={{ border: `1px solid ${NAVY}`, padding: '5px 4px', textAlign: 'center', width: '60px' }}>数 量</th>
+                        <th style={{ border: `1px solid ${NAVY}`, padding: '5px 4px', textAlign: 'center', width: '80px' }}>単 価</th>
+                        <th style={{ border: `1px solid ${NAVY}`, padding: '5px 4px', textAlign: 'center', width: '80px' }}>金 額</th>
                     </tr>
                 </thead>
                 <tbody>
                     {dataRows.map((row, i) => (
                         <tr key={i}>
-                            <td style={{ border: cellBorder, padding: '2px 4px', textAlign: 'center' }}>{i + 1}</td>
-                            <td style={{ border: cellBorder, padding: '2px 6px' }}>{row.name}</td>
-                            <td style={{ border: cellBorder, padding: '2px 4px', textAlign: 'center' }}>{row.quantity}</td>
-                            <td style={{ border: cellBorder, padding: '2px 4px', textAlign: 'right', fontFamily: 'monospace' }}>{row.unitPrice.toLocaleString()}</td>
-                            <td style={{ border: cellBorder, padding: '2px 4px', textAlign: 'right', fontFamily: 'monospace' }}>{row.amount.toLocaleString()}</td>
+                            <td style={{ border: cellBorder, padding: '3px 4px', textAlign: 'center' }}>{i + 1}</td>
+                            <td style={{ border: cellBorder, padding: '3px 8px' }}>{row.name}</td>
+                            <td style={{ border: cellBorder, padding: '3px 4px', textAlign: 'center' }}>{row.quantity}</td>
+                            <td style={{ border: cellBorder, padding: '3px 6px', textAlign: 'right', fontFamily: 'monospace' }}>{row.unitPrice.toLocaleString()}</td>
+                            <td style={{ border: cellBorder, padding: '3px 6px', textAlign: 'right', fontFamily: 'monospace' }}>{row.amount.toLocaleString()}</td>
                         </tr>
                     ))}
                     {Array.from({ length: emptyRowCount }).map((_, i) => (
                         <tr key={`e-${i}`}>
-                            <td style={{ border: cellBorder, padding: '2px 4px', textAlign: 'center' }}>{dataRows.length + i + 1}</td>
-                            <td style={{ border: cellBorder, padding: '2px 6px' }}>&nbsp;</td>
-                            <td style={{ border: cellBorder, padding: '2px 4px' }}></td>
-                            <td style={{ border: cellBorder, padding: '2px 4px' }}></td>
-                            <td style={{ border: cellBorder, padding: '2px 4px' }}></td>
+                            <td style={{ border: cellBorder, padding: '3px 4px', textAlign: 'center' }}>{dataRows.length + i + 1}</td>
+                            <td style={{ border: cellBorder, padding: '3px 8px' }}>&nbsp;</td>
+                            <td style={{ border: cellBorder, padding: '3px 4px' }}></td>
+                            <td style={{ border: cellBorder, padding: '3px 6px' }}></td>
+                            <td style={{ border: cellBorder, padding: '3px 6px' }}></td>
                         </tr>
                     ))}
                 </tbody>
@@ -191,30 +191,30 @@ const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({
 
             {/* Totals - right-aligned below table */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0' }}>
-                <table style={{ borderCollapse: 'collapse', fontSize: '9.5px' }}>
+                <table style={{ borderCollapse: 'collapse', fontSize: '11px' }}>
                     <tbody>
                         <tr>
-                            <td style={{ border: cellBorder, padding: '4px 10px', fontWeight: 'bold', textAlign: 'center', color: NAVY, width: '110px' }}>小　計 (税抜)</td>
-                            <td style={{ border: cellBorder, padding: '4px 10px', textAlign: 'right', fontFamily: 'monospace', width: '90px' }}>¥{preTaxTotal.toLocaleString()}</td>
+                            <td style={{ border: cellBorder, padding: '5px 14px', fontWeight: 'bold', textAlign: 'center', color: NAVY, width: '120px' }}>小　計 (税抜)</td>
+                            <td style={{ border: cellBorder, padding: '5px 14px', textAlign: 'right', fontFamily: 'monospace', width: '100px' }}>¥{preTaxTotal.toLocaleString()}</td>
                         </tr>
                         <tr>
-                            <td style={{ border: cellBorder, padding: '4px 10px', fontWeight: 'bold', textAlign: 'center', color: NAVY }}>消費税 (10%)</td>
-                            <td style={{ border: cellBorder, padding: '4px 10px', textAlign: 'right', fontFamily: 'monospace' }}>¥{taxAmount.toLocaleString()}</td>
+                            <td style={{ border: cellBorder, padding: '5px 14px', fontWeight: 'bold', textAlign: 'center', color: NAVY }}>消費税 (10%)</td>
+                            <td style={{ border: cellBorder, padding: '5px 14px', textAlign: 'right', fontFamily: 'monospace' }}>¥{taxAmount.toLocaleString()}</td>
                         </tr>
                         <tr>
-                            <td style={{ border: cellBorder, padding: '4px 10px', fontWeight: 'bold', textAlign: 'center', color: NAVY }}>合　計 (税込)</td>
-                            <td style={{ border: cellBorder, padding: '4px 10px', textAlign: 'right', fontFamily: 'monospace' }}>¥{finalTotal.toLocaleString()}</td>
+                            <td style={{ border: cellBorder, padding: '5px 14px', fontWeight: 'bold', textAlign: 'center', color: NAVY }}>合　計 (税込)</td>
+                            <td style={{ border: cellBorder, padding: '5px 14px', textAlign: 'right', fontFamily: 'monospace' }}>¥{finalTotal.toLocaleString()}</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            <div style={{ flex: 1, minHeight: '4px' }}></div>
+            <div style={{ flex: 1, minHeight: '6px' }}></div>
 
             {/* Remarks */}
-            <div style={{ border: '1px solid #9CA3AF', padding: '6px 8px', minHeight: '30px' }}>
-                <span style={{ fontWeight: 'bold', fontSize: '10px', color: NAVY }}>備考欄：</span>
-                <span style={{ fontSize: '9.5px', marginLeft: '8px' }}>{customerInfo?.remarks || ''}</span>
+            <div style={{ border: '1px solid #9CA3AF', padding: '8px 12px', minHeight: '36px' }}>
+                <span style={{ fontWeight: 'bold', fontSize: '12px', color: NAVY }}>備考欄：</span>
+                <span style={{ fontSize: '11px', marginLeft: '10px' }}>{customerInfo?.remarks || ''}</span>
             </div>
         </div>
     );
