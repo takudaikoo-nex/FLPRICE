@@ -1,9 +1,113 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Item, Plan } from '../../types';
-import { Edit, Trash2, Plus, Search, ArrowUp, ArrowDown } from 'lucide-react';
+import { Edit, Trash2, Plus, Search, GripVertical } from 'lucide-react';
 import ItemEditor from './ItemEditor';
 import { convertDbItem, convertItemToDb, convertDbPlan } from '../../lib/converter';
+import {
+    DndContext,
+    closestCenter,
+    PointerSensor,
+    KeyboardSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
+} from '@dnd-kit/core';
+import {
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    useSortable,
+    arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+interface SortableRowProps {
+    item: Item;
+    onEdit: (item: Item) => void;
+    onDelete: (id: number) => void;
+    isFiltered: boolean;
+}
+
+const SortableRow: React.FC<SortableRowProps> = ({ item, onEdit, onDelete, isFiltered }) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: item.id, disabled: isFiltered });
+
+    const style: React.CSSProperties = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+        position: 'relative',
+        zIndex: isDragging ? 10 : undefined,
+        backgroundColor: isDragging ? '#f0fdf4' : undefined,
+    };
+
+    return (
+        <tr ref={setNodeRef} style={style} className="hover:bg-gray-50">
+            <td className="p-4 text-center">
+                <button
+                    {...attributes}
+                    {...listeners}
+                    className={`cursor-grab active:cursor-grabbing text-gray-400 hover:text-emerald-600 ${isFiltered ? 'opacity-30 cursor-not-allowed' : ''}`}
+                    disabled={isFiltered}
+                    title={isFiltered ? '検索中はドラッグ無効' : 'ドラッグで並び替え'}
+                >
+                    <GripVertical size={18} />
+                </button>
+            </td>
+            <td className="p-4 font-mono text-sm text-gray-500">{item.id}</td>
+            <td className="p-4 font-bold text-gray-800">
+                {item.name}
+                <div className="text-xs font-normal text-gray-400 mt-0.5 truncate max-w-xs">
+                    {item.description}
+                </div>
+            </td>
+            <td className="p-4 text-right font-mono text-sm">
+                {item.basePrice ? `¥${item.basePrice.toLocaleString()}` : '¥0'}
+            </td>
+            <td className="p-4">
+                <div className="flex gap-1 flex-wrap">
+                    {item.allowedPlans.map(p => (
+                        <span key={p} className="text-xs bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200 uppercase">
+                            {p}
+                        </span>
+                    ))}
+                </div>
+            </td>
+            <td className="p-4">
+                <div className="flex gap-1 flex-wrap">
+                    {item.includedInPlans.map(p => (
+                        <span key={p} className="text-xs bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200 text-blue-700 uppercase">
+                            {p}
+                        </span>
+                    ))}
+                </div>
+            </td>
+            <td className="p-4 text-center">
+                <div className="flex justify-center gap-2">
+                    <button
+                        onClick={() => onEdit(item)}
+                        className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                    >
+                        <Edit size={18} />
+                    </button>
+                    <button
+                        onClick={() => onDelete(item.id)}
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                        <Trash2 size={18} />
+                    </button>
+                </div>
+            </td>
+        </tr>
+    );
+};
 
 const ItemsManager: React.FC = () => {
     const [items, setItems] = useState<Item[]>([]);
@@ -12,6 +116,11 @@ const ItemsManager: React.FC = () => {
     const [editingItem, setEditingItem] = useState<Item | null>(null);
     const [isNew, setIsNew] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    );
 
     useEffect(() => {
         fetchData();
@@ -64,33 +173,34 @@ const ItemsManager: React.FC = () => {
         }
     };
 
-    const handleMove = async (index: number, direction: 'up' | 'down') => {
-        if (direction === 'up' && index === 0) return;
-        if (direction === 'down' && index === items.length - 1) return;
+    const handleDragEnd = async (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (!over || active.id === over.id) return;
 
-        const targetIndex = direction === 'up' ? index - 1 : index + 1;
-        const currentItem = items[index];
-        const targetItem = items[targetIndex];
+        const oldIndex = items.findIndex(i => i.id === active.id);
+        const newIndex = items.findIndex(i => i.id === over.id);
+        if (oldIndex === -1 || newIndex === -1) return;
+
+        const reordered = arrayMove(items, oldIndex, newIndex);
+        setItems(reordered);
 
         try {
-            const { error: error1 } = await supabase
-                .from('items')
-                .update({ display_order: targetItem.displayOrder })
-                .eq('id', currentItem.id);
+            const updates = reordered.map((item, idx) => ({
+                id: item.id,
+                display_order: idx + 1,
+            }));
 
-            if (error1) throw error1;
-
-            const { error: error2 } = await supabase
-                .from('items')
-                .update({ display_order: currentItem.displayOrder })
-                .eq('id', targetItem.id);
-
-            if (error2) throw error2;
-
-            await fetchData();
+            for (const u of updates) {
+                const { error } = await supabase
+                    .from('items')
+                    .update({ display_order: u.display_order })
+                    .eq('id', u.id);
+                if (error) throw error;
+            }
         } catch (error) {
             console.error('Error reordering items:', error);
             alert('並び替えに失敗しました');
+            await fetchData();
         }
     };
 
@@ -133,23 +243,23 @@ const ItemsManager: React.FC = () => {
         setIsNew(true);
     };
 
-    const filteredItems = items.filter(item =>
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.description.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const isFiltered = searchTerm.length > 0;
+    const filteredItems = isFiltered
+        ? items.filter(item =>
+            item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            item.description.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+        : items;
 
     const handleSyncFromConstants = async () => {
         if (!confirm('本当に constants.ts のデータでデータベースを上書き同期しますか？\n（現在の管理画面での変更はリセットされます）')) return;
-        
+
         try {
             setLoading(true);
-            
-            // Delete all current items
+
             const { error: delError } = await supabase.from('items').delete().gt('id', 0);
             if (delError) throw delError;
 
-            // Import from constants.ts
-            // We need to dynamically import constants.ts to avoid circular dependencies if any
             const { ITEMS } = await import('../../constants');
             const dataToInsert = ITEMS.map((item, idx) => ({
                 ...convertItemToDb(item),
@@ -171,7 +281,6 @@ const ItemsManager: React.FC = () => {
 
     if (loading) return <div className="p-4">読み込み中...</div>;
 
-    // Show Editor if editing
     if (editingItem) {
         return (
             <ItemEditor
@@ -184,7 +293,6 @@ const ItemsManager: React.FC = () => {
         );
     }
 
-    // Show List
     return (
         <div>
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
@@ -217,88 +325,41 @@ const ItemsManager: React.FC = () => {
                 </div>
             </div>
 
+            {isFiltered && (
+                <div className="mb-3 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                    検索中はドラッグによる並び替えが無効になります。
+                </div>
+            )}
+
             <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200">
-                    <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
-                        <tr>
-                            <th className="p-4 w-12 text-center">順序</th>
-                            <th className="p-4 w-16">ID</th>
-                            <th className="p-4">名前</th>
-                            <th className="p-4 w-32 text-right">初期額</th>
-                            <th className="p-4 w-48">対象プラン</th>
-                            <th className="p-4 w-48">含むプラン</th>
-                            <th className="p-4 w-24 text-center">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                        {filteredItems.map(item => (
-                            <tr key={item.id} className="hover:bg-gray-50">
-                                <td className="p-4 text-center">
-                                    <div className="flex flex-col items-center gap-1">
-                                        <button
-                                            onClick={() => handleMove(items.indexOf(item), 'up')}
-                                            disabled={items.indexOf(item) === 0}
-                                            className="text-gray-400 hover:text-emerald-600 disabled:opacity-30 disabled:hover:text-gray-400"
-                                        >
-                                            <ArrowUp size={16} />
-                                        </button>
-                                        <button
-                                            onClick={() => handleMove(items.indexOf(item), 'down')}
-                                            disabled={items.indexOf(item) === items.length - 1}
-                                            className="text-gray-400 hover:text-emerald-600 disabled:opacity-30 disabled:hover:text-gray-400"
-                                        >
-                                            <ArrowDown size={16} />
-                                        </button>
-                                    </div>
-                                </td>
-                                <td className="p-4 font-mono text-sm text-gray-500">{item.id}</td>
-                                <td className="p-4 font-bold text-gray-800">
-                                    {item.name}
-                                    <div className="text-xs font-normal text-gray-400 mt-0.5 truncate max-w-xs">
-                                        {item.description}
-                                    </div>
-                                </td>
-                                <td className="p-4 text-right font-mono text-sm">
-                                    {item.basePrice ? `¥${item.basePrice.toLocaleString()}` : '¥0'}
-                                </td>
-                                <td className="p-4">
-                                    <div className="flex gap-1 flex-wrap">
-                                        {item.allowedPlans.map(p => (
-                                            <span key={p} className="text-xs bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200 uppercase">
-                                                {p}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </td>
-                                <td className="p-4">
-                                    <div className="flex gap-1 flex-wrap">
-                                        {item.includedInPlans.map(p => (
-                                            <span key={p} className="text-xs bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200 text-blue-700 uppercase">
-                                                {p}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </td>
-                                <td className="p-4 text-center">
-                                    <div className="flex justify-center gap-2">
-                                        <button
-                                            onClick={() => startEdit(item)}
-                                            className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                                        >
-                                            <Edit size={18} />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(item.id)}
-                                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                        >
-                                            <Trash2 size={18} />
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <SortableContext items={filteredItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
+                        <table className="w-full text-left border-collapse bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200">
+                            <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+                                <tr>
+                                    <th className="p-4 w-12 text-center">順序</th>
+                                    <th className="p-4 w-16">ID</th>
+                                    <th className="p-4">名前</th>
+                                    <th className="p-4 w-32 text-right">初期額</th>
+                                    <th className="p-4 w-48">対象プラン</th>
+                                    <th className="p-4 w-48">含むプラン</th>
+                                    <th className="p-4 w-24 text-center">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {filteredItems.map(item => (
+                                    <SortableRow
+                                        key={item.id}
+                                        item={item}
+                                        onEdit={startEdit}
+                                        onDelete={handleDelete}
+                                        isFiltered={isFiltered}
+                                    />
+                                ))}
+                            </tbody>
+                        </table>
+                    </SortableContext>
+                </DndContext>
             </div>
         </div>
     );
