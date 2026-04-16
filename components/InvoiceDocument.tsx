@@ -22,8 +22,22 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
     const info = COMPANY_INFO[logoType];
     const today = new Date();
     const formattedDate = today.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
-    const deadline = new Date(today); deadline.setDate(deadline.getDate() + 7);
-    const formattedDeadline = deadline.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
+    
+    let formattedDeadline = '';
+    if (customerInfo?.funeralDate) {
+        const funeralDate = new Date(customerInfo.funeralDate);
+        if (!isNaN(funeralDate.getTime())) {
+            funeralDate.setDate(funeralDate.getDate() - 1);
+            formattedDeadline = funeralDate.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
+        }
+    }
+    
+    if (!formattedDeadline) {
+        // Fallback: 7 days from today
+        const deadline = new Date(today); 
+        deadline.setDate(deadline.getDate() + 7);
+        formattedDeadline = deadline.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
+    }
 
     const planId = plan.id;
     const getPrice = (item: Item) => getItemPrice(item, planId, selectedOptions, selectedGrades, freeInputValues);

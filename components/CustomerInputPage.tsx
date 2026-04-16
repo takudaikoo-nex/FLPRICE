@@ -46,13 +46,22 @@ const CustomerInputPage: React.FC<CustomerInputPageProps> = ({ onBack, onSaveAnd
     const [postalCodeInput, setPostalCodeInput] = useState('');
     const [applicantPostalCodeInput, setApplicantPostalCodeInput] = useState('');
 
-    const calculateAge = (birthDate: string): string => {
+    const calculateAge = (birthDate: string, deathDateStr?: string): string => {
         if (!birthDate) return '';
         const birth = new Date(birthDate);
-        const today = new Date();
-        let age = today.getFullYear() - birth.getFullYear();
-        const m = today.getMonth() - birth.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+        if (isNaN(birth.getTime())) return '';
+        
+        let endDate = new Date();
+        if (deathDateStr) {
+            const death = new Date(deathDateStr);
+            if (!isNaN(death.getTime())) {
+                endDate = death;
+            }
+        }
+
+        let age = endDate.getFullYear() - birth.getFullYear();
+        const m = endDate.getMonth() - birth.getMonth();
+        if (m < 0 || (m === 0 && endDate.getDate() < birth.getDate())) {
             age--;
         }
         return age.toString();
@@ -135,11 +144,9 @@ const CustomerInputPage: React.FC<CustomerInputPageProps> = ({ onBack, onSaveAnd
 
             // Auto-calculate age (for standard inputs if any left, but DateInput uses handleDateChange)
             if (name === 'birthDate') {
-                const age = calculateAge(value);
-                newData.age = age;
+                newData.age = calculateAge(value, newData.deathDate);
             } else if (name === 'applicantBirthDate') {
-                const age = calculateAge(value);
-                newData.applicantAge = age;
+                newData.applicantAge = calculateAge(value);
             }
 
             return newData;
@@ -151,9 +158,13 @@ const CustomerInputPage: React.FC<CustomerInputPageProps> = ({ onBack, onSaveAnd
             const newData = { ...prev, [field]: val, [modeField]: mode };
 
             if (field === 'birthDate') {
-                newData.age = calculateAge(val);
+                newData.age = calculateAge(val, newData.deathDate);
             } else if (field === 'applicantBirthDate') {
                 newData.applicantAge = calculateAge(val);
+            } else if (field === 'deathDate') {
+                if (newData.birthDate) {
+                    newData.age = calculateAge(newData.birthDate, val);
+                }
             }
 
             return newData;
