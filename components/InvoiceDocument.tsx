@@ -161,18 +161,18 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
                     {nonTaxableOptions.length > 0 && (
                         <>
                             <div className="flex bg-gray-100 font-bold border-b border-black !print-color-adjust-exact">
-                                <div style={{ width: '35%' }} className="text-left py-1 pl-4 border-r border-black tracking-widest">非課税対象</div>
-                                <div style={{ width: '45%' }} className="text-center py-1 px-2 border-r border-black"></div>
+                                <div style={{ width: '25%' }} className="text-left py-1 pl-4 border-r border-black tracking-widest">非課税対象</div>
+                                <div style={{ width: '55%' }} className="text-center py-1 px-2 border-r border-black"></div>
                                 <div style={{ width: '20%' }} className="text-right py-1 pr-6 tracking-widest">金額</div>
                             </div>
                             <div>
                                 {nonTaxableOptions.map((item, i) => {
                                     return (
                                         <div key={`nt-${item.id}`} className={`flex ${i === nonTaxableOptions.length - 1 ? '' : 'border-b border-black'}`}>
-                                            <div style={{ width: '35%' }} className="text-left py-2 px-2 border-r border-black flex items-center">
+                                            <div style={{ width: '25%' }} className="text-left py-2 px-2 border-r border-black flex items-center">
                                                 {item.name}
                                             </div>
-                                            <div style={{ width: '45%' }} className="text-center py-2 px-2 border-r border-black text-gray-600">
+                                            <div style={{ width: '55%' }} className="text-center py-2 px-2 border-r border-black text-gray-600">
                                                 {getGradeLabel(item)}
                                             </div>
                                             <div style={{ width: '20%' }} className="text-right py-2 px-2 font-mono">¥{getPrice(item).toLocaleString()}</div>
