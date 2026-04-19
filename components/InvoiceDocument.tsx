@@ -111,22 +111,22 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
                 <div className="border border-black text-sm">
                     {/* Basic Plan Header */}
                     <div className="flex bg-gray-100 font-bold border-b border-black !print-color-adjust-exact">
-                        <div style={{ width: '60%' }} className="text-left py-1 pl-4 border-r border-black tracking-widest">プラン名</div>
-                        <div style={{ width: '40%' }} className="text-right py-1 pr-8 tracking-widest">金額 (税抜)</div>
+                        <div style={{ width: '80%' }} className="text-left py-1 pl-4 border-r border-black tracking-widest">プラン名</div>
+                        <div style={{ width: '20%' }} className="text-right py-1 pr-6 tracking-widest">金額 (税抜)</div>
                     </div>
                     {/* Basic Plan + Included Items */}
                     <div>
                         <div className={`flex ${includedItems.length === 0 && taxableOptions.length === 0 && nonTaxableOptions.length === 0 ? '' : 'border-b border-black'}`}>
-                            <div style={{ width: '60%' }} className="text-left py-2 px-2 border-r border-black font-medium">{`基本プラン (${plan.name})`}</div>
-                            <div style={{ width: '40%' }} className="text-right py-2 px-2 font-mono">¥{plan.price.toLocaleString()}</div>
+                            <div style={{ width: '80%' }} className="text-left py-2 px-2 border-r border-black font-medium">{`基本プラン (${plan.name})`}</div>
+                            <div style={{ width: '20%' }} className="text-right py-2 px-2 font-mono">¥{plan.price.toLocaleString()}</div>
                         </div>
                         {includedItems.length > 0 && includedItems.map((item, i) => (
                             <div key={`inc-${item.id}`} className={`flex ${i === includedItems.length - 1 && taxableOptions.length === 0 && nonTaxableOptions.length === 0 ? '' : 'border-b border-black'}`}>
-                                <div style={{ width: '60%' }} className="text-left py-2 px-2 border-r border-black text-gray-700 flex items-center">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-gray-400 mr-2 inline-block"></span>
-                                    {item.name}
+                                <div style={{ width: '80%' }} className="text-left py-2 px-2 border-r border-black text-gray-700 flex items-center">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-gray-400 mr-2 inline-block shrink-0"></span>
+                                    <span>{item.name}</span>
                                 </div>
-                                <div style={{ width: '40%' }} className="text-right py-2 px-2 font-mono text-gray-500">プラン内</div>
+                                <div style={{ width: '20%' }} className="text-right py-2 px-2 font-mono text-gray-500">プラン内</div>
                             </div>
                         ))}
                     </div>
@@ -135,21 +135,21 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
                     {taxableOptions.length > 0 && (
                         <>
                             <div className="flex bg-gray-100 font-bold border-b border-black !print-color-adjust-exact">
-                                <div style={{ width: '40%' }} className="text-left py-1 pl-4 border-r border-black tracking-widest">オプション内訳 / 項目名</div>
-                                <div style={{ width: '20%' }} className="text-center py-1 px-2 border-r border-black tracking-widest">詳細</div>
-                                <div style={{ width: '40%' }} className="text-right py-1 pr-8 tracking-widest">金額 (税抜)</div>
+                                <div style={{ width: '35%' }} className="text-left py-1 pl-4 border-r border-black tracking-widest">オプション内訳 / 項目名</div>
+                                <div style={{ width: '45%' }} className="text-center py-1 px-2 border-r border-black tracking-widest">詳細</div>
+                                <div style={{ width: '20%' }} className="text-right py-1 pr-6 tracking-widest">金額 (税抜)</div>
                             </div>
                             <div>
                                 {taxableOptions.map((item, i) => {
                                     return (
                                         <div key={`opt-${item.id}`} className={`flex ${i === taxableOptions.length - 1 && nonTaxableOptions.length === 0 ? '' : 'border-b border-black'}`}>
-                                            <div style={{ width: '40%' }} className="text-left py-2 px-2 border-r border-black flex items-center truncate">
+                                            <div style={{ width: '35%' }} className="text-left py-2 px-2 border-r border-black flex items-center">
                                                 {item.name}
                                             </div>
-                                            <div style={{ width: '20%' }} className="text-center py-2 px-2 border-r border-black text-gray-600 truncate">
+                                            <div style={{ width: '45%' }} className="text-center py-2 px-2 border-r border-black text-gray-600">
                                                 {getGradeLabel(item)}
                                             </div>
-                                            <div style={{ width: '40%' }} className="text-right py-2 px-2 font-mono">¥{getPrice(item).toLocaleString()}</div>
+                                            <div style={{ width: '20%' }} className="text-right py-2 px-2 font-mono">¥{getPrice(item).toLocaleString()}</div>
                                         </div>
                                     );
                                 })}
@@ -161,21 +161,21 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
                     {nonTaxableOptions.length > 0 && (
                         <>
                             <div className="flex bg-gray-100 font-bold border-b border-black !print-color-adjust-exact">
-                                <div style={{ width: '40%' }} className="text-left py-1 pl-4 border-r border-black tracking-widest">非課税対象</div>
-                                <div style={{ width: '20%' }} className="text-center py-1 px-2 border-r border-black"></div>
-                                <div style={{ width: '40%' }} className="text-right py-1 pr-8 tracking-widest">金額</div>
+                                <div style={{ width: '35%' }} className="text-left py-1 pl-4 border-r border-black tracking-widest">非課税対象</div>
+                                <div style={{ width: '45%' }} className="text-center py-1 px-2 border-r border-black"></div>
+                                <div style={{ width: '20%' }} className="text-right py-1 pr-6 tracking-widest">金額</div>
                             </div>
                             <div>
                                 {nonTaxableOptions.map((item, i) => {
                                     return (
                                         <div key={`nt-${item.id}`} className={`flex ${i === nonTaxableOptions.length - 1 ? '' : 'border-b border-black'}`}>
-                                            <div style={{ width: '40%' }} className="text-left py-2 px-2 border-r border-black flex items-center truncate">
+                                            <div style={{ width: '35%' }} className="text-left py-2 px-2 border-r border-black flex items-center">
                                                 {item.name}
                                             </div>
-                                            <div style={{ width: '20%' }} className="text-center py-2 px-2 border-r border-black text-gray-600 truncate">
+                                            <div style={{ width: '45%' }} className="text-center py-2 px-2 border-r border-black text-gray-600">
                                                 {getGradeLabel(item)}
                                             </div>
-                                            <div style={{ width: '40%' }} className="text-right py-2 px-2 font-mono">¥{getPrice(item).toLocaleString()}</div>
+                                            <div style={{ width: '20%' }} className="text-right py-2 px-2 font-mono">¥{getPrice(item).toLocaleString()}</div>
                                         </div>
                                     );
                                 })}
