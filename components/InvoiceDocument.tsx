@@ -67,11 +67,7 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
 
     const includedItems = items.filter(i => i.allowedPlans.includes(planId) && i.includedInPlans.includes(planId));
 
-    const taxableRows = [
-        { name: `基本プラン (${plan.name})`, price: plan.price, detail: '', isIncluded: false },
-        ...includedItems.map(i => ({ name: i.name, price: 0, detail: '', isIncluded: true })),
-        ...taxableOptions.map(i => ({ name: i.name, price: getPrice(i), detail: getGradeLabel(i), isIncluded: false })),
-    ];
+
 
     return (
         <div id="invoice-document" className="w-[210mm] h-[297mm] bg-white text-gray-900 overflow-hidden relative leading-relaxed flex flex-col"
@@ -111,32 +107,79 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
                 </div>
             </div>
 
-            <div className="mb-8" style={{ marginTop: '20px' }}>
+            <div className="mb-6" style={{ marginTop: '20px' }}>
                 <div className="border border-black text-sm">
+                    {/* Basic Plan Header */}
                     <div className="flex bg-gray-100 font-bold border-b border-black !print-color-adjust-exact">
-                        <div className="flex-1 text-left py-1 px-2 border-r border-black">内訳 / 項目名</div>
-                        <div className="w-[20%] text-center py-1 px-2 border-r border-black">詳細</div>
-                        <div className="flex-1 text-right py-1 px-2">金額 (税抜)</div>
+                        <div className="w-[60%] text-center py-1 px-4 border-r border-black tracking-widest">プラン名</div>
+                        <div className="w-[40%] text-center py-1 px-4 tracking-widest">金額 (税抜)</div>
                     </div>
+                    {/* Basic Plan + Included Items */}
                     <div>
-                        {taxableRows.map((row, i) => (
-                            <div key={i} className="flex border-b border-black last:border-0">
-                                <div className="flex-1 text-left py-2 px-2 border-r border-black truncate">{row.name}</div>
-                                <div className="w-[20%] text-center py-2 px-2 border-r border-black truncate text-gray-600">{row.detail}</div>
-                                <div className="flex-1 text-right py-2 px-2 font-mono">{row.isIncluded ? 'プラン内' : `¥${row.price.toLocaleString()}`}</div>
+                        <div className={`flex ${includedItems.length === 0 && taxableOptions.length === 0 && nonTaxableOptions.length === 0 ? '' : 'border-b border-black'}`}>
+                            <div className="w-[60%] text-left py-2 px-2 border-r border-black font-medium">{`基本プラン (${plan.name})`}</div>
+                            <div className="w-[40%] text-right py-2 px-2 font-mono">¥{plan.price.toLocaleString()}</div>
+                        </div>
+                        {includedItems.length > 0 && includedItems.map((item, i) => (
+                            <div key={`inc-${item.id}`} className={`flex ${i === includedItems.length - 1 && taxableOptions.length === 0 && nonTaxableOptions.length === 0 ? '' : 'border-b border-black'}`}>
+                                <div className="w-[60%] text-left py-2 px-2 border-r border-black text-gray-700 flex items-center">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-gray-400 mr-2 inline-block"></span>
+                                    {item.name}
+                                </div>
+                                <div className="w-[40%] text-right py-2 px-2 font-mono text-gray-500">プラン内</div>
                             </div>
                         ))}
                     </div>
+
+                    {/* Options Header */}
+                    {taxableOptions.length > 0 && (
+                        <>
+                            <div className="flex bg-gray-100 font-bold border-b border-black !print-color-adjust-exact">
+                                <div className="w-[40%] text-center py-1 px-2 border-r border-black tracking-widest">内訳 / 項目名</div>
+                                <div className="w-[20%] text-center py-1 px-2 border-r border-black tracking-widest">詳細</div>
+                                <div className="w-[40%] text-center py-1 px-2 tracking-widest">金額 (税抜)</div>
+                            </div>
+                            <div>
+                                {taxableOptions.map((item, i) => {
+                                    return (
+                                        <div key={`opt-${item.id}`} className={`flex ${i === taxableOptions.length - 1 && nonTaxableOptions.length === 0 ? '' : 'border-b border-black'}`}>
+                                            <div className="w-[40%] text-left py-2 px-2 border-r border-black flex items-center truncate">
+                                                {item.name}
+                                            </div>
+                                            <div className="w-[20%] text-center py-2 px-2 border-r border-black text-gray-600 truncate">
+                                                {getGradeLabel(item)}
+                                            </div>
+                                            <div className="w-[40%] text-right py-2 px-2 font-mono">¥{getPrice(item).toLocaleString()}</div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </>
+                    )}
+
+                    {/* Non-Taxable Header */}
                     {nonTaxableOptions.length > 0 && (
                         <>
-                            <div className="flex bg-gray-100 font-bold border-y border-black !print-color-adjust-exact"><div className="flex-1 text-left py-1 px-2">非課税対象</div><div className="w-[20%] border-l border-black"></div><div className="flex-1 border-l border-black"></div></div>
-                            <div>{nonTaxableOptions.map((item, i) => (
-                                <div key={`nt-${i}`} className="flex border-b border-black last:border-0">
-                                    <div className="flex-1 text-left py-2 px-2 border-r border-black">{item.name}</div>
-                                    <div className="w-[20%] text-center py-2 px-2 border-r border-black"></div>
-                                    <div className="flex-1 text-right py-2 px-2 font-mono">¥{getPrice(item).toLocaleString()}</div>
-                                </div>
-                            ))}</div>
+                            <div className="flex bg-gray-100 font-bold border-b border-black !print-color-adjust-exact">
+                                <div className="w-[40%] text-center py-1 px-2 border-r border-black tracking-widest">非課税対象</div>
+                                <div className="w-[20%] text-center py-1 px-2 border-r border-black"></div>
+                                <div className="w-[40%] text-center py-1 px-2 tracking-widest">金額</div>
+                            </div>
+                            <div>
+                                {nonTaxableOptions.map((item, i) => {
+                                    return (
+                                        <div key={`nt-${item.id}`} className={`flex ${i === nonTaxableOptions.length - 1 ? '' : 'border-b border-black'}`}>
+                                            <div className="w-[40%] text-left py-2 px-2 border-r border-black flex items-center truncate">
+                                                {item.name}
+                                            </div>
+                                            <div className="w-[20%] text-center py-2 px-2 border-r border-black text-gray-600 truncate">
+                                                {getGradeLabel(item)}
+                                            </div>
+                                            <div className="w-[40%] text-right py-2 px-2 font-mono">¥{getPrice(item).toLocaleString()}</div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </>
                     )}
                 </div>
