@@ -25,7 +25,8 @@ const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({
     const info = COMPANY_INFO[logoType];
     const today = new Date();
 
-    const issueDateStr = customerInfo?.funeralDate || today.toISOString().split('T')[0];
+    const issueDateStr = today.toISOString().split('T')[0];
+    const funeralDateStr = customerInfo?.funeralDate || '';
 
     const formatJapaneseEraDate = (dateStr: string) => {
         if (!dateStr) return '';
@@ -37,6 +38,7 @@ const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({
     };
 
     const formattedIssueDate = formatJapaneseEraDate(issueDateStr);
+    const formattedFuneralDate = formatJapaneseEraDate(funeralDateStr);
 
     const planId = plan.id;
     const getPrice = (item: Item) => getItemPrice(item, planId, selectedOptions, selectedGrades, freeInputValues);
@@ -101,7 +103,7 @@ const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({
         <div id="receipt-document" className="w-[210mm] h-[297mm] bg-white text-gray-900 overflow-hidden relative flex flex-col"
             style={{ padding: '12mm 16mm', boxSizing: 'border-box', fontFamily: '"Yu Mincho", "YuMincho", serif', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact', fontSize: '12px', lineHeight: '1.5' }}>
 
-            {/* Header: Title + Deceased + Issue Date */}
+            {/* Header: Title + Deceased + Issue Date + Funeral Date */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <div style={{ backgroundColor: NAVY, color: 'white', padding: '6px 20px', fontWeight: 'bold', fontSize: '20px', letterSpacing: '0.3em', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' } as React.CSSProperties}>
@@ -111,7 +113,10 @@ const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({
                         {deceasedName ? `故 ${deceasedName} 様　${categoryName}` : categoryName}
                     </div>
                 </div>
-                <div style={{ fontSize: '12px' }}>発行日：　{formattedIssueDate}</div>
+                <div style={{ fontSize: '12px', textAlign: 'right' }}>
+                    <div style={{ marginBottom: '4px' }}>発行日：　{formattedIssueDate}</div>
+                    <div>葬祭日：　{formattedFuneralDate || '　　 年 　 月 　 日'}</div>
+                </div>
             </div>
 
             {/* Customer (left) + Company (right) */}
