@@ -135,7 +135,7 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
                     {taxableOptions.length > 0 && (
                         <>
                             <div className="flex bg-gray-100 font-bold border-b border-black !print-color-adjust-exact">
-                                <div style={{ width: '35%' }} className="text-left py-1 pl-4 border-r border-black tracking-widest">オプション内訳 / 項目名</div>
+                                <div style={{ width: '35%' }} className="text-left py-1 pl-4 border-r border-black tracking-widest">オプション内訳</div>
                                 <div style={{ width: '45%' }} className="text-center py-1 px-2 border-r border-black tracking-widest">詳細</div>
                                 <div style={{ width: '20%' }} className="text-right py-1 pr-6 tracking-widest">金額 (税抜)</div>
                             </div>
