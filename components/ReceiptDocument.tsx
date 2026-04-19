@@ -15,7 +15,7 @@ interface ReceiptDocumentProps {
     logoType: 'FL' | 'LS';
 }
 
-const TOTAL_ROWS = 24;
+const TOTAL_ROWS = 15;
 const NAVY = '#1B3A5C';
 
 const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({
