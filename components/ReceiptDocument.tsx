@@ -59,7 +59,6 @@ const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({
     const taxableSubtotal = plan.price + taxableOptionsTotal;
     const taxAmount = Math.floor(taxableSubtotal * TAX_RATE);
     const finalTotal = taxableSubtotal + taxAmount + nonTaxableTotal;
-    const preTaxTotal = taxableSubtotal + nonTaxableTotal;
 
     const getGradeLabel = (item: Item): string => {
         const gradeId = selectedGrades.get(item.id);
@@ -200,12 +199,18 @@ const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({
                     <tbody>
                         <tr>
                             <td style={{ border: cellBorder, padding: '5px 14px', fontWeight: 'bold', textAlign: 'center', color: NAVY, width: '120px' }}>小　計 (税抜)</td>
-                            <td style={{ border: cellBorder, padding: '5px 14px', textAlign: 'right', fontFamily: 'monospace', width: '100px' }}>¥{preTaxTotal.toLocaleString()}</td>
+                            <td style={{ border: cellBorder, padding: '5px 14px', textAlign: 'right', fontFamily: 'monospace', width: '100px' }}>¥{taxableSubtotal.toLocaleString()}</td>
                         </tr>
                         <tr>
                             <td style={{ border: cellBorder, padding: '5px 14px', fontWeight: 'bold', textAlign: 'center', color: NAVY }}>消費税 (10%)</td>
                             <td style={{ border: cellBorder, padding: '5px 14px', textAlign: 'right', fontFamily: 'monospace' }}>¥{taxAmount.toLocaleString()}</td>
                         </tr>
+                        {nonTaxableTotal > 0 && (
+                            <tr>
+                                <td style={{ border: cellBorder, padding: '5px 14px', fontWeight: 'bold', textAlign: 'center', color: NAVY }}>非課税計</td>
+                                <td style={{ border: cellBorder, padding: '5px 14px', textAlign: 'right', fontFamily: 'monospace' }}>¥{nonTaxableTotal.toLocaleString()}</td>
+                            </tr>
+                        )}
                         <tr>
                             <td style={{ border: cellBorder, padding: '5px 14px', fontWeight: 'bold', textAlign: 'center', color: NAVY }}>合　計 (税込)</td>
                             <td style={{ border: cellBorder, padding: '5px 14px', textAlign: 'right', fontFamily: 'monospace' }}>¥{finalTotal.toLocaleString()}</td>
