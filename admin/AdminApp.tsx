@@ -44,9 +44,9 @@ const AdminApp: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-100 flex">
+        <div className="h-screen bg-gray-100 flex overflow-hidden">
             {/* Sidebar */}
-            <aside className="w-64 bg-white border-r border-gray-200 flex-shrink-0 relative">
+            <aside className="w-64 bg-white border-r border-gray-200 flex-shrink-0 flex flex-col">
                 <div className="p-6 border-b border-gray-100">
                     <h1 className="text-xl font-bold text-emerald-700 flex items-center gap-2">
                         <LayoutDashboard size={24} />
@@ -100,7 +100,7 @@ const AdminApp: React.FC = () => {
                     </button>
                 </nav>
 
-                <div className="absolute bottom-0 w-64 p-4 border-t border-gray-100">
+                <div className="mt-auto p-4 border-t border-gray-100">
                     <button
                         onClick={handleLogout}
                         className="w-full flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors"
