@@ -7,8 +7,9 @@ import PrintPreview from './components/PrintPreview';
 import CustomerInputPage from './components/CustomerInputPage';
 import StartScreen from './components/StartScreen';
 import { useEstimateSystem } from './hooks/useEstimateSystem';
+import { useEstimateSystem } from './hooks/useEstimateSystem';
 import MobileEstimatePage from './components/MobileEstimatePage';
-
+import { MoneyInput } from './components/MoneyInput';
 const EMPTY_CUSTOMER_INFO: CustomerInfo = {
   deathDate: '', deceasedName: '', birthDate: '', age: '', address: '', honseki: '',
   applicantName: '', applicantRelation: '', applicantBirthDate: '',
@@ -21,41 +22,7 @@ const THEME = {
   funeral: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', active: 'bg-emerald-600 text-white shadow-md', dot: 'bg-emerald-500', selectedBorder: 'border-emerald-500 text-emerald-700', optionBg: 'bg-emerald-50/40' },
 } as const;
 
-/** 数値を3桁カンマ区切りで表示する入力欄 */
-const MoneyInput: React.FC<{ value: number; onChange: (v: number) => void; className?: string }> = ({ value, onChange, className }) => {
-  const [editing, setEditing] = useState(false);
-  const [raw, setRaw] = useState('');
 
-  const handleFocus = () => {
-    setEditing(true);
-    setRaw(value ? String(value) : '');
-  };
-  const handleBlur = () => {
-    setEditing(false);
-    const parsed = parseInt(raw.replace(/,/g, ''));
-    onChange(isNaN(parsed) ? 0 : parsed);
-  };
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setRaw(e.target.value.replace(/[^0-9]/g, ''));
-  };
-
-  return (
-    <div className={`flex items-center gap-1.5 ${className || ''}`}>
-      <span className="text-base text-gray-500 font-medium">¥</span>
-      <input
-        type={editing ? 'text' : 'text'}
-        inputMode="numeric"
-        value={editing ? raw : (value ? value.toLocaleString() : '')}
-        placeholder="0"
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-        onChange={editing ? handleChange : undefined}
-        readOnly={!editing}
-        className="w-36 text-base p-2.5 border border-gray-300 rounded-lg text-right focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 font-mono bg-white transition-shadow hover:border-gray-400 cursor-text"
-      />
-    </div>
-  );
-};
 
 const App: React.FC = () => {
   const system = useEstimateSystem();
@@ -263,7 +230,7 @@ const App: React.FC = () => {
                       {optionItems.map(item => {
                         const isSelected = item.type === 'checkbox' ? selectedOptions.has(item.id)
                           : item.type === 'dropdown' ? selectedGrades.has(item.id)
-                          : (freeInputValues.get(item.id) ?? 0) > 0;
+                          : (freeInputValues.get(item.id) ?? 0) !== 0;
 
                         return (
                           <tr key={item.id}

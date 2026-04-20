@@ -4,12 +4,13 @@ import LoginForm from './components/LoginForm';
 import PlansManager from './components/PlansManager';
 import ItemsManager from './components/ItemsManager';
 import AttendeesManager from './components/AttendeesManager';
-import { LogOut, LayoutDashboard, List, Users } from 'lucide-react';
+import { LogOut, LayoutDashboard, List, Users, DatabaseBackup } from 'lucide-react';
+import BackupManager from './components/BackupManager';
 
 const AdminApp: React.FC = () => {
     const [session, setSession] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'plans' | 'items' | 'attendees'>('plans');
+    const [activeTab, setActiveTab] = useState<'plans' | 'items' | 'attendees' | 'backup'>('plans');
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -87,6 +88,16 @@ const AdminApp: React.FC = () => {
                         <Users size={20} />
                         参列人数設定
                     </button>
+                    <button
+                        onClick={() => setActiveTab('backup')}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'backup'
+                            ? 'bg-emerald-50 text-emerald-700 font-bold'
+                            : 'text-gray-600 hover:bg-gray-50'
+                            }`}
+                    >
+                        <DatabaseBackup size={20} />
+                        バックアップ設定
+                    </button>
                 </nav>
 
                 <div className="absolute bottom-0 w-64 p-4 border-t border-gray-100">
@@ -113,6 +124,10 @@ const AdminApp: React.FC = () => {
 
                     {activeTab === 'attendees' && (
                         <AttendeesManager />
+                    )}
+
+                    {activeTab === 'backup' && (
+                        <BackupManager />
                     )}
                 </div>
             </main>

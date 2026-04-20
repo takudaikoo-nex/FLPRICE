@@ -58,6 +58,6 @@ export const isItemActive = (
     if (item.includedInPlans.includes(planId)) return true;
     if (item.type === 'checkbox') return selectedOptions.has(item.id);
     if (item.type === 'dropdown') return selectedGrades.has(item.id);
-    if (item.type === 'free_input') return (freeInputValues.get(item.id) ?? 0) > 0;
+    if (item.type === 'free_input') return (freeInputValues.get(item.id) ?? 0) !== 0;
     return false;
 };

@@ -49,7 +49,7 @@ const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({
             if (i.type === 'dropdown' && selectedGrades.has(i.id)) return true;
             return false;
         }
-        return getPrice(i) > 0;
+        return getPrice(i) !== 0;
     });
 
     const taxableOptions = activeOptions.filter(i => !i.nonTaxable);

@@ -1,15 +1,17 @@
 import { Plan, Item, PlanId } from './types';
 
 // --- Plan ID groups ---
-const CREMATION: PlanId[] = ['plan_01', 'plan_02'];
-const FUNERAL: PlanId[] = ['plan_03', 'plan_04', 'plan_05'];
+const CREMATION: PlanId[] = ['plan_01', 'plan_07', 'plan_02'];
+const FUNERAL: PlanId[] = ['plan_06', 'plan_03', 'plan_04', 'plan_05'];
 const ALL: PlanId[] = [...CREMATION, ...FUNERAL];
 const FUNERAL_FULL: PlanId[] = ['plan_04', 'plan_05']; // 一日葬・二日葬（受付セット・会葬礼状・案内看板・返礼品・香典返し・料理）
 
 // --- Plans (税抜) ---
 export const PLANS: Plan[] = [
   { id: 'plan_01', name: 'シンプル直葬プラン', price: 150000, category: 'cremation', description: '費用を最小限に抑え、火葬のみを誠実に行うプランです。' },
-  { id: 'plan_02', name: 'お別れ火葬式プラン', price: 275000, category: 'cremation', description: '火葬前にお花に囲まれた空間でお別れの時間を持てるプランです。' },
+  { id: 'plan_07', name: '面会火葬式プラン', price: 250000, category: 'cremation', description: '火葬の前にお棺の窓越しに最後のご面会ができるプランです。' },
+  { id: 'plan_02', name: 'お別れ火葬式プラン', price: 350000, category: 'cremation', description: '火葬前にお花に囲まれた空間でお別れの時間を持てるプランです。' },
+  { id: 'plan_06', name: 'こっそり家族葬プラン', price: 350000, category: 'funeral', description: '納棺師をオプションとし、さらに費用を抑えてご自宅でご家族だけでひっそりとお見送りできるプランです。' },
   { id: 'plan_03', name: 'お別れ自宅葬プラン', price: 400000, category: 'funeral', description: 'ご自宅でご家族だけでお見送りできるプランです。' },
   { id: 'plan_04', name: '一日葬プラン', price: 500000, category: 'funeral', description: '通夜を行わず、告別式から火葬までを1日で行うプランです。' },
   { id: 'plan_05', name: '二日葬プラン', price: 700000, category: 'funeral', description: '通夜・告別式を行い、2日かけてお見送りする一般的なプランです。' },
@@ -26,26 +28,26 @@ export const ITEMS: Item[] = [
   {
     id: 2, name: 'ご搬送（~50kmまで）', type: 'checkbox',
     description: '出発地点～安置場所、安置場所～火葬場の搬送料金です（50km圏内）。',
-    allowedPlans: ['plan_02', 'plan_03', 'plan_04', 'plan_05'],
-    includedInPlans: ['plan_02', 'plan_03', 'plan_04', 'plan_05'],
+    allowedPlans: ['plan_07', 'plan_02', ...FUNERAL],
+    includedInPlans: ['plan_07', 'plan_02', ...FUNERAL],
   },
   {
     id: 3, name: 'ご安置', type: 'checkbox',
     description: '弊社にてお預かり安置室利用料が含まれます。',
-    allowedPlans: ALL, includedInPlans: ['plan_02', 'plan_03', 'plan_04', 'plan_05'],
+    allowedPlans: ALL, includedInPlans: ['plan_02', ...FUNERAL],
     // plan_01は要確認 → allowedだがincludedではない
   },
   {
     id: 4, name: 'ドライアイス', type: 'checkbox',
     description: 'お預かり安置もしくはご自宅にてドライアイス処置を含みます。',
-    allowedPlans: ALL, includedInPlans: ['plan_02', 'plan_03', 'plan_04', 'plan_05'],
+    allowedPlans: ALL, includedInPlans: ['plan_02', ...FUNERAL],
     // plan_01は要確認 → allowedだがincludedではない
   },
   {
     id: 5, name: '枕飾り一式', type: 'checkbox',
     description: '白木机・香炉・リン・線香・ろうそくの一式です。',
-    allowedPlans: ['plan_02', 'plan_03', 'plan_04', 'plan_05'],
-    includedInPlans: ['plan_02', 'plan_03', 'plan_04', 'plan_05'],
+    allowedPlans: ['plan_07', 'plan_02', ...FUNERAL],
+    includedInPlans: ['plan_07', 'plan_02', ...FUNERAL],
   },
   {
     id: 6, name: '役所・火葬場手続き代行', type: 'checkbox',
@@ -61,14 +63,14 @@ export const ITEMS: Item[] = [
     id: 8, name: '遺影写真（基本）', type: 'checkbox',
     description: 'カラー額 四つ切サイズと手札サイズをご用意します。',
     allowedPlans: ALL,
-    includedInPlans: ['plan_02', 'plan_03', 'plan_04', 'plan_05'],
+    includedInPlans: ['plan_02', ...FUNERAL],
     // plan_01は△(optional)
   },
   {
     id: 9, name: '白木位牌', type: 'checkbox',
     description: '一般的な白木のお位牌となります。',
-    allowedPlans: ['plan_02', 'plan_03', 'plan_04', 'plan_05'],
-    includedInPlans: ['plan_02', 'plan_03', 'plan_04', 'plan_05'],
+    allowedPlans: ['plan_07', 'plan_02', ...FUNERAL],
+    includedInPlans: ['plan_07', 'plan_02', ...FUNERAL],
   },
   {
     id: 10, name: '受付セット', type: 'checkbox',
@@ -85,7 +87,7 @@ export const ITEMS: Item[] = [
   {
     id: 12, name: 'お別れ用お盆花', type: 'checkbox',
     description: 'お棺の中にお入れする生花です。',
-    allowedPlans: ['plan_01', 'plan_02'],
+    allowedPlans: ['plan_01', 'plan_07', 'plan_02'],
     includedInPlans: ['plan_02'],
     // plan_01は△(optional)
     basePrice: 20000,
@@ -103,8 +105,8 @@ export const ITEMS: Item[] = [
   {
     id: 15, name: '後飾り祭壇', type: 'checkbox',
     description: 'ご自宅で骨壺をお飾りする仮祭壇・線香・ろうそく・焼香セットです。',
-    allowedPlans: ['plan_02', 'plan_03', 'plan_04', 'plan_05'],
-    includedInPlans: ['plan_02', 'plan_03', 'plan_04', 'plan_05'],
+    allowedPlans: ['plan_07', 'plan_02', ...FUNERAL],
+    includedInPlans: ['plan_07', 'plan_02', ...FUNERAL],
   },
   {
     id: 16, name: '案内看板', type: 'checkbox',
@@ -124,7 +126,7 @@ export const ITEMS: Item[] = [
     description: '納棺士による清拭・着せ替え・メイクを行います。',
     basePrice: 50000,
     allowedPlans: ALL,
-    includedInPlans: FUNERAL, // 葬儀プランでは含まれる、火葬プランは△(optional)
+    includedInPlans: ['plan_03', 'plan_04', 'plan_05'], // 葬儀プラン(こっそり家族葬以外)では含まれる、火葬プランは△(optional)
   },
   {
     id: 21, name: '湯灌', type: 'checkbox',
@@ -203,8 +205,8 @@ export const ITEMS: Item[] = [
     id: 35, name: '棺前装飾生花', type: 'checkbox',
     description: '棺前を生花で装飾します。',
     basePrice: 30000,
-    allowedPlans: ['plan_03'],
-    includedInPlans: ['plan_03'], // お別れ自宅葬プランに含む
+    allowedPlans: ['plan_06', 'plan_03'],
+    includedInPlans: ['plan_06', 'plan_03'], // こっそり家族葬・お別れ自宅葬プランに含む
   },
 
   // ============ 非課税（プルダウン化: ドロップダウン） ============
@@ -252,7 +254,7 @@ export const ITEMS: Item[] = [
   {
     id: 41, name: '控室料金', type: 'dropdown',
     description: 'ご親族様の控室利用料です。',
-    allowedPlans: ['plan_02', 'plan_03', 'plan_04', 'plan_05'],
+    allowedPlans: ['plan_02', ...FUNERAL],
     includedInPlans: [],
     options: [
       { id: 'r_fujisawa_in', name: '藤沢市斎場 控室 (市内)', price: 4800, allowedPlans: ALL },
@@ -285,7 +287,7 @@ export const ITEMS: Item[] = [
   {
     id: 42, name: '斎場料金', type: 'dropdown',
     description: '式場の利用料金です。',
-    allowedPlans: ['plan_02', 'plan_03', 'plan_04', 'plan_05'],
+    allowedPlans: ['plan_02', ...FUNERAL],
     includedInPlans: [],
     options: [
       { id: 'h_fujisawa_fam_in', name: '藤沢市斎場 家族 (市内)', price: 3000, allowedPlans: ALL },

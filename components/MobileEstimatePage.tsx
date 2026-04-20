@@ -4,6 +4,7 @@ import DetailModal from './DetailModal';
 import MobileFooter from './MobileFooter';
 import { Info, Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { useEstimateSystem } from '../hooks/useEstimateSystem';
+import { MoneyInput } from './MoneyInput';
 
 interface MobileEstimatePageProps {
     system: ReturnType<typeof useEstimateSystem>;
@@ -108,7 +109,7 @@ const MobileEstimatePage: React.FC<MobileEstimatePageProps> = ({ system, onOutpu
                     <h2 className={`font-bold mb-3 text-lg ${theme.text}`}>追加オプション</h2>
                     <div className="space-y-3">
                         {optionItems.map(item => {
-                            const isSelected = item.type === 'checkbox' ? selectedOptions.has(item.id) : item.type === 'dropdown' ? selectedGrades.has(item.id) : (freeInputValues.get(item.id) ?? 0) > 0;
+                            const isSelected = item.type === 'checkbox' ? selectedOptions.has(item.id) : item.type === 'dropdown' ? selectedGrades.has(item.id) : (freeInputValues.get(item.id) ?? 0) !== 0;
                             return (
                                 <div key={item.id} className={`p-4 rounded-xl border transition-all ${isSelected ? 'bg-emerald-50 border-emerald-300' : 'bg-white border-gray-200'}`}>
                                     <div className="flex justify-between items-start mb-2">
@@ -137,10 +138,10 @@ const MobileEstimatePage: React.FC<MobileEstimatePageProps> = ({ system, onOutpu
                                         )}
                                         {item.type === 'free_input' && (
                                             <div className="flex items-center justify-end gap-1">
-                                                <span className="text-sm text-gray-500">¥</span>
-                                                <input type="number" value={freeInputValues.get(item.id) || ''} placeholder="0"
-                                                    onChange={(e) => { const v = parseInt(e.target.value); setFreeInputValue(item.id, isNaN(v) ? 0 : v); }}
-                                                    className="w-32 p-2 border border-gray-300 rounded text-right font-mono" />
+                                                <MoneyInput 
+                                                    value={freeInputValues.get(item.id) || 0} 
+                                                    onChange={(v) => setFreeInputValue(item.id, v)} 
+                                                />
                                             </div>
                                         )}
                                     </div>

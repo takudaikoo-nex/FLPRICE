@@ -37,7 +37,7 @@ export const useEstimateSystem = () => {
         const fetchData = async () => {
             try {
                 const { data: plansData, error: plansError } = await supabase
-                    .from('plans').select('*');
+                    .from('plans').select('*').order('display_order', { ascending: true });
                 if (plansError) throw plansError;
                 
                 const { data: itemsData, error: itemsError } = await supabase
