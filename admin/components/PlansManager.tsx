@@ -43,21 +43,22 @@ const SortablePlanCard = ({ plan, onEdit, onDelete }: { plan: Plan; onEdit: (p: 
     };
 
     return (
-        <div ref={setNodeRef} style={style} className='bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow relative'>
-            <button
-                {...attributes}
-                {...listeners}
-                className='absolute left-2 top-4 p-1 text-gray-400 hover:text-emerald-600 cursor-grab active:cursor-grabbing'
-                title='ドラッグで並び替え'
-            >
-                <GripVertical size={20} />
-            </button>
-            <div className='pl-8'>
-                <div className='flex justify-between items-start mb-2'>
-                    <span className={`text-xs font-bold px-2 py-1 rounded ${plan.category === 'cremation' ? 'bg-orange-100 text-orange-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                        {plan.category === 'cremation' ? '火葬式' : '葬儀'}
-                    </span>
-                    <div className='flex gap-2'>
+        <div ref={setNodeRef} style={style} className='bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow'>
+            <div className='flex gap-3'>
+                <button
+                    {...attributes}
+                    {...listeners}
+                    className='mt-1 shrink-0 text-gray-400 hover:text-emerald-600 cursor-grab active:cursor-grabbing'
+                    title='ドラッグで並び替え'
+                >
+                    <GripVertical size={20} />
+                </button>
+                <div className='flex-1'>
+                    <div className='flex justify-between items-start mb-2'>
+                        <span className={`text-xs font-bold px-2 py-1 rounded ${plan.category === 'cremation' ? 'bg-orange-100 text-orange-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                            {plan.category === 'cremation' ? '火葬式' : '葬儀'}
+                        </span>
+                        <div className='flex gap-2'>
                         <button onClick={() => onEdit(plan)} className='p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors'><Edit size={18} /></button>
                         <button onClick={() => onDelete(plan.id)} className='p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors'><Trash2 size={18} /></button>
                     </div>
@@ -66,6 +67,7 @@ const SortablePlanCard = ({ plan, onEdit, onDelete }: { plan: Plan; onEdit: (p: 
                 <p className='text-2xl font-bold text-emerald-600 mb-3'>¥{plan.price.toLocaleString()}</p>
                 <p className='text-sm text-gray-500 line-clamp-2'>{plan.description}</p>
                 <div className='mt-3 text-xs text-gray-400'>ID: {plan.id}</div>
+                </div>
             </div>
         </div>
     );
