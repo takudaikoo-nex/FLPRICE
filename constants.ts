@@ -254,7 +254,6 @@ export const ITEMS: Item[] = [
     description: 'ご親族様の控室利用料です。',
     allowedPlans: ['plan_02', 'plan_03', 'plan_04', 'plan_05'],
     includedInPlans: [],
-    nonTaxable: true,
     options: [
       { id: 'r_fujisawa_in', name: '藤沢市斎場 控室 (市内)', price: 4800, allowedPlans: ALL },
       { id: 'r_fujisawa_out', name: '藤沢市斎場 控室 (市外)', price: 9600, allowedPlans: ALL },
@@ -288,7 +287,6 @@ export const ITEMS: Item[] = [
     description: '式場の利用料金です。',
     allowedPlans: ['plan_02', 'plan_03', 'plan_04', 'plan_05'],
     includedInPlans: [],
-    nonTaxable: true,
     options: [
       { id: 'h_fujisawa_fam_in', name: '藤沢市斎場 家族 (市内)', price: 3000, allowedPlans: ALL },
       { id: 'h_fujisawa_fam_out', name: '藤沢市斎場 家族 (市外)', price: 6000, allowedPlans: ALL },
