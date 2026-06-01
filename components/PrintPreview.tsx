@@ -4,8 +4,6 @@ import InvoiceDocument from './InvoiceDocument';
 import ReceiptDocument from './ReceiptDocument';
 import { deserializePrintData } from '../lib/serialization';
 import { Plan, Item } from '../types';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
 
 const PrintPreview: React.FC = () => {
     const [data, setData] = useState<{
@@ -21,7 +19,6 @@ const PrintPreview: React.FC = () => {
         documentType?: 'quote' | 'invoice' | 'receipt';
     } | null>(null);
 
-    const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
     const isMobile = new URLSearchParams(window.location.search).get('mobile') === 'true';
 
     useEffect(() => {
@@ -31,30 +28,6 @@ const PrintPreview: React.FC = () => {
             if (parsed) setData(parsed);
         }
     }, []);
-
-    const handleDownloadPDF = async () => {
-        const input = document.getElementById('print-content');
-        if (!input) return;
-        try {
-            setIsGeneratingPdf(true);
-            const canvas = await html2canvas(input, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff', windowWidth: 1200 });
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-            const imgWidth = 210;
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
-            pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-            const today = new Date();
-            const dateStr = today.getFullYear() + String(today.getMonth() + 1).padStart(2, '0') + String(today.getDate()).padStart(2, '0');
-            const applicantName = data?.customerInfo?.applicantName || 'お客様';
-            const docType = data?.documentType === 'receipt' ? '領収書' : data?.documentType === 'invoice' ? '請求書' : '御見積書';
-            pdf.save(`${applicantName} 様_${docType}_${dateStr}.pdf`);
-        } catch (error) {
-            console.error('PDF generation failed:', error);
-            alert('PDFの作成に失敗しました。');
-        } finally {
-            setIsGeneratingPdf(false);
-        }
-    };
 
     if (!data) return (
         <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -77,10 +50,8 @@ const PrintPreview: React.FC = () => {
                     <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-sm text-center space-y-6">
                         <span className="text-4xl">📄</span>
                         <h2 className="text-xl font-bold text-gray-800">{data.documentType === 'receipt' ? '領収書' : data.documentType === 'invoice' ? '請求書' : '見積書'}出力</h2>
-                        <p className="text-gray-500 text-sm">下のボタンを押してPDFを保存してください</p>
-                        <button onClick={handleDownloadPDF} disabled={isGeneratingPdf}
-                            className="w-full bg-emerald-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-emerald-700 disabled:opacity-50">
-                            {isGeneratingPdf ? '作成中...' : '📥 PDFを保存'}
+                        <button onClick={() => window.print()} className="w-full bg-emerald-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-emerald-700">
+                            🖨️ 印刷する
                         </button>
                         <button onClick={() => window.close()} className="text-gray-400 text-sm underline hover:text-gray-600">閉じる</button>
                     </div>
@@ -92,9 +63,6 @@ const PrintPreview: React.FC = () => {
                         <h1 className="font-bold text-gray-700">印刷プレビュー ({data.documentType === 'receipt' ? '領収書' : data.documentType === 'invoice' ? '請求書' : '見積書'})</h1>
                         <div className="flex gap-4">
                             <button onClick={() => window.close()} className="px-6 py-3 rounded border border-gray-300 hover:bg-gray-100 text-lg">閉じる</button>
-                            <button onClick={handleDownloadPDF} disabled={isGeneratingPdf} className="px-6 py-3 rounded bg-blue-600 text-white hover:bg-blue-700 font-bold text-lg disabled:opacity-50">
-                                {isGeneratingPdf ? 'PDF生成中...' : 'PDFで保存'}
-                            </button>
                             <button onClick={() => window.print()} className="px-8 py-3 rounded bg-emerald-600 text-white hover:bg-emerald-700 font-bold text-lg">印刷する</button>
                         </div>
                     </div>
