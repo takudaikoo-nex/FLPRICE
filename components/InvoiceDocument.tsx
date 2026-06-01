@@ -51,7 +51,12 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
         return getPrice(i) !== 0;
     });
 
-    const taxableOptions = activeOptions.filter(i => !i.nonTaxable);
+    // free_input（割引調整額など）を末尾に配置
+    const taxableOptionsRaw = activeOptions.filter(i => !i.nonTaxable);
+    const taxableOptions = [
+        ...taxableOptionsRaw.filter(i => i.type !== 'free_input'),
+        ...taxableOptionsRaw.filter(i => i.type === 'free_input'),
+    ];
     const nonTaxableOptions = activeOptions.filter(i => i.nonTaxable);
     const taxableOptionsTotal = taxableOptions.reduce((sum, i) => sum + getPrice(i), 0);
     const nonTaxableTotal = nonTaxableOptions.reduce((sum, i) => sum + getPrice(i), 0);
@@ -149,7 +154,7 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
                                             <div style={{ width: '45%' }} className="text-center py-2 px-2 border-r border-black text-gray-600">
                                                 {getGradeLabel(item)}
                                             </div>
-                                            <div style={{ width: '20%' }} className="text-right py-2 px-2 font-mono">¥{getPrice(item).toLocaleString()}</div>
+                                            <div style={{ width: '20%' }} className={`text-right py-2 px-2 font-mono ${getPrice(item) < 0 ? 'text-red-600' : ''}`}>¥{getPrice(item).toLocaleString()}</div>
                                         </div>
                                     );
                                 })}
@@ -175,7 +180,7 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
                                             <div style={{ width: '55%' }} className="text-center py-2 px-2 border-r border-black text-gray-600">
                                                 {getGradeLabel(item)}
                                             </div>
-                                            <div style={{ width: '20%' }} className="text-right py-2 px-2 font-mono">¥{getPrice(item).toLocaleString()}</div>
+                                            <div style={{ width: '20%' }} className={`text-right py-2 px-2 font-mono ${getPrice(item) < 0 ? 'text-red-600' : ''}`}>¥{getPrice(item).toLocaleString()}</div>
                                         </div>
                                     );
                                 })}

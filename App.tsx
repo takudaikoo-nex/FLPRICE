@@ -7,7 +7,6 @@ import PrintPreview from './components/PrintPreview';
 import CustomerInputPage from './components/CustomerInputPage';
 import StartScreen from './components/StartScreen';
 import { useEstimateSystem } from './hooks/useEstimateSystem';
-import { useEstimateSystem } from './hooks/useEstimateSystem';
 import MobileEstimatePage from './components/MobileEstimatePage';
 import { MoneyInput } from './components/MoneyInput';
 const EMPTY_CUSTOMER_INFO: CustomerInfo = {

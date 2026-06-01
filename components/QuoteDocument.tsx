@@ -30,7 +30,7 @@ const QuoteDocument: React.FC<QuoteDocumentProps> = ({
     // 含まれるアイテム
     const includedItems = items.filter(i => i.allowedPlans.includes(planId) && i.includedInPlans.includes(planId));
 
-    // 選択されたオプション（価格あり）
+    // 選択されたオプション（価格あり、負の値の割引も含む）
     const activeOptions = items.filter(i => {
         if (!i.allowedPlans.includes(planId)) return false;
         if (i.includedInPlans.includes(planId)) {
@@ -39,7 +39,7 @@ const QuoteDocument: React.FC<QuoteDocumentProps> = ({
             return false;
         }
         const price = getPrice(i);
-        return price > 0;
+        return price !== 0;
     });
 
     // 課税/非課税分離
@@ -62,15 +62,14 @@ const QuoteDocument: React.FC<QuoteDocumentProps> = ({
         return '';
     };
 
-    const MAX_ROWS = 20;
-    const tableRows = Array.from({ length: MAX_ROWS }).map((_, i) => {
-        const item = taxableOptions[i];
-        return {
-            name: item ? item.name : '',
-            detail: item ? getGradeLabel(item) : '',
-            price: item ? getPrice(item) : null,
-        };
-    });
+    // free_input（割引調整額など）を末尾に配置
+    const regularTaxable = taxableOptions.filter(i => i.type !== 'free_input');
+    const adjustmentTaxable = taxableOptions.filter(i => i.type === 'free_input');
+    const tableRows = [...regularTaxable, ...adjustmentTaxable].map(item => ({
+        name: item.name,
+        detail: getGradeLabel(item),
+        price: getPrice(item),
+    }));
 
     const LabelCell = ({ children }: { children: React.ReactNode }) => (
         <div className="w-24 bg-gray-100 border-r border-gray-400 flex items-center justify-center font-bold text-xs shrink-0 !print-color-adjust-exact">{children}</div>
@@ -170,7 +169,7 @@ const QuoteDocument: React.FC<QuoteDocumentProps> = ({
                                         <span className="truncate">{row.name}</span>
                                         {row.detail && <span className="text-[10px] text-gray-500 bg-gray-100 px-1 rounded shrink-0 ml-2">{row.detail}</span>}
                                     </div>
-                                    <div className="w-[120px] text-right px-3 h-full flex items-center justify-end font-mono text-gray-700">
+                                    <div className={`w-[120px] text-right px-3 h-full flex items-center justify-end font-mono ${(row.price ?? 0) < 0 ? 'text-red-600' : 'text-gray-700'}`}>
                                         {row.price !== null ? `¥${row.price.toLocaleString()}` : ''}
                                     </div>
                                 </div>
