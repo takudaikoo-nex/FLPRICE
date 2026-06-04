@@ -109,6 +109,19 @@ const ItemEditor: React.FC<ItemEditorProps> = ({ item, isNew, onSave, onCancel, 
                             </select>
                         </div>
 
+                        {/* 非課税フラグ */}
+                        <div>
+                            <label className="flex items-center gap-3 cursor-pointer w-fit">
+                                <input
+                                    type="checkbox"
+                                    checked={editingItem.nonTaxable || false}
+                                    onChange={e => setEditingItem({ ...editingItem, nonTaxable: e.target.checked })}
+                                    className="w-5 h-5 accent-orange-500 rounded"
+                                />
+                                <span className="text-sm font-medium text-gray-700">非課税項目（消費税を計算しない）</span>
+                            </label>
+                        </div>
+
                         {editingItem.type === 'dropdown' && (
                             <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
                                 <div className="flex justify-between items-center mb-3">
