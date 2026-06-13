@@ -12,6 +12,7 @@ export const convertDbItem = (item: any): Item => ({
     includedInPlans: item.included_in_plans || [],
     options: item.options,
     nonTaxable: item.non_taxable,
+    reducedTax: item.reduced_tax,
 });
 
 /** アプリのItemをSupabase DB用のsnake_caseに変換 */
@@ -26,6 +27,7 @@ export const convertItemToDb = (item: Item): Record<string, any> => ({
     included_in_plans: item.includedInPlans,
     options: item.options,
     non_taxable: item.nonTaxable,
+    reduced_tax: item.reducedTax,
 });
 
 /** Supabase DBから取得したPlanを変換 */

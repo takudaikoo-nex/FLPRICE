@@ -1,6 +1,7 @@
 import { Item, PlanId } from '../types';
 
 export const TAX_RATE = 0.10;
+export const REDUCED_TAX_RATE = 0.08;
 export const NON_TAXABLE_NAMES = ['火葬料金', '控室料金', '斎場料金'];
 
 /** アイテムの価格を取得（プランに含まれる場合は0） */

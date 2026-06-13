@@ -1,7 +1,7 @@
 import React from 'react';
 import { Plan, Item } from '../types';
 import { COMPANY_INFO } from '../constants';
-import { getItemPrice, TAX_RATE } from '../lib/pricing';
+import { getItemPrice, TAX_RATE, REDUCED_TAX_RATE } from '../lib/pricing';
 
 interface ReceiptDocumentProps {
     plan: Plan;
@@ -52,13 +52,16 @@ const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({
         return getPrice(i) !== 0;
     });
 
-    const taxableOptions = activeOptions.filter(i => !i.nonTaxable);
+    const standardTaxableOptions = activeOptions.filter(i => !i.nonTaxable && !i.reducedTax);
+    const reducedTaxOptions = activeOptions.filter(i => i.reducedTax);
     const nonTaxableOptions = activeOptions.filter(i => i.nonTaxable);
-    const taxableOptionsTotal = taxableOptions.reduce((sum, i) => sum + getPrice(i), 0);
+    const standardOptionsTotal = standardTaxableOptions.reduce((sum, i) => sum + getPrice(i), 0);
+    const reducedOptionsTotal = reducedTaxOptions.reduce((sum, i) => sum + getPrice(i), 0);
     const nonTaxableTotal = nonTaxableOptions.reduce((sum, i) => sum + getPrice(i), 0);
-    const taxableSubtotal = plan.price + taxableOptionsTotal;
+    const taxableSubtotal = plan.price + standardOptionsTotal;
     const taxAmount = Math.floor(taxableSubtotal * TAX_RATE);
-    const finalTotal = taxableSubtotal + taxAmount + nonTaxableTotal;
+    const reducedTaxAmount = Math.floor(reducedOptionsTotal * REDUCED_TAX_RATE);
+    const finalTotal = taxableSubtotal + taxAmount + reducedOptionsTotal + reducedTaxAmount + nonTaxableTotal;
 
     const getGradeLabel = (item: Item): string => {
         const gradeId = selectedGrades.get(item.id);
@@ -75,11 +78,12 @@ const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({
         amount: plan.price,
     });
 
-    [...taxableOptions, ...nonTaxableOptions].forEach(item => {
+    [...standardTaxableOptions, ...reducedTaxOptions, ...nonTaxableOptions].forEach(item => {
         const price = getPrice(item);
         const gradeLabel = getGradeLabel(item);
         let name = item.name;
         if (gradeLabel) name += ` (${gradeLabel})`;
+        if (item.reducedTax) name += ' ※';
         if (item.nonTaxable) name += ' (非課税)';
         dataRows.push({ name, quantity: '1 回', unitPrice: price, amount: price });
     });
@@ -205,6 +209,18 @@ const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({
                             <td style={{ border: cellBorder, padding: '5px 14px', fontWeight: 'bold', textAlign: 'center', color: NAVY }}>消費税 (10%)</td>
                             <td style={{ border: cellBorder, padding: '5px 14px', textAlign: 'right', fontFamily: 'monospace' }}>¥{taxAmount.toLocaleString()}</td>
                         </tr>
+                        {reducedOptionsTotal > 0 && (
+                            <>
+                                <tr>
+                                    <td style={{ border: cellBorder, padding: '5px 14px', fontWeight: 'bold', textAlign: 'center', color: '#c2410c' }}>※軽減税率対象計</td>
+                                    <td style={{ border: cellBorder, padding: '5px 14px', textAlign: 'right', fontFamily: 'monospace' }}>¥{reducedOptionsTotal.toLocaleString()}</td>
+                                </tr>
+                                <tr>
+                                    <td style={{ border: cellBorder, padding: '5px 14px', fontWeight: 'bold', textAlign: 'center', color: '#c2410c' }}>消費税 (8%)</td>
+                                    <td style={{ border: cellBorder, padding: '5px 14px', textAlign: 'right', fontFamily: 'monospace' }}>¥{reducedTaxAmount.toLocaleString()}</td>
+                                </tr>
+                            </>
+                        )}
                         {nonTaxableTotal > 0 && (
                             <tr>
                                 <td style={{ border: cellBorder, padding: '5px 14px', fontWeight: 'bold', textAlign: 'center', color: NAVY }}>非課税計</td>

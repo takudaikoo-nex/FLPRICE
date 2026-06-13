@@ -29,6 +29,7 @@ export interface Item {
   includedInPlans: PlanId[]; // このプランではプラン料金に含まれる（無料）
   options?: DropdownOption[];
   nonTaxable?: boolean;
+  reducedTax?: boolean;
 }
 
 export interface CustomerInfo {

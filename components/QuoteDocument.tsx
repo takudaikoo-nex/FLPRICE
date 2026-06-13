@@ -2,7 +2,7 @@ import React from 'react';
 import { Plan, Item } from '../types';
 import { COMPANY_INFO } from '../constants';
 import { formatDateWithMode } from '../lib/dateUtils';
-import { getItemPrice, TAX_RATE } from '../lib/pricing';
+import { getItemPrice, TAX_RATE, REDUCED_TAX_RATE } from '../lib/pricing';
 
 interface QuoteDocumentProps {
     plan: Plan;
@@ -42,15 +42,18 @@ const QuoteDocument: React.FC<QuoteDocumentProps> = ({
         return price !== 0;
     });
 
-    // 課税/非課税分離
-    const taxableOptions = activeOptions.filter(i => !i.nonTaxable);
+    // 課税/軽減税率/非課税分離
+    const standardTaxableOptions = activeOptions.filter(i => !i.nonTaxable && !i.reducedTax);
+    const reducedTaxOptions = activeOptions.filter(i => i.reducedTax);
     const nonTaxableOptions = activeOptions.filter(i => i.nonTaxable);
 
-    const taxableOptionsTotal = taxableOptions.reduce((sum, i) => sum + getPrice(i), 0);
+    const standardOptionsTotal = standardTaxableOptions.reduce((sum, i) => sum + getPrice(i), 0);
+    const reducedOptionsTotal = reducedTaxOptions.reduce((sum, i) => sum + getPrice(i), 0);
     const nonTaxableTotal = nonTaxableOptions.reduce((sum, i) => sum + getPrice(i), 0);
-    const taxableSubtotal = plan.price + taxableOptionsTotal;
+    const taxableSubtotal = plan.price + standardOptionsTotal;
     const taxAmount = Math.floor(taxableSubtotal * TAX_RATE);
-    const finalTotal = taxableSubtotal + taxAmount + nonTaxableTotal;
+    const reducedTaxAmount = Math.floor(reducedOptionsTotal * REDUCED_TAX_RATE);
+    const finalTotal = taxableSubtotal + taxAmount + reducedOptionsTotal + reducedTaxAmount + nonTaxableTotal;
 
     // ドロップダウン内容取得
     const getGradeLabel = (item: Item): string => {
@@ -63,12 +66,14 @@ const QuoteDocument: React.FC<QuoteDocumentProps> = ({
     };
 
     // free_input（割引調整額など）を末尾に配置
-    const regularTaxable = taxableOptions.filter(i => i.type !== 'free_input');
-    const adjustmentTaxable = taxableOptions.filter(i => i.type === 'free_input');
+    const allOptionsForTable = [...standardTaxableOptions, ...reducedTaxOptions];
+    const regularTaxable = allOptionsForTable.filter(i => i.type !== 'free_input');
+    const adjustmentTaxable = allOptionsForTable.filter(i => i.type === 'free_input');
     const tableRows = [...regularTaxable, ...adjustmentTaxable].map(item => ({
         name: item.name,
         detail: getGradeLabel(item),
         price: getPrice(item),
+        reducedTax: item.reducedTax || false,
     }));
 
     const LabelCell = ({ children }: { children: React.ReactNode }) => (
@@ -168,6 +173,7 @@ const QuoteDocument: React.FC<QuoteDocumentProps> = ({
                                     <div className="flex-1 px-3 border-r border-gray-200 h-full flex items-center overflow-hidden">
                                         <span className="truncate">{row.name}</span>
                                         {row.detail && <span className="text-[10px] text-gray-500 bg-gray-100 px-1 rounded shrink-0 ml-2">{row.detail}</span>}
+                                        {row.reducedTax && <span className="text-[9px] text-orange-600 bg-orange-50 px-1 rounded shrink-0 ml-1">軽減8%</span>}
                                     </div>
                                     <div className={`w-[120px] text-right px-3 h-full flex items-center justify-end font-mono ${(row.price ?? 0) < 0 ? 'text-red-600' : 'text-gray-700'}`}>
                                         {row.price !== null ? `¥${row.price.toLocaleString()}` : ''}
@@ -199,6 +205,7 @@ const QuoteDocument: React.FC<QuoteDocumentProps> = ({
                         <div className="border border-gray-800 shadow-sm rounded-sm overflow-hidden">
                             <div className="grid grid-cols-[100px_1fr] border-b border-gray-300"><div className="bg-gray-100 pl-3 py-1 font-bold text-sm flex items-center text-gray-600 !print-color-adjust-exact">小計</div><div className="text-right pr-4 py-1 font-mono text-base">¥{taxableSubtotal.toLocaleString()}</div></div>
                             <div className="grid grid-cols-[100px_1fr] border-b border-gray-300"><div className="bg-gray-100 pl-3 py-1 font-bold text-sm flex items-center text-gray-600 !print-color-adjust-exact">消費税 (10%)</div><div className="text-right pr-4 py-1 font-mono text-base">¥{taxAmount.toLocaleString()}</div></div>
+                            {reducedOptionsTotal > 0 && <><div className="grid grid-cols-[100px_1fr] border-b border-gray-300"><div className="bg-orange-50 pl-3 py-1 font-bold text-sm flex items-center text-orange-700 !print-color-adjust-exact">軽減税率計</div><div className="text-right pr-4 py-1 font-mono text-base">¥{reducedOptionsTotal.toLocaleString()}</div></div><div className="grid grid-cols-[100px_1fr] border-b border-gray-300"><div className="bg-orange-50 pl-3 py-1 font-bold text-sm flex items-center text-orange-700 !print-color-adjust-exact">消費税 (8%)</div><div className="text-right pr-4 py-1 font-mono text-base">¥{reducedTaxAmount.toLocaleString()}</div></div></>}
                             <div className="grid grid-cols-[100px_1fr] border-b border-gray-300"><div className="bg-gray-100 pl-3 py-1 font-bold text-sm flex items-center text-gray-600 !print-color-adjust-exact">非課税計</div><div className="text-right pr-4 py-1 font-mono text-base">¥{nonTaxableTotal.toLocaleString()}</div></div>
                             <div className="grid grid-cols-[100px_1fr] bg-emerald-50"><div className="pl-3 py-2 font-bold text-base flex items-center text-emerald-900 !print-color-adjust-exact">合計金額</div><div className="text-right pr-4 py-2 font-bold text-2xl font-mono text-emerald-700 underline decoration-2 decoration-emerald-300 underline-offset-4">¥{finalTotal.toLocaleString()}</div></div>
                         </div>

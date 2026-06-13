@@ -1,7 +1,7 @@
 import React from 'react';
 import { Plan, Item } from '../types';
 import { COMPANY_INFO } from '../constants';
-import { getItemPrice, TAX_RATE } from '../lib/pricing';
+import { getItemPrice, TAX_RATE, REDUCED_TAX_RATE } from '../lib/pricing';
 
 interface InvoiceDocumentProps {
     plan: Plan;
@@ -52,17 +52,20 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
     });
 
     // free_input（割引調整額など）を末尾に配置
-    const taxableOptionsRaw = activeOptions.filter(i => !i.nonTaxable);
-    const taxableOptions = [
-        ...taxableOptionsRaw.filter(i => i.type !== 'free_input'),
-        ...taxableOptionsRaw.filter(i => i.type === 'free_input'),
+    const standardOptionsRaw = activeOptions.filter(i => !i.nonTaxable && !i.reducedTax);
+    const standardTaxableOptions = [
+        ...standardOptionsRaw.filter(i => i.type !== 'free_input'),
+        ...standardOptionsRaw.filter(i => i.type === 'free_input'),
     ];
+    const reducedTaxOptions = activeOptions.filter(i => i.reducedTax);
     const nonTaxableOptions = activeOptions.filter(i => i.nonTaxable);
-    const taxableOptionsTotal = taxableOptions.reduce((sum, i) => sum + getPrice(i), 0);
+    const standardOptionsTotal = standardTaxableOptions.reduce((sum, i) => sum + getPrice(i), 0);
+    const reducedOptionsTotal = reducedTaxOptions.reduce((sum, i) => sum + getPrice(i), 0);
     const nonTaxableTotal = nonTaxableOptions.reduce((sum, i) => sum + getPrice(i), 0);
-    const taxableSubtotal = plan.price + taxableOptionsTotal;
+    const taxableSubtotal = plan.price + standardOptionsTotal;
     const taxAmount = Math.floor(taxableSubtotal * TAX_RATE);
-    const finalTotal = taxableSubtotal + taxAmount + nonTaxableTotal;
+    const reducedTaxAmount = Math.floor(reducedOptionsTotal * REDUCED_TAX_RATE);
+    const finalTotal = taxableSubtotal + taxAmount + reducedOptionsTotal + reducedTaxAmount + nonTaxableTotal;
 
     const getGradeLabel = (item: Item): string => {
         const gradeId = selectedGrades.get(item.id);
@@ -121,12 +124,12 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
                     </div>
                     {/* Basic Plan + Included Items */}
                     <div>
-                        <div className={`flex ${includedItems.length === 0 && taxableOptions.length === 0 && nonTaxableOptions.length === 0 ? '' : 'border-b border-black'}`}>
+                        <div className={`flex ${includedItems.length === 0 && standardTaxableOptions.length === 0 && reducedTaxOptions.length === 0 && nonTaxableOptions.length === 0 ? '' : 'border-b border-black'}`}>
                             <div style={{ width: '80%' }} className="text-left py-2 px-2 border-r border-black font-medium">{`基本プラン (${plan.name})`}</div>
                             <div style={{ width: '20%' }} className="text-right py-2 px-2 font-mono">¥{plan.price.toLocaleString()}</div>
                         </div>
                         {includedItems.length > 0 && includedItems.map((item, i) => (
-                            <div key={`inc-${item.id}`} className={`flex ${i === includedItems.length - 1 && taxableOptions.length === 0 && nonTaxableOptions.length === 0 ? '' : 'border-b border-black'}`}>
+                            <div key={`inc-${item.id}`} className={`flex ${i === includedItems.length - 1 && standardTaxableOptions.length === 0 && reducedTaxOptions.length === 0 && nonTaxableOptions.length === 0 ? '' : 'border-b border-black'}`}>
                                 <div style={{ width: '80%' }} className="text-left py-2 px-2 border-r border-black text-gray-700 flex items-center">
                                     <span className="w-1.5 h-1.5 rounded-full bg-gray-400 mr-2 inline-block shrink-0"></span>
                                     <span>{item.name}</span>
@@ -137,7 +140,7 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
                     </div>
 
                     {/* Options Header */}
-                    {taxableOptions.length > 0 && (
+                    {standardTaxableOptions.length > 0 && (
                         <>
                             <div className="flex bg-gray-100 font-bold border-b border-black !print-color-adjust-exact">
                                 <div style={{ width: '35%' }} className="text-left py-1 pl-4 border-r border-black tracking-widest">オプション内訳</div>
@@ -145,13 +148,39 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
                                 <div style={{ width: '20%' }} className="text-right py-1 pr-6 tracking-widest">金額 (税抜)</div>
                             </div>
                             <div>
-                                {taxableOptions.map((item, i) => {
+                                {standardTaxableOptions.map((item, i) => {
                                     return (
-                                        <div key={`opt-${item.id}`} className={`flex ${i === taxableOptions.length - 1 && nonTaxableOptions.length === 0 ? '' : 'border-b border-black'}`}>
+                                        <div key={`opt-${item.id}`} className={`flex ${i === standardTaxableOptions.length - 1 && reducedTaxOptions.length === 0 && nonTaxableOptions.length === 0 ? '' : 'border-b border-black'}`}>
                                             <div style={{ width: '35%' }} className="text-left py-2 px-2 border-r border-black flex items-center">
                                                 {item.name}
                                             </div>
                                             <div style={{ width: '45%' }} className="text-center py-2 px-2 border-r border-black text-gray-600">
+                                                {getGradeLabel(item)}
+                                            </div>
+                                            <div style={{ width: '20%' }} className={`text-right py-2 px-2 font-mono ${getPrice(item) < 0 ? 'text-red-600' : ''}`}>¥{getPrice(item).toLocaleString()}</div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </>
+                    )}
+
+                    {/* Reduced Tax (8%) Header */}
+                    {reducedTaxOptions.length > 0 && (
+                        <>
+                            <div className="flex bg-orange-50 font-bold border-b border-black !print-color-adjust-exact">
+                                <div style={{ width: '25%' }} className="text-left py-1 pl-4 border-r border-black tracking-widest text-orange-800">軽減税率 (8%)</div>
+                                <div style={{ width: '55%' }} className="text-center py-1 px-2 border-r border-black"></div>
+                                <div style={{ width: '20%' }} className="text-right py-1 pr-6 tracking-widest">金額 (税抜)</div>
+                            </div>
+                            <div>
+                                {reducedTaxOptions.map((item, i) => {
+                                    return (
+                                        <div key={`red-${item.id}`} className={`flex ${i === reducedTaxOptions.length - 1 && nonTaxableOptions.length === 0 ? '' : 'border-b border-black'}`}>
+                                            <div style={{ width: '25%' }} className="text-left py-2 px-2 border-r border-black flex items-center">
+                                                {item.name}
+                                            </div>
+                                            <div style={{ width: '55%' }} className="text-center py-2 px-2 border-r border-black text-gray-600">
                                                 {getGradeLabel(item)}
                                             </div>
                                             <div style={{ width: '20%' }} className={`text-right py-2 px-2 font-mono ${getPrice(item) < 0 ? 'text-red-600' : ''}`}>¥{getPrice(item).toLocaleString()}</div>
@@ -191,6 +220,7 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
                 <div className="flex flex-col items-end mt-4 text-sm">
                     <div className="flex justify-between w-[250px] border-b border-gray-300 py-1" style={{ borderTop: '1px solid #374151' }}><span>小計 (税抜)</span><span className="font-mono">¥{taxableSubtotal.toLocaleString()}</span></div>
                     <div className="flex justify-between w-[250px] border-b border-gray-300 py-1"><span>消費税 (10%)</span><span className="font-mono">¥{taxAmount.toLocaleString()}</span></div>
+                    {reducedOptionsTotal > 0 && <><div className="flex justify-between w-[250px] border-b border-gray-300 py-1 text-orange-700"><span>軽減税率対象計 (税抜)</span><span className="font-mono">¥{reducedOptionsTotal.toLocaleString()}</span></div><div className="flex justify-between w-[250px] border-b border-gray-300 py-1 text-orange-700"><span>消費税 (8%)</span><span className="font-mono">¥{reducedTaxAmount.toLocaleString()}</span></div></>}
                     {nonTaxableTotal > 0 && <div className="flex justify-between w-[250px] border-b border-gray-300 py-1"><span>非課税計</span><span className="font-mono">¥{nonTaxableTotal.toLocaleString()}</span></div>}
                     <div className="flex justify-between w-[250px] border-b-2 border-black py-2 font-bold"><span>合計 (税込み)</span><span className="font-mono">¥{finalTotal.toLocaleString()}</span></div>
                 </div>
