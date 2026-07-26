@@ -1,0 +1,243 @@
+import React, { useState, useEffect } from 'react';
+import {
+    readTokenFromUrl, lookupFuneral, fetchProducts, submitOrder, toUserMessage,
+    FuneralPublic, PublicProduct, CartLine, OrdererInput, OrderResult,
+} from './lib/api';
+import { isDemoMode, DEMO_FUNERAL, DEMO_PRODUCTS, demoSubmit } from './lib/demoData';
+import { formatYen } from '../lib/flower';
+import { sendOrderMail } from '../lib/mail';
+import FuneralHeader from './components/FuneralHeader';
+import ProductList from './components/ProductList';
+import OrderForm from './components/OrderForm';
+import ConfirmView from './components/ConfirmView';
+import CompleteView from './components/CompleteView';
+import Notice from './components/Notice';
+
+type Step = 'catalog' | 'form' | 'confirm' | 'complete';
+
+const emptyOrderer: OrdererInput = {
+    name: '', kana: '', company: '', phone: '', email: '',
+    postal_code: '', address: '', relation: '', remarks: '',
+};
+
+const App: React.FC = () => {
+    const [loading, setLoading] = useState(true);
+    const [funeral, setFuneral] = useState<FuneralPublic | null>(null);
+    const [products, setProducts] = useState<PublicProduct[]>([]);
+    const [loadFailed, setLoadFailed] = useState(false);
+
+    const [lines, setLines] = useState<CartLine[]>([]);
+    const [step, setStep] = useState<Step>('catalog');
+    const [orderer, setOrderer] = useState<OrdererInput>(emptyOrderer);
+    const [paymentMethod, setPaymentMethod] = useState<'card' | 'invoice'>('invoice');
+
+    const [submitting, setSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState('');
+    const [result, setResult] = useState<OrderResult | null>(null);
+
+    const demo = isDemoMode();
+    const token = readTokenFromUrl();
+
+    useEffect(() => {
+        if (demo) {
+            setFuneral(DEMO_FUNERAL);
+            setProducts(DEMO_PRODUCTS);
+            setLoading(false);
+            return;
+        }
+
+        if (!token) {
+            setLoading(false);
+            return;
+        }
+
+        (async () => {
+            try {
+                const [funeralData, productData] = await Promise.all([
+                    lookupFuneral(token),
+                    fetchProducts(),
+                ]);
+                setFuneral(funeralData);
+                setProducts(productData);
+            } catch (error) {
+                console.error('Failed to load order page:', error);
+                setLoadFailed(true);
+            } finally {
+                setLoading(false);
+            }
+        })();
+    }, [demo, token]);
+
+    useEffect(() => {
+        window.scrollTo({ top: 0 });
+    }, [step]);
+
+    const handleAdd = (product: PublicProduct, quantity: number, nafudaName: string) => {
+        setLines(prev => {
+            const existing = prev.find(line => line.product.id === product.id);
+            if (existing) {
+                return prev.map(line => line.product.id === product.id
+                    ? { ...line, quantity, nafuda_name: nafudaName }
+                    : line);
+            }
+            return [...prev, { product, quantity, nafuda_name: nafudaName }];
+        });
+    };
+
+    const handleRemove = (productId: string) => {
+        setLines(prev => prev.filter(line => line.product.id !== productId));
+    };
+
+    const handleSubmit = async () => {
+        if (!demo && !token) return;
+        setSubmitting(true);
+        setSubmitError('');
+        try {
+            const orderResult = demo
+                ? await demoSubmit(
+                    lines.reduce((sum, line) => sum + line.product.price * line.quantity, 0),
+                    DEMO_FUNERAL.tax_rate,
+                )
+                : await submitOrder(token!, orderer, lines, paymentMethod);
+            // クレジットカードの場合はP3でStripeの決済画面へ遷移させる
+            setResult(orderResult);
+            setStep('complete');
+
+            // 自社への受注通知。失敗しても注文自体は成立しているため画面は止めない
+            if (!demo) {
+                sendOrderMail('internal_notice', orderResult.order_number)
+                    .catch(error => console.error('Failed to send internal notice:', error));
+            }
+        } catch (error) {
+            console.error('Failed to submit order:', error);
+            setSubmitError(toUserMessage(error));
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    if (loading) {
+        return <div className="loading">読み込んでいます...</div>;
+    }
+
+    if ((!demo && !token) || loadFailed || !funeral || funeral.status === 'not_found') {
+        return (
+            <Notice
+                title="ページが見つかりません"
+                message="お手元のご案内に記載されたURLをご確認ください。ご不明な場合は葬儀社までお問い合わせください。"
+            />
+        );
+    }
+
+    if (funeral.status === 'closed') {
+        return (
+            <Notice
+                title="供花の受付は終了しました"
+                message={`故 ${funeral.deceased_name} 様への供花のお申し込みは締め切らせていただきました。`}
+            />
+        );
+    }
+
+    if (funeral.status === 'deadline_passed') {
+        return (
+            <Notice
+                title="受付締切を過ぎています"
+                message={`故 ${funeral.deceased_name} 様への供花のお申し込みは受付を終了いたしました。お急ぎの場合は葬儀社までお問い合わせください。`}
+            />
+        );
+    }
+
+    const demoBanner = demo
+        ? <div className="demo-banner">デモ表示です。実際の注文は保存されません。</div>
+        : null;
+
+    if (step === 'complete' && result) {
+        return (
+            <>
+                {demoBanner}
+                <CompleteView
+                    result={result}
+                    paymentMethod={paymentMethod}
+                    email={orderer.email}
+                />
+            </>
+        );
+    }
+
+    const subtotal = lines.reduce((sum, line) => sum + line.product.price * line.quantity, 0);
+    const total = subtotal + Math.round(subtotal * funeral.tax_rate);
+
+    return (
+        <>
+            {demoBanner}
+
+            <header className="site-header">
+                <h1>供花のお申し込み</h1>
+                <p>心を込めてお届けいたします</p>
+            </header>
+
+            <div className="page">
+                <FuneralHeader funeral={funeral} />
+
+                {step === 'catalog' && (
+                    <ProductList
+                        products={products}
+                        taxRate={funeral.tax_rate}
+                        lines={lines}
+                        onAdd={handleAdd}
+                        onRemove={handleRemove}
+                    />
+                )}
+
+                {step === 'form' && (
+                    <OrderForm
+                        orderer={orderer}
+                        onChange={setOrderer}
+                        paymentMethod={paymentMethod}
+                        onChangePaymentMethod={setPaymentMethod}
+                        cardPaymentEnabled={funeral.card_payment_enabled}
+                        onBack={() => setStep('catalog')}
+                        onNext={() => setStep('confirm')}
+                    />
+                )}
+
+                {step === 'confirm' && (
+                    <ConfirmView
+                        funeral={funeral}
+                        lines={lines}
+                        orderer={orderer}
+                        paymentMethod={paymentMethod}
+                        submitting={submitting}
+                        error={submitError}
+                        onBack={() => setStep('form')}
+                        onSubmit={handleSubmit}
+                    />
+                )}
+
+                <footer className="site-footer">
+                    お申し込みに関するお問い合わせは葬儀社までご連絡ください。
+                </footer>
+            </div>
+
+            {step === 'catalog' && lines.length > 0 && (
+                <div className="cart-bar">
+                    <div className="cart-bar-inner">
+                        <div className="cart-total">
+                            <div className="label">{lines.length}点 / 合計（税込）</div>
+                            <div className="value">{formatYen(total)}</div>
+                        </div>
+                        <button
+                            type="button"
+                            className="btn btn-primary"
+                            onClick={() => setStep('form')}
+                        >
+                            お申し込みへ進む
+                        </button>
+                    </div>
+                </div>
+            )}
+        </>
+    );
+};
+
+export default App;

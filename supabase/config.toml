@@ -1,0 +1,7 @@
+project_id = "kbifluukpqhbjmhhvbgg"
+
+[functions.send-order-mail]
+# 自社への受注通知は公開サイト（未ログイン）から呼び出すため、
+# 関数側で Authorization ヘッダを検証している。
+# （請求書の送信はスタッフのログインを必須にしている）
+verify_jwt = false

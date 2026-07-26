@@ -4,13 +4,18 @@ import LoginForm from './components/LoginForm';
 import PlansManager from './components/PlansManager';
 import ItemsManager from './components/ItemsManager';
 import AttendeesManager from './components/AttendeesManager';
-import { LogOut, LayoutDashboard, List, Users, DatabaseBackup } from 'lucide-react';
+import { LogOut, LayoutDashboard, List, Users, DatabaseBackup, Flower2, CalendarClock, ClipboardList } from 'lucide-react';
 import BackupManager from './components/BackupManager';
+import FlowerProductsManager from './components/FlowerProductsManager';
+import FuneralsManager from './components/FuneralsManager';
+import FlowerOrdersManager from './components/FlowerOrdersManager';
+
+type AdminTab = 'plans' | 'items' | 'attendees' | 'backup' | 'flowerProducts' | 'funerals' | 'flowerOrders';
 
 const AdminApp: React.FC = () => {
     const [session, setSession] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'plans' | 'items' | 'attendees' | 'backup'>('plans');
+    const [activeTab, setActiveTab] = useState<AdminTab>('plans');
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -44,7 +49,7 @@ const AdminApp: React.FC = () => {
     }
 
     return (
-        <div className="h-screen bg-gray-100 flex overflow-hidden">
+        <div className="admin-scope h-screen bg-gray-100 flex overflow-hidden">
             {/* Sidebar */}
             <aside className="w-64 bg-white border-r border-gray-200 flex-shrink-0 flex flex-col">
                 <div className="p-6 border-b border-gray-100">
@@ -98,6 +103,43 @@ const AdminApp: React.FC = () => {
                         <DatabaseBackup size={20} />
                         バックアップ設定
                     </button>
+
+                    <div className="pt-4 mt-2 border-t border-gray-100">
+                        <p className="px-4 mb-2 text-xs text-gray-400">供花発注</p>
+
+                        <button
+                            onClick={() => setActiveTab('flowerProducts')}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'flowerProducts'
+                                ? 'bg-emerald-50 text-emerald-700 font-bold'
+                                : 'text-gray-600 hover:bg-gray-50'
+                                }`}
+                        >
+                            <Flower2 size={20} />
+                            供花商品管理
+                        </button>
+
+                        <button
+                            onClick={() => setActiveTab('funerals')}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'funerals'
+                                ? 'bg-emerald-50 text-emerald-700 font-bold'
+                                : 'text-gray-600 hover:bg-gray-50'
+                                }`}
+                        >
+                            <CalendarClock size={20} />
+                            葬儀・発注受付
+                        </button>
+
+                        <button
+                            onClick={() => setActiveTab('flowerOrders')}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'flowerOrders'
+                                ? 'bg-emerald-50 text-emerald-700 font-bold'
+                                : 'text-gray-600 hover:bg-gray-50'
+                                }`}
+                        >
+                            <ClipboardList size={20} />
+                            供花 受注一覧
+                        </button>
+                    </div>
                 </nav>
 
                 <div className="mt-auto p-4 border-t border-gray-100">
@@ -128,6 +170,18 @@ const AdminApp: React.FC = () => {
 
                     {activeTab === 'backup' && (
                         <BackupManager />
+                    )}
+
+                    {activeTab === 'flowerProducts' && (
+                        <FlowerProductsManager />
+                    )}
+
+                    {activeTab === 'funerals' && (
+                        <FuneralsManager />
+                    )}
+
+                    {activeTab === 'flowerOrders' && (
+                        <FlowerOrdersManager />
                     )}
                 </div>
             </main>

@@ -4,6 +4,7 @@ import { PlanCategory, PlanId, Item, Plan, CustomerInfo } from '../types';
 import { serializePrintData } from '../lib/serialization';
 import { getItemPrice } from '../lib/pricing';
 import { convertDbItem, convertDbPlan } from '../lib/converter';
+import { findOrCreateCustomerForEstimate } from '../lib/customers';
 import { PLANS, ITEMS } from '../constants';
 
 export const useEstimateSystem = () => {
@@ -17,7 +18,7 @@ export const useEstimateSystem = () => {
     const [freeInputValues, setFreeInputValues] = useState<Map<number, number>>(new Map());
     const [modalItem, setModalItem] = useState<Item | null>(null);
     const [loadedCustomerInfo, setLoadedCustomerInfo] = useState<CustomerInfo | null>(null);
-    const [viewMode, setViewMode] = useState<'start' | 'home' | 'input'>('home');
+    const [viewMode, setViewMode] = useState<'top' | 'customers' | 'search' | 'start' | 'home' | 'input'>('top');
     const [isSaving, setIsSaving] = useState(false);
     const [logoType, setLogoType] = useState<'FL' | 'LS'>('FL');
 
@@ -141,9 +142,23 @@ export const useEstimateSystem = () => {
                 totalCost, customerInfo, logoType
             };
 
+            // 顧客名が入力されていれば顧客を用意して紐付ける（同名の顧客は再利用）
+            let customerId: string | null = null;
+            try {
+                customerId = await findOrCreateCustomerForEstimate(customerInfo);
+            } catch (customerError) {
+                // 顧客の紐付けに失敗しても見積の保存自体は続行する（後から画面で紐付け可能）
+                console.error('Failed to link customer:', customerError);
+            }
+
             const { data, error } = await supabase
                 .from('estimates')
-                .insert([{ content: dataToSave, customer_info: customerInfo, total_price: totalCost }])
+                .insert([{
+                    content: dataToSave,
+                    customer_info: customerInfo,
+                    total_price: totalCost,
+                    customer_id: customerId,
+                }])
                 .select().single();
 
             if (error) throw error;

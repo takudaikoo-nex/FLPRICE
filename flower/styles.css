@@ -1,0 +1,634 @@
+/* ================================================
+   供花発注サイト スタイル
+   ================================================ */
+
+:root {
+    --primary: #2C4A3E;
+    --primary-dark: #1F362D;
+    --accent: #B8860B;
+    --bg: #F7F5F2;
+    --surface: #FFFFFF;
+    --text: #1A1A1A;
+    --muted: #6B7280;
+    --line: #E3DFD8;
+    --danger: #B91C1C;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgb(0 0 0 / 0.06), 0 8px 24px rgb(0 0 0 / 0.05);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Zen Maru Gothic', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+}
+
+img {
+    max-width: 100%;
+    display: block;
+}
+
+/* ---------- レイアウト ---------- */
+.page {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 16px 140px;
+}
+
+.site-header {
+    background: var(--primary);
+    color: #fff;
+    padding: 20px 16px;
+    text-align: center;
+}
+
+.site-header h1 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+}
+
+.site-header p {
+    font-size: 0.8rem;
+    opacity: 0.8;
+    margin-top: 4px;
+}
+
+.section {
+    margin-top: 28px;
+}
+
+.section-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--primary);
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--line);
+    margin-bottom: 16px;
+}
+
+/* ---------- 葬儀情報 ---------- */
+.funeral-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+    margin-top: 24px;
+}
+
+.funeral-card .deceased {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.funeral-meta {
+    margin-top: 12px;
+    display: grid;
+    gap: 6px;
+    font-size: 0.9rem;
+}
+
+.funeral-meta div {
+    display: flex;
+    gap: 12px;
+}
+
+.funeral-meta dt {
+    color: var(--muted);
+    min-width: 5.5em;
+    flex-shrink: 0;
+}
+
+.deadline-note {
+    margin-top: 14px;
+    padding: 10px 12px;
+    background: #FBF7EC;
+    border: 1px solid #EADFC0;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: #6B5310;
+}
+
+/* ---------- 商品一覧 ---------- */
+.category-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.category-tab {
+    padding: 6px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.category-tab.is-active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+    font-weight: 700;
+}
+
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.product-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    border: 2px solid transparent;
+    font-family: inherit;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+}
+
+.product-card.is-selected {
+    border-color: var(--primary);
+}
+
+.product-thumb {
+    aspect-ratio: 1 / 1;
+    background: #EFEBE5;
+    object-fit: cover;
+    width: 100%;
+}
+
+.product-thumb-empty {
+    aspect-ratio: 1 / 1;
+    background: #EFEBE5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
+.product-body {
+    padding: 12px 14px 14px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.product-category {
+    font-size: 0.7rem;
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.product-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-top: 2px;
+}
+
+.product-price {
+    margin-top: auto;
+    padding-top: 10px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.product-price small {
+    font-size: 0.7rem;
+    color: var(--muted);
+    font-weight: 400;
+    margin-left: 4px;
+}
+
+.product-selected-badge {
+    margin-top: 8px;
+    font-size: 0.75rem;
+    color: var(--primary);
+    font-weight: 700;
+}
+
+/* ---------- モーダル ---------- */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgb(0 0 0 / 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 50;
+}
+
+.modal {
+    background: var(--surface);
+    border-radius: var(--radius);
+    width: 100%;
+    max-width: 520px;
+    max-height: 88vh;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.modal-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.icon-button {
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    line-height: 1;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.modal-image {
+    width: 100%;
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.modal-thumbs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.modal-thumbs img {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 2px solid transparent;
+    cursor: pointer;
+}
+
+.modal-thumbs img.is-active {
+    border-color: var(--primary);
+}
+
+/* ---------- フォーム ---------- */
+.field {
+    margin-bottom: 16px;
+}
+
+.field label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.field .hint {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-weight: 400;
+    margin-top: 4px;
+}
+
+.required {
+    color: var(--danger);
+    font-size: 0.75rem;
+    margin-left: 6px;
+}
+
+input[type="text"],
+input[type="tel"],
+input[type="email"],
+input[type="number"],
+textarea,
+select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 1rem;
+    background: var(--surface);
+    color: var(--text);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgb(44 74 62 / 0.12);
+}
+
+textarea {
+    min-height: 96px;
+    resize: vertical;
+}
+
+.form-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.radio-card {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+.radio-card.is-selected {
+    border-color: var(--primary);
+    background: #F4F7F5;
+}
+
+.radio-card input {
+    margin-top: 4px;
+}
+
+.radio-card .label {
+    font-weight: 700;
+}
+
+.radio-card .desc {
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+
+/* ---------- ボタン ---------- */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 999px;
+    border: none;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+}
+
+.btn-primary:disabled {
+    background: #A8B5AF;
+    cursor: not-allowed;
+}
+
+.btn-ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--line);
+}
+
+.btn-block {
+    width: 100%;
+}
+
+.btn-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+/* ---------- 数量 ---------- */
+.quantity {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.quantity button {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    font-size: 1.2rem;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.quantity span {
+    min-width: 2em;
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+/* ---------- カートバー ---------- */
+.cart-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -4px 16px rgb(0 0 0 / 0.06);
+    padding: 12px 16px;
+    z-index: 40;
+}
+
+.cart-bar-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.cart-total .label {
+    font-size: 0.75rem;
+    color: var(--muted);
+}
+
+.cart-total .value {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+/* ---------- 明細テーブル ---------- */
+.summary-list {
+    border-top: 1px solid var(--line);
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.summary-row .name {
+    font-weight: 700;
+}
+
+.summary-row .nafuda {
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+
+.summary-row .amount {
+    white-space: nowrap;
+    font-weight: 700;
+}
+
+.totals {
+    margin-top: 16px;
+    display: grid;
+    gap: 6px;
+    font-size: 0.9rem;
+}
+
+.totals div {
+    display: flex;
+    justify-content: space-between;
+}
+
+.totals .grand {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--primary);
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+}
+
+/* ---------- 通知・状態 ---------- */
+.notice {
+    max-width: 560px;
+    margin: 48px auto;
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 32px 24px;
+    text-align: center;
+}
+
+.notice h2 {
+    font-size: 1.15rem;
+    color: var(--primary);
+    margin-bottom: 12px;
+}
+
+.notice p {
+    font-size: 0.92rem;
+    color: var(--muted);
+}
+
+.error-text {
+    color: var(--danger);
+    font-size: 0.85rem;
+    margin-top: 12px;
+}
+
+.loading {
+    text-align: center;
+    padding: 80px 16px;
+    color: var(--muted);
+}
+
+.order-number {
+    display: inline-block;
+    margin: 16px 0;
+    padding: 10px 24px;
+    background: var(--bg);
+    border-radius: 8px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--primary);
+    letter-spacing: 0.05em;
+}
+
+.site-footer {
+    text-align: center;
+    padding: 24px 16px 40px;
+    font-size: 0.75rem;
+    color: var(--muted);
+}
+
+@media (max-width: 600px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .product-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 12px;
+    }
+
+    .funeral-card .deceased {
+        font-size: 1.2rem;
+    }
+}
+
+/* ---------- デモ表示バナー ---------- */
+.demo-banner {
+    background: var(--accent);
+    color: #fff;
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 6px 12px;
+    letter-spacing: 0.03em;
+}
+
+/* ---------- 微調整 ---------- */
+.radio-card .label,
+.radio-card .desc {
+    display: block;
+}
+
+.hint {
+    font-size: 0.78rem;
+    color: var(--muted);
+}

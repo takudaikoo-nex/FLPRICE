@@ -8,6 +8,9 @@ import CustomerInputPage from './components/CustomerInputPage';
 import StartScreen from './components/StartScreen';
 import { useEstimateSystem } from './hooks/useEstimateSystem';
 import MobileEstimatePage from './components/MobileEstimatePage';
+import TopScreen from './components/TopScreen';
+import CustomerListPage from './components/CustomerListPage';
+import EstimateSearchPage from './components/EstimateSearchPage';
 import { MoneyInput } from './components/MoneyInput';
 const EMPTY_CUSTOMER_INFO: CustomerInfo = {
   deathDate: '', deceasedName: '', birthDate: '', age: '', address: '', honseki: '',
@@ -73,6 +76,9 @@ const App: React.FC = () => {
     if (isNaN(id)) { alert('有効な数字を入力してください'); return; }
     if (await executeLoadEstimate(id, false)) setViewMode('home');
   };
+  const handleOpenEstimate = async (id: number) => {
+    if (await executeLoadEstimate(id, false)) setViewMode('home');
+  };
   const handleStartNew = () => {
     system.setSelectedOptions(new Set());
     system.setSelectedGrades(new Map());
@@ -89,6 +95,17 @@ const App: React.FC = () => {
       <div className="text-center"><div className="text-4xl mb-4">🌿</div><div className="text-lg font-medium text-gray-600">読み込み中...</div></div>
     </div>
   );
+  if (viewMode === 'top') return (
+    <TopScreen
+      logoType={logoType}
+      onToggleLogo={toggleLogo}
+      onCustomerList={() => setViewMode('customers')}
+      onCreateNew={handleStartNew}
+      onSearch={() => setViewMode('search')}
+    />
+  );
+  if (viewMode === 'customers') return <CustomerListPage onBack={() => setViewMode('top')} onOpenEstimate={handleOpenEstimate} />;
+  if (viewMode === 'search') return <EstimateSearchPage onBack={() => setViewMode('top')} onOpenEstimate={handleOpenEstimate} />;
   if (viewMode === 'start') return <StartScreen onLoad={handleStartLoad} onCreateNew={handleStartNew} logoType={logoType} onToggleLogo={toggleLogo} />;
   if (viewMode === 'input') return <CustomerInputPage onBack={() => setViewMode('home')} onSaveAndPrint={handleSaveAndPrint} isSaving={isSaving} initialData={loadedCustomerInfo} />;
   if (viewMode === 'home' && isMobile) return <MobileEstimatePage system={system} onOutputClick={handleOutputClick} onInvoiceClick={handleInvoiceClick} onReceiptClick={handleReceiptClick} goToInputPage={goToInputPage} onLoadClick={handleLoadEstimate} />;
@@ -101,7 +118,10 @@ const App: React.FC = () => {
       <div className="contents print:hidden">
         {/* Header */}
         <header className="bg-white border-b border-gray-200 py-3 px-6 flex-shrink-0 relative">
-          <button onClick={handleLoadEstimate} className="absolute top-3 right-4 text-sm text-gray-400 hover:text-gray-600 border border-gray-200 hover:border-gray-400 rounded-lg px-3 py-1.5 transition-colors">呼出</button>
+          <div style={{ position: 'absolute', top: '0.75rem', right: '1rem', display: 'flex', gap: '0.5rem' }}>
+            <button onClick={() => setViewMode('top')} className="text-sm text-gray-400 hover:text-gray-600 border border-gray-200 hover:border-gray-400 rounded-lg px-3 py-1.5 transition-colors">TOP</button>
+            <button onClick={handleLoadEstimate} className="text-sm text-gray-400 hover:text-gray-600 border border-gray-200 hover:border-gray-400 rounded-lg px-3 py-1.5 transition-colors">呼出</button>
+          </div>
           <div className="max-w-7xl mx-auto flex items-center gap-3">
             <div className="cursor-pointer hover:opacity-80 transition-opacity" onClick={toggleLogo} title="Click to switch logo">
               <img src={`/images/logo${logoType}.png`} alt="Logo" className="h-8 w-auto object-contain" />
