@@ -42,6 +42,11 @@ export const sendOrderMail = async (type: OrderMailType, args: SendOrderMailArgs
             try {
                 const body = await response.json();
                 code = body?.error || '';
+                // send_failed / internal_error は種別だけで原因が分からないため、
+                // 関数が返した詳細（SMTPサーバーの応答など）をそのまま使う
+                if ((code === 'send_failed' || code === 'internal_error') && body?.detail) {
+                    code = body.detail;
+                }
             } catch {
                 // 本文が読めない場合は元のメッセージを使う
             }
