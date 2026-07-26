@@ -29,12 +29,23 @@ export const sendMail = async (
     });
 
     try {
-        await client.send({
-            from: fromName ? `${fromName} <${from}>` : from,
-            to,
-            subject,
-            content: text,
-        });
+        // 接続できないポートを指定した場合、応答が返らず関数ごとタイムアウトしてしまう。
+        // ブラウザ側にはCORSエラーとして見えて原因が分からなくなるため、
+        // ここで打ち切って明確なエラーを返す。
+        await Promise.race([
+            client.send({
+                from: fromName ? `${fromName} <${from}>` : from,
+                to,
+                subject,
+                content: text,
+            }),
+            new Promise((_, reject) =>
+                setTimeout(
+                    () => reject(new Error(`smtp_timeout: ${hostname}:${env('SMTP_PORT') || '465'} に接続できませんでした`)),
+                    20000,
+                )
+            ),
+        ]);
     } catch (error) {
         console.error('SMTP send failed:', error);
         throw error;

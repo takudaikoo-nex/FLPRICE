@@ -104,6 +104,12 @@ const FlowerOrdersPage: React.FC<Props> = ({ onBack }) => {
 
     const describeMailError = (error: any): string => {
         const code = String(error?.message || error);
+        if (code.includes('smtp_timeout')) {
+            return 'メールサーバーに接続できませんでした。ポート番号（SMTP_PORT）と暗号化設定（SMTP_TLS）をご確認ください。';
+        }
+        if (code.includes('Failed to send a request')) {
+            return 'メール送信が時間内に完了しませんでした。メールサーバーへの接続設定をご確認ください。';
+        }
         return MAIL_ERROR_MESSAGE[code]
             || `送信に失敗しました: ${code}。Supabaseの Edge Functions → send-order-mail → Logs も確認してください。`;
     };
