@@ -51,10 +51,20 @@ const notifyInternal = async (orderId: number) => {
         const { data: settings } = await admin
             .from('flower_settings').select('*').eq('id', 1).single();
 
-        if (!order || !settings?.mail_from) return;
+        if (!order) {
+            console.error('internal notice skipped: order not found', orderId);
+            return;
+        }
+        if (!settings?.mail_from) {
+            console.error('internal notice skipped: mail_from is not configured in flower_settings');
+            return;
+        }
 
         const recipients: string[] = settings.notify_emails ?? [];
-        if (recipients.length === 0) return;
+        if (recipients.length === 0) {
+            console.error('internal notice skipped: notify_emails is empty in flower_settings');
+            return;
+        }
 
         const mail = buildInternalNoticeMail(order, order.funerals, order.flower_order_items ?? []);
         await sendMail(recipients, mail.subject, mail.text, settings.mail_from, settings.mail_from_name);

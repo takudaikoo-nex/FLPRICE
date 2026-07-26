@@ -94,6 +94,37 @@ const FlowerOrdersPage: React.FC<Props> = ({ onBack }) => {
         setPreview(buildInvoiceMail(order, order.funerals, order.flower_order_items || [], settings));
     };
 
+    const MAIL_ERROR_MESSAGE: Record<string, string> = {
+        mail_from_not_configured: '「供花の設定」で送信元メールアドレスを登録してください。',
+        notify_emails_not_configured: '「供花の設定」で受注通知メールの宛先を登録してください。',
+        settings_not_found: '供花の設定が見つかりません。',
+        unauthorized: '送信の権限がありません。ログインし直してください。',
+    };
+
+    const describeMailError = (error: any): string => {
+        const code = String(error?.message || error);
+        return MAIL_ERROR_MESSAGE[code]
+            || `送信に失敗しました: ${code}。Supabaseの Edge Functions → send-order-mail → Logs も確認してください。`;
+    };
+
+    /** 自社への受注通知を送り直す（注文時に送信できていなかった場合） */
+    const handleResendNotice = async (order: FlowerOrder) => {
+        setSending(true);
+        try {
+            const result = await sendOrderMail('internal_notice', {
+                orderNumber: order.order_number,
+                funeralToken: order.funerals?.public_token,
+            });
+            alert(result?.skipped ? 'この注文はすでに通知済みです。' : '受注通知を送信しました。');
+            await fetchData();
+        } catch (error: any) {
+            console.error('Error resending notice:', error);
+            alert(describeMailError(error));
+        } finally {
+            setSending(false);
+        }
+    };
+
     const handleSendInvoice = async (order: FlowerOrder) => {
         if (!confirm(`${order.orderer_email} 宛に請求書を送信します。よろしいですか？`)) return;
 
@@ -106,7 +137,7 @@ const FlowerOrdersPage: React.FC<Props> = ({ onBack }) => {
             setDetail(prev => (prev ? { ...prev, invoice_sent_at: new Date().toISOString() } : prev));
         } catch (error: any) {
             console.error('Error sending invoice:', error);
-            alert(`送信に失敗しました: ${error.message || error}`);
+            alert(describeMailError(error));
         } finally {
             setSending(false);
         }
@@ -318,6 +349,15 @@ const FlowerOrdersPage: React.FC<Props> = ({ onBack }) => {
                                             {detail.notified_at
                                                 ? `自社への受注通知: ${formatDateTime(detail.notified_at)}`
                                                 : '自社への受注通知: 未送信'}
+                                            {!detail.notified_at && (
+                                                <button
+                                                    onClick={() => handleResendNotice(detail)}
+                                                    disabled={sending}
+                                                    className="ml-2 text-emerald-700"
+                                                >
+                                                    送信する
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
 
