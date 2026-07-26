@@ -17,6 +17,8 @@ const CustomerInputPage: React.FC<CustomerInputPageProps> = ({ onBack, onSaveAnd
         funeralDate: '',
         funeralDateMode: 'western',
         deceasedName: '',
+        venueName: '',
+        venueAddress: '',
         birthDate: '',
         birthDateMode: 'western',
         age: '',
@@ -217,6 +219,28 @@ const CustomerInputPage: React.FC<CustomerInputPageProps> = ({ onBack, onSaveAnd
                                     value={formData.funeralDate || ''}
                                     mode={formData.funeralDateMode || 'western'}
                                     onChange={(val, mode) => handleDateChange('funeralDate', 'funeralDateMode', val, mode)}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1.5">式場名</label>
+                                <input
+                                    type="text"
+                                    name="venueName"
+                                    value={formData.venueName || ''}
+                                    onChange={handleChange}
+                                    placeholder="例: ファーストリーフホール鎌倉"
+                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1.5">式場住所</label>
+                                <input
+                                    type="text"
+                                    name="venueAddress"
+                                    value={formData.venueAddress || ''}
+                                    onChange={handleChange}
+                                    placeholder="例: 神奈川県鎌倉市〇〇 1-2-3"
+                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all"
                                 />
                             </div>
                             <div>

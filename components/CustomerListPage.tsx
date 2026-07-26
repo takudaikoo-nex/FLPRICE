@@ -102,6 +102,9 @@ const CustomerListPage: React.FC<Props> = ({ onBack, onOpenEstimate }) => {
             {showCustomerForm && (
                 <CustomerFormModal
                     customer={editingCustomer}
+                    sourceEstimate={editingCustomer
+                        ? (estimatesByCustomer.get(editingCustomer.id) || [])[0] ?? null
+                        : null}
                     onClose={closeCustomerForm}
                     onSaved={async customerId => {
                         closeCustomerForm();

@@ -16,11 +16,14 @@ interface EditableInfo {
     chiefMournerName: string;
     applicantPhone: string;
     funeralDate: string;
+    venueName: string;
+    venueAddress: string;
 }
 
 const EstimateEditModal: React.FC<Props> = ({ estimateId, customers, onClose, onSaved }) => {
     const [info, setInfo] = useState<EditableInfo>({
         deceasedName: '', applicantName: '', chiefMournerName: '', applicantPhone: '', funeralDate: '',
+        venueName: '', venueAddress: '',
     });
     const [customerId, setCustomerId] = useState<string>('');
     const [loading, setLoading] = useState(true);
@@ -45,6 +48,8 @@ const EstimateEditModal: React.FC<Props> = ({ estimateId, customers, onClose, on
                     chiefMournerName: source.chiefMournerName || '',
                     applicantPhone: source.applicantPhone || '',
                     funeralDate: source.funeralDate || '',
+                    venueName: source.venueName || '',
+                    venueAddress: source.venueAddress || '',
                 });
                 setCustomerId(data.customer_id || '');
             } catch (e) {
@@ -140,6 +145,27 @@ const EstimateEditModal: React.FC<Props> = ({ estimateId, customers, onClose, on
                             </div>
                         </div>
 
+                        <div className="fl-grid-2">
+                            <div className="fl-field">
+                                <label htmlFor="e-venue">式場名</label>
+                                <input
+                                    id="e-venue"
+                                    type="text"
+                                    value={info.venueName}
+                                    onChange={e => update({ venueName: e.target.value })}
+                                />
+                            </div>
+                            <div className="fl-field">
+                                <label htmlFor="e-venue-address">式場住所</label>
+                                <input
+                                    id="e-venue-address"
+                                    type="text"
+                                    value={info.venueAddress}
+                                    onChange={e => update({ venueAddress: e.target.value })}
+                                />
+                            </div>
+                        </div>
+
                         <div className="fl-field">
                             <label htmlFor="e-phone">電話番号</label>
                             <input
@@ -151,7 +177,8 @@ const EstimateEditModal: React.FC<Props> = ({ estimateId, customers, onClose, on
                         </div>
 
                         <p className="fl-note">
-                            ここでの変更は見積を呼び出したときの入力内容にも反映されます。プランやオプションの変更は見積画面で行ってください。
+                            ここでの変更は見積を呼び出したときの入力内容にも反映され、供花の発注受付を作成する際にも引き継がれます。
+                            プランやオプションの変更は見積画面で行ってください。
                         </p>
                     </>
                 )}

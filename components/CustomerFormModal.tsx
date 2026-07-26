@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
+import { Download } from 'lucide-react';
 import { Customer } from '../types';
 import { CustomerInput, emptyCustomerInput, createCustomer, updateCustomer } from '../lib/customers';
+import { EstimateSummary } from '../lib/estimateQueries';
 
 interface Props {
     /** 未指定なら新規作成 */
     customer?: Customer | null;
+    /** この顧客の最新の見積。連絡先を取り込むために使う */
+    sourceEstimate?: EstimateSummary | null;
     onClose: () => void;
     onSaved: (customerId: string) => void;
 }
@@ -20,12 +24,24 @@ const toInput = (customer?: Customer | null): CustomerInput => customer
     }
     : emptyCustomerInput();
 
-const CustomerFormModal: React.FC<Props> = ({ customer, onClose, onSaved }) => {
+const CustomerFormModal: React.FC<Props> = ({ customer, sourceEstimate, onClose, onSaved }) => {
     const [form, setForm] = useState<CustomerInput>(toInput(customer));
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
 
     const update = (patch: Partial<CustomerInput>) => setForm({ ...form, ...patch });
+
+    /** 見積に入力済みの申込者情報を顧客情報に取り込む */
+    const importFromEstimate = () => {
+        if (!sourceEstimate) return;
+        setForm({
+            ...form,
+            name: form.name.trim() || sourceEstimate.customerName,
+            phone: sourceEstimate.phone || form.phone,
+            postal_code: sourceEstimate.postalCode || form.postal_code,
+            address: sourceEstimate.address || form.address,
+        });
+    };
 
     const handleSave = async () => {
         if (!form.name.trim()) {
@@ -55,6 +71,17 @@ const CustomerFormModal: React.FC<Props> = ({ customer, onClose, onSaved }) => {
         <div className="fl-modal-backdrop" onClick={onClose}>
             <div className="fl-modal" onClick={e => e.stopPropagation()}>
                 <h3>{customer ? '顧客情報を編集' : '顧客を追加'}</h3>
+
+                {sourceEstimate && (
+                    <div className="fl-import-row">
+                        <span>
+                            見積 #{sourceEstimate.id} に連絡先が入力されています
+                        </span>
+                        <button type="button" className="fl-icon-btn" onClick={importFromEstimate}>
+                            <Download size={14} /> 見積から取り込む
+                        </button>
+                    </div>
+                )}
 
                 <div className="fl-grid-2">
                     <div className="fl-field">

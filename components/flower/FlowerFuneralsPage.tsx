@@ -116,6 +116,8 @@ const FlowerFuneralsPage: React.FC<Props> = ({ onBack }) => {
             estimate_id: estimate.id,
             deceased_name: estimate.deceasedName,
             chief_mourner_name: estimate.chiefMournerName,
+            venue_name: estimate.venueName,
+            venue_address: estimate.venueAddress,
             ceremony_at: funeralDateToCeremonyIso(estimate.funeralDate),
         });
         setIsNew(true);
@@ -355,7 +357,7 @@ const FlowerFuneralsPage: React.FC<Props> = ({ onBack }) => {
 
                         {editing.estimate_id && (
                             <p className="text-sm text-gray-500 mb-4">
-                                見積 #{editing.estimate_id} から引き継ぎました。式場情報は見積に含まれないため、必要に応じて入力してください。
+                                見積 #{editing.estimate_id} の内容を引き継いでいます。
                             </p>
                         )}
 

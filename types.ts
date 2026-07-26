@@ -36,6 +36,9 @@ export interface CustomerInfo {
   deathDate: string;
   funeralDate?: string;
   deceasedName: string;
+  /** 式場（供花の発注受付にも引き継ぐ） */
+  venueName?: string;
+  venueAddress?: string;
   birthDate: string;
   age?: string;
   address: string;

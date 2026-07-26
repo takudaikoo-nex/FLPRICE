@@ -63,7 +63,7 @@ const EstimateSearchPage: React.FC<Props> = ({ onBack, onOpenEstimate }) => {
                     className="fl-search"
                     value={keyword}
                     onChange={e => setKeyword(e.target.value)}
-                    placeholder="見積番号・故人名・顧客名・電話番号"
+                    placeholder="顧客名・故人名で検索（見積番号・電話番号も可）"
                     autoFocus
                 />
 
@@ -76,13 +76,15 @@ const EstimateSearchPage: React.FC<Props> = ({ onBack, onOpenEstimate }) => {
                                 onClick={() => onOpenEstimate(estimate.id)}
                             >
                                 <span className="fl-row-title">
-                                    見積 #{estimate.id}
-                                    <span className="fl-badge">{formatDate(estimate.createdAt)}</span>
+                                    {estimate.customerName} 様
                                     {!estimate.customerId && <span className="fl-badge">未紐付け</span>}
                                 </span>
+                                <span className="fl-row-deceased">
+                                    {estimate.deceasedName ? `故 ${estimate.deceasedName} 様` : '故人名 未入力'}
+                                </span>
                                 <span className="fl-row-sub">
-                                    {estimate.customerName}
-                                    {estimate.deceasedName && ` / 故 ${estimate.deceasedName} 様`}
+                                    見積 #{estimate.id} / {formatDate(estimate.createdAt)}
+                                    {estimate.venueName && ` / ${estimate.venueName}`}
                                     {estimate.phone && ` / ${estimate.phone}`}
                                 </span>
                             </button>

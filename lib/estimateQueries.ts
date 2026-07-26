@@ -14,6 +14,10 @@ export interface EstimateSummary {
     phone: string;
     /** 葬儀日（見積の入力値。'YYYY-MM-DD' など） */
     funeralDate: string;
+    venueName: string;
+    venueAddress: string;
+    postalCode: string;
+    address: string;
 }
 
 const UNKNOWN_CUSTOMER = '（顧客情報なし）';
@@ -50,6 +54,10 @@ export const fetchEstimateSummaries = async (limit = 500): Promise<EstimateSumma
             chiefMournerName: info.chiefMournerName || '',
             phone: info.applicantPhone || info.chiefMournerPhone || info.chiefMournerMobile || '',
             funeralDate: info.funeralDate || '',
+            venueName: info.venueName || '',
+            venueAddress: info.venueAddress || '',
+            postalCode: info.applicantPostalCode || '',
+            address: info.applicantAddress || info.chiefMournerAddress || '',
         };
     });
 };
