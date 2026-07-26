@@ -10,15 +10,21 @@ export const sendMail = async (
     from: string,
     fromName: string,
 ): Promise<void> => {
+    const hostname = env('SMTP_HOSTNAME');
+    const username = env('SMTP_USERNAME');
+    const password = env('SMTP_PASSWORD');
+
+    // 未設定のまま接続すると分かりにくいエラーになるため、先に弾く
+    if (!hostname || !username || !password) {
+        throw new Error('smtp_not_configured');
+    }
+
     const client = new SMTPClient({
         connection: {
-            hostname: env('SMTP_HOSTNAME'),
+            hostname,
             port: Number(env('SMTP_PORT') || '465'),
             tls: env('SMTP_TLS') !== 'false',
-            auth: {
-                username: env('SMTP_USERNAME'),
-                password: env('SMTP_PASSWORD'),
-            },
+            auth: { username, password },
         },
     });
 
@@ -29,7 +35,16 @@ export const sendMail = async (
             subject,
             content: text,
         });
+    } catch (error) {
+        console.error('SMTP send failed:', error);
+        throw error;
     } finally {
-        await client.close();
+        // 接続が確立していない場合 close() 自体が例外を投げ、
+        // 本来のエラーを覆い隠してしまうため個別に握りつぶす
+        try {
+            await client.close();
+        } catch (closeError) {
+            console.error('SMTP close failed (ignored):', closeError);
+        }
     }
 };

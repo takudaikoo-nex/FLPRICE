@@ -98,6 +98,7 @@ const FlowerOrdersPage: React.FC<Props> = ({ onBack }) => {
         mail_from_not_configured: '「供花の設定」で送信元メールアドレスを登録してください。',
         notify_emails_not_configured: '「供花の設定」で受注通知メールの宛先を登録してください。',
         settings_not_found: '供花の設定が見つかりません。',
+        smtp_not_configured: 'メールサーバー（SMTP）の接続情報が未登録です。Supabaseのシークレットに SMTP_HOSTNAME / SMTP_USERNAME / SMTP_PASSWORD を登録してください。',
         unauthorized: '送信の権限がありません。ログインし直してください。',
     };
 

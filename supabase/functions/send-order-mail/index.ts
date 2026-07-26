@@ -193,6 +193,7 @@ Deno.serve(async (req: Request) => {
         return json({ sent: true, to: order.orderer_email });
     } catch (error) {
         console.error('send-order-mail failed:', error);
-        return json({ error: 'send_failed', detail: String(error) }, 500);
+        const message = error instanceof Error ? error.message : String(error);
+        return json({ error: message === 'smtp_not_configured' ? message : 'send_failed', detail: message }, 500);
     }
 });
