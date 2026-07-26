@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { EstimateStatus } from './estimateStatus';
 
 export interface EstimateSummary {
     id: number;
@@ -18,6 +19,11 @@ export interface EstimateSummary {
     venueAddress: string;
     postalCode: string;
     address: string;
+    status: EstimateStatus;
+    note: string;
+    quoteIssuedAt: string | null;
+    invoiceIssuedAt: string | null;
+    receiptIssuedAt: string | null;
 }
 
 const UNKNOWN_CUSTOMER = '（顧客情報なし）';
@@ -35,7 +41,7 @@ const deriveCustomerName = (info: any): string => {
 export const fetchEstimateSummaries = async (limit = 500): Promise<EstimateSummary[]> => {
     const { data, error } = await supabase
         .from('estimates')
-        .select('id, created_at, customer_info, total_price, customer_id, customers(name)')
+        .select('id, created_at, customer_info, total_price, customer_id, status, note, quote_issued_at, invoice_issued_at, receipt_issued_at, customers(name)')
         .order('id', { ascending: false })
         .limit(limit);
 
@@ -58,6 +64,11 @@ export const fetchEstimateSummaries = async (limit = 500): Promise<EstimateSumma
             venueAddress: info.venueAddress || '',
             postalCode: info.applicantPostalCode || '',
             address: info.applicantAddress || info.chiefMournerAddress || '',
+            status: (row.status ?? 'quoted') as EstimateStatus,
+            note: row.note || '',
+            quoteIssuedAt: row.quote_issued_at ?? null,
+            invoiceIssuedAt: row.invoice_issued_at ?? null,
+            receiptIssuedAt: row.receipt_issued_at ?? null,
         };
     });
 };

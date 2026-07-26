@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Customer } from '../types';
 import { supabase } from '../lib/supabase';
 import { linkEstimateToCustomer, updateEstimateCustomerInfo } from '../lib/customers';
+import {
+    EstimateStatus, ESTIMATE_STATUS_LABEL, ESTIMATE_STATUS_ORDER,
+} from '../lib/estimateStatus';
+import { formatDate } from '../lib/estimateQueries';
 
 interface Props {
     estimateId: number;
@@ -26,6 +30,11 @@ const EstimateEditModal: React.FC<Props> = ({ estimateId, customers, onClose, on
         venueName: '', venueAddress: '',
     });
     const [customerId, setCustomerId] = useState<string>('');
+    const [status, setStatus] = useState<EstimateStatus>('quoted');
+    const [note, setNote] = useState('');
+    const [issued, setIssued] = useState<{ quote: string | null; invoice: string | null; receipt: string | null }>(
+        { quote: null, invoice: null, receipt: null },
+    );
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
@@ -35,7 +44,7 @@ const EstimateEditModal: React.FC<Props> = ({ estimateId, customers, onClose, on
             try {
                 const { data, error: fetchError } = await supabase
                     .from('estimates')
-                    .select('customer_info, customer_id')
+                    .select('customer_info, customer_id, status, note, quote_issued_at, invoice_issued_at, receipt_issued_at')
                     .eq('id', estimateId)
                     .single();
 
@@ -52,6 +61,13 @@ const EstimateEditModal: React.FC<Props> = ({ estimateId, customers, onClose, on
                     venueAddress: source.venueAddress || '',
                 });
                 setCustomerId(data.customer_id || '');
+                setStatus((data.status ?? 'quoted') as EstimateStatus);
+                setNote(data.note || '');
+                setIssued({
+                    quote: data.quote_issued_at ?? null,
+                    invoice: data.invoice_issued_at ?? null,
+                    receipt: data.receipt_issued_at ?? null,
+                });
             } catch (e) {
                 console.error('Failed to load estimate:', e);
                 setError('見積の読み込みに失敗しました。');
@@ -69,6 +85,12 @@ const EstimateEditModal: React.FC<Props> = ({ estimateId, customers, onClose, on
         try {
             await updateEstimateCustomerInfo(estimateId, { ...info });
             await linkEstimateToCustomer(estimateId, customerId || null);
+
+            const { error: statusError } = await supabase
+                .from('estimates')
+                .update({ status, note })
+                .eq('id', estimateId);
+            if (statusError) throw statusError;
             onSaved();
         } catch (e: any) {
             console.error('Failed to save estimate:', e);
@@ -87,6 +109,29 @@ const EstimateEditModal: React.FC<Props> = ({ estimateId, customers, onClose, on
                     <div className="fl-empty">読み込み中...</div>
                 ) : (
                     <>
+                        <div className="fl-grid-2">
+                            <div className="fl-field">
+                                <label htmlFor="e-status">ステータス</label>
+                                <select
+                                    id="e-status"
+                                    value={status}
+                                    onChange={e => setStatus(e.target.value as EstimateStatus)}
+                                >
+                                    {ESTIMATE_STATUS_ORDER.map(key => (
+                                        <option key={key} value={key}>{ESTIMATE_STATUS_LABEL[key]}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="fl-field">
+                                <label>帳票の発行状況</label>
+                                <div className="fl-issued">
+                                    <span>見積書 {issued.quote ? formatDate(issued.quote) : '未発行'}</span>
+                                    <span>請求書 {issued.invoice ? formatDate(issued.invoice) : '未発行'}</span>
+                                    <span>領収書 {issued.receipt ? formatDate(issued.receipt) : '未発行'}</span>
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="fl-field">
                             <label htmlFor="e-customer">紐づく顧客</label>
                             <select
@@ -173,6 +218,16 @@ const EstimateEditModal: React.FC<Props> = ({ estimateId, customers, onClose, on
                                 type="tel"
                                 value={info.applicantPhone}
                                 onChange={e => update({ applicantPhone: e.target.value })}
+                            />
+                        </div>
+
+                        <div className="fl-field">
+                            <label htmlFor="e-note">案件メモ</label>
+                            <textarea
+                                id="e-note"
+                                value={note}
+                                onChange={e => setNote(e.target.value)}
+                                placeholder="社内での申し送りなど"
                             />
                         </div>
 

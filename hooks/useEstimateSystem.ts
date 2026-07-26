@@ -5,6 +5,7 @@ import { serializePrintData } from '../lib/serialization';
 import { getItemPrice } from '../lib/pricing';
 import { convertDbItem, convertDbPlan } from '../lib/converter';
 import { findOrCreateCustomerForEstimate } from '../lib/customers';
+import { statusAfterDocument, EstimateStatus } from '../lib/estimateStatus';
 import { PLANS, ITEMS } from '../constants';
 
 export const useEstimateSystem = () => {
@@ -18,6 +19,8 @@ export const useEstimateSystem = () => {
     const [freeInputValues, setFreeInputValues] = useState<Map<number, number>>(new Map());
     const [modalItem, setModalItem] = useState<Item | null>(null);
     const [loadedCustomerInfo, setLoadedCustomerInfo] = useState<CustomerInfo | null>(null);
+    // 読み込み中の案件（見積）。ある場合は帳票を出しても新規採番せず、この案件を更新する
+    const [loadedEstimateId, setLoadedEstimateId] = useState<number | null>(null);
     const [viewMode, setViewMode] = useState<'top' | 'customers' | 'search' | 'flowerFunerals' | 'flowerOrders' | 'start' | 'home' | 'input'>('top');
     const [isSaving, setIsSaving] = useState(false);
     const [logoType, setLogoType] = useState<'FL' | 'LS'>('FL');
@@ -151,22 +154,56 @@ export const useEstimateSystem = () => {
                 console.error('Failed to link customer:', customerError);
             }
 
-            const { data, error } = await supabase
-                .from('estimates')
-                .insert([{
-                    content: dataToSave,
-                    customer_info: customerInfo,
-                    total_price: totalCost,
-                    customer_id: customerId,
-                }])
-                .select().single();
+            const issuedColumn = {
+                quote: 'quote_issued_at',
+                invoice: 'invoice_issued_at',
+                receipt: 'receipt_issued_at',
+            }[documentType];
 
-            if (error) throw error;
+            const now = new Date().toISOString();
+            let estimateId = loadedEstimateId;
+
+            if (estimateId) {
+                // 既存の案件を更新する（帳票を出し直しても番号は変わらない）
+                const { data: current, error: fetchError } = await supabase
+                    .from('estimates').select('status').eq('id', estimateId).single();
+                if (fetchError) throw fetchError;
+
+                const { error } = await supabase
+                    .from('estimates')
+                    .update({
+                        content: dataToSave,
+                        customer_info: customerInfo,
+                        total_price: totalCost,
+                        customer_id: customerId,
+                        status: statusAfterDocument((current?.status ?? 'quoted') as EstimateStatus, documentType),
+                        [issuedColumn]: now,
+                    })
+                    .eq('id', estimateId);
+                if (error) throw error;
+            } else {
+                const { data, error } = await supabase
+                    .from('estimates')
+                    .insert([{
+                        content: dataToSave,
+                        customer_info: customerInfo,
+                        total_price: totalCost,
+                        customer_id: customerId,
+                        status: statusAfterDocument('quoted', documentType),
+                        [issuedColumn]: now,
+                    }])
+                    .select().single();
+
+                if (error) throw error;
+                estimateId = data.id;
+                setLoadedEstimateId(estimateId);
+            }
+
             setLoadedCustomerInfo(customerInfo);
 
             const serialized = serializePrintData(
                 currentPlan, items, selectedOptions, selectedGrades, freeInputValues,
-                totalCost, customerInfo, data.id, logoType, documentType
+                totalCost, customerInfo, estimateId!, logoType, documentType
             );
             localStorage.setItem('print_data', serialized);
             const isMobile = new URLSearchParams(window.location.search).get('mobile') === 'true';
@@ -205,6 +242,7 @@ export const useEstimateSystem = () => {
             if (content.freeInputValues) setFreeInputValues(new Map<number, number>(content.freeInputValues));
             if (content.logoType) setLogoType(content.logoType);
             if (content.customerInfo) setLoadedCustomerInfo(content.customerInfo);
+            setLoadedEstimateId(id);
             if (showSuccessAlert) alert(`見積番号 ${id} を読み込みました。`);
             return true;
         } catch (e) {
@@ -223,6 +261,7 @@ export const useEstimateSystem = () => {
         freeInputValues, setFreeInputValues,
         modalItem, setModalItem,
         loadedCustomerInfo, setLoadedCustomerInfo,
+        loadedEstimateId, setLoadedEstimateId,
         viewMode, setViewMode,
         isSaving, logoType,
         plans, items, loading,

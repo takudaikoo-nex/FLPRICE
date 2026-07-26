@@ -6,6 +6,7 @@ import {
     fetchEstimateSummaries, matchesKeyword, formatDate, EstimateSummary,
 } from '../lib/estimateQueries';
 import EstimateEditModal from './EstimateEditModal';
+import { ESTIMATE_STATUS_LABEL } from '../lib/estimateStatus';
 
 interface Props {
     onBack: () => void;
@@ -77,6 +78,9 @@ const EstimateSearchPage: React.FC<Props> = ({ onBack, onOpenEstimate }) => {
                             >
                                 <span className="fl-row-title">
                                     {estimate.customerName} 様
+                                    <span className={`fl-status is-${estimate.status}`}>
+                                        {ESTIMATE_STATUS_LABEL[estimate.status]}
+                                    </span>
                                     {!estimate.customerId && <span className="fl-badge">未紐付け</span>}
                                 </span>
                                 <span className="fl-row-deceased">

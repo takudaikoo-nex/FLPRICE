@@ -105,6 +105,7 @@ const App: React.FC = () => {
     system.setCategory('cremation');
     system.setSelectedPlanId(plans.find(p => p.category === 'cremation')?.id || 'plan_01');
     setLoadedCustomerInfo(null);
+    system.setLoadedEstimateId(null);
     setViewMode('home');
   };
 
@@ -159,6 +160,9 @@ const App: React.FC = () => {
               <img src={`/images/logo${logoType}.png`} alt="Logo" className="h-8 w-auto object-contain" />
             </div>
             <h1 className="text-xl font-bold text-gray-800 tracking-wide">葬儀プランお見積り</h1>
+            {system.loadedEstimateId && (
+              <span className="text-sm text-gray-500">案件 #{system.loadedEstimateId}</span>
+            )}
           </div>
         </header>
 

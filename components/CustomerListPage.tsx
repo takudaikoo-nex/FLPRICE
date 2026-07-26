@@ -7,6 +7,7 @@ import {
 } from '../lib/estimateQueries';
 import CustomerFormModal from './CustomerFormModal';
 import EstimateEditModal from './EstimateEditModal';
+import { ESTIMATE_STATUS_LABEL } from '../lib/estimateStatus';
 
 interface Props {
     onBack: () => void;
@@ -148,7 +149,12 @@ const CustomerListPage: React.FC<Props> = ({ onBack, onOpenEstimate }) => {
                                     className="fl-row-main"
                                     onClick={() => onOpenEstimate(estimate.id)}
                                 >
-                                    <span className="fl-row-title">見積 #{estimate.id}</span>
+                                    <span className="fl-row-title">
+                                        見積 #{estimate.id}
+                                        <span className={`fl-status is-${estimate.status}`}>
+                                            {ESTIMATE_STATUS_LABEL[estimate.status]}
+                                        </span>
+                                    </span>
                                     <span className="fl-row-sub">
                                         {estimate.deceasedName && `故 ${estimate.deceasedName} 様 / `}
                                         {formatDate(estimate.createdAt)}
@@ -228,7 +234,12 @@ const CustomerListPage: React.FC<Props> = ({ onBack, onOpenEstimate }) => {
                                     className="fl-row-main"
                                     onClick={() => onOpenEstimate(estimate.id)}
                                 >
-                                    <span className="fl-row-title">見積 #{estimate.id}</span>
+                                    <span className="fl-row-title">
+                                        見積 #{estimate.id}
+                                        <span className={`fl-status is-${estimate.status}`}>
+                                            {ESTIMATE_STATUS_LABEL[estimate.status]}
+                                        </span>
+                                    </span>
                                     <span className="fl-row-sub">
                                         {estimate.deceasedName && `故 ${estimate.deceasedName} 様 / `}
                                         {formatDate(estimate.createdAt)}
