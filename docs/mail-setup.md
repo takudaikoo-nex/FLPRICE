@@ -67,8 +67,9 @@ npx supabase secrets set \
   SMTP_PASSWORD='********' \
   SMTP_TLS=true
 
-# 関数をデプロイ
+# 関数をデプロイ（2つとも）
 npx supabase functions deploy send-order-mail
+npx supabase functions deploy flower-public
 ```
 
 `supabase/config.toml` で `verify_jwt = false` を指定しています。公開サイト（未ログイン）から受注通知を呼ぶためで、

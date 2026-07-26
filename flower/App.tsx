@@ -4,8 +4,7 @@ import {
     calcDiscount, FuneralPublic, PublicProduct, CartLine, OrdererInput, OrderResult,
 } from './lib/api';
 import { isDemoMode, DEMO_FUNERAL, DEMO_PRODUCTS, demoSubmit } from './lib/demoData';
-import { formatYen } from '../lib/flower';
-import { sendOrderMail } from '../lib/mail';
+import { formatYen } from '../lib/format';
 import FuneralHeader from './components/FuneralHeader';
 import ProductList from './components/ProductList';
 import OrderForm from './components/OrderForm';
@@ -104,12 +103,6 @@ const App: React.FC = () => {
             // クレジットカードの場合はP3でStripeの決済画面へ遷移させる
             setResult(orderResult);
             setStep('complete');
-
-            // 自社への受注通知。失敗しても注文自体は成立しているため画面は止めない
-            if (!demo) {
-                sendOrderMail('internal_notice', orderResult.order_number)
-                    .catch(error => console.error('Failed to send internal notice:', error));
-            }
         } catch (error) {
             console.error('Failed to submit order:', error);
             setSubmitError(toUserMessage(error));

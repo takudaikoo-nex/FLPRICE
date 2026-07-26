@@ -1,6 +1,6 @@
 import React from 'react';
 import { FuneralPublic } from '../lib/api';
-import { formatDateTime } from '../../lib/flower';
+import { formatDateTime } from '../../lib/format';
 
 interface Props {
     funeral: FuneralPublic;

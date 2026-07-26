@@ -30,6 +30,8 @@
     "node_modules",
     "dist",
     "dist-flower",
-    "supabase/functions/send-order-mail"
+    "supabase/functions/send-order-mail",
+    "supabase/functions/flower-public",
+    "supabase/functions/_shared/smtp.ts"
   ]
 }

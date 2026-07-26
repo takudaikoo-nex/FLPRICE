@@ -1,4 +1,12 @@
-import { supabase } from '../../lib/supabase';
+// ================================================
+// 供花 公開サイトの API クライアント
+//
+// このサイトには Supabase の鍵を持たせない。
+// DBへのアクセスはすべて Edge Function（flower-public）が行い、
+// ここからは認証情報なしの fetch で呼び出す。
+// ================================================
+
+const FUNCTION_URL = 'https://kbifluukpqhbjmhhvbgg.supabase.co/functions/v1/flower-public';
 
 export type FuneralStatus = 'open' | 'closed' | 'deadline_passed' | 'not_found';
 
@@ -25,6 +33,7 @@ export interface PublicProduct {
     description: string;
     category: string;
     price: number; // 税抜
+    /** そのまま <img src> に使える絶対URL */
     image_paths: string[];
 }
 
@@ -74,22 +83,50 @@ export const readTokenFromUrl = (): string | null => {
     return match ? match[1] : null;
 };
 
-export const lookupFuneral = async (token: string): Promise<FuneralPublic> => {
-    const { data, error } = await supabase.rpc('funeral_public_lookup', { p_token: token });
-    if (error) throw error;
-    return data as FuneralPublic;
+class ApiError extends Error {
+    constructor(message: string, readonly detail: string = '') {
+        super(message);
+    }
+}
+
+const callApi = async <T>(body: Record<string, unknown>): Promise<T> => {
+    const response = await fetch(FUNCTION_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+    });
+
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok || data?.error) {
+        throw new ApiError(data?.error || `HTTP ${response.status}`, data?.detail || '');
+    }
+    return data as T;
 };
 
-export const fetchProducts = async (): Promise<PublicProduct[]> => {
-    const { data, error } = await supabase
-        .from('flower_products')
-        .select('id, code, name, description, category, price, image_paths')
-        .eq('is_active', true)
-        .order('display_order', { ascending: true });
+export const lookupFuneral = (token: string): Promise<FuneralPublic> =>
+    callApi<FuneralPublic>({ action: 'lookup', token });
 
-    if (error) throw error;
-    return data || [];
-};
+export const fetchProducts = (): Promise<PublicProduct[]> =>
+    callApi<PublicProduct[]>({ action: 'products' });
+
+export const submitOrder = (
+    token: string,
+    orderer: OrdererInput,
+    lines: CartLine[],
+    paymentMethod: 'card' | 'invoice',
+): Promise<OrderResult> =>
+    callApi<OrderResult>({
+        action: 'create_order',
+        token,
+        orderer,
+        items: lines.map(line => ({
+            product_id: line.product.id,
+            quantity: line.quantity,
+            nafuda_name: line.nafuda_name,
+        })),
+        payment_method: paymentMethod,
+    });
 
 const ERROR_MESSAGES: Record<string, string> = {
     INVALID_TOKEN: 'この発注ページのURLが正しくありません。お手数ですが葬儀社までご連絡ください。',
@@ -103,32 +140,15 @@ const ERROR_MESSAGES: Record<string, string> = {
     PRODUCT_NOT_FOUND: '選択されたお供物が現在取り扱えません。お手数ですが選び直してください。',
 };
 
-/** RPCのエラーメッセージを利用者向けの文面に変換する */
+/** エラーを利用者向けの文面に変換する */
 export const toUserMessage = (error: unknown): string => {
-    const raw = (error as { message?: string })?.message || '';
+    const raw = [
+        (error as { message?: string })?.message,
+        (error as { detail?: string })?.detail,
+    ].filter(Boolean).join(' ');
+
     for (const [code, message] of Object.entries(ERROR_MESSAGES)) {
         if (raw.includes(code)) return message;
     }
     return '送信に失敗しました。通信環境をご確認のうえ、もう一度お試しください。';
-};
-
-export const submitOrder = async (
-    token: string,
-    orderer: OrdererInput,
-    lines: CartLine[],
-    paymentMethod: 'card' | 'invoice',
-): Promise<OrderResult> => {
-    const { data, error } = await supabase.rpc('create_flower_order', {
-        p_token: token,
-        p_orderer: orderer,
-        p_items: lines.map(line => ({
-            product_id: line.product.id,
-            quantity: line.quantity,
-            nafuda_name: line.nafuda_name,
-        })),
-        p_payment_method: paymentMethod,
-    });
-
-    if (error) throw error;
-    return data as OrderResult;
 };

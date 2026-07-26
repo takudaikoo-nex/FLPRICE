@@ -13,6 +13,8 @@ import CustomerListPage from './components/CustomerListPage';
 import EstimateSearchPage from './components/EstimateSearchPage';
 import FlowerFuneralsPage from './components/flower/FlowerFuneralsPage';
 import FlowerOrdersPage from './components/flower/FlowerOrdersPage';
+import LoginGate from './components/LoginGate';
+import { supabase } from './lib/supabase';
 import { MoneyInput } from './components/MoneyInput';
 const EMPTY_CUSTOMER_INFO: CustomerInfo = {
   deathDate: '', deceasedName: '', birthDate: '', age: '', address: '', honseki: '',
@@ -42,7 +44,22 @@ const App: React.FC = () => {
 
   const [isMobile, setIsMobile] = useState(false);
   const [isIncludedOpen, setIsIncludedOpen] = useState(true);
+  const [session, setSession] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const theme = THEME[category];
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setAuthLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, next) => {
+      setSession(next);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -91,7 +108,16 @@ const App: React.FC = () => {
     setViewMode('home');
   };
 
+  // 印刷用ページはlocalStorageの内容だけで描画するため、ログインの前に返す
   if (isPrintMode) return <PrintPreview />;
+
+  if (authLoading) return (
+    <div className="flex items-center justify-center h-screen bg-gray-50">
+      <div className="text-center"><div className="text-lg font-medium text-gray-600">読み込み中...</div></div>
+    </div>
+  );
+  if (!session) return <LoginGate logoType={logoType} />;
+
   if (loading) return (
     <div className="flex items-center justify-center h-screen bg-gray-50">
       <div className="text-center"><div className="text-4xl mb-4">🌿</div><div className="text-lg font-medium text-gray-600">読み込み中...</div></div>

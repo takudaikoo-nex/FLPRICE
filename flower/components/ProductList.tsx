@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { PublicProduct, CartLine } from '../lib/api';
-import { flowerImageUrl, formatYen } from '../../lib/flower';
+import { formatYen } from '../../lib/format';
 
 interface Props {
     products: PublicProduct[];
@@ -74,7 +74,7 @@ const ProductList: React.FC<Props> = ({ products, taxRate, lines, onAdd, onRemov
                         className={`product-card${isSelected(product.id) ? ' is-selected' : ''}`}
                     >
                         {product.image_paths[0]
-                            ? <img className="product-thumb" src={flowerImageUrl(product.image_paths[0])} alt={product.name} />
+                            ? <img className="product-thumb" src={product.image_paths[0]} alt={product.name} />
                             : <div className="product-thumb-empty">準備中</div>}
 
                         <div className="product-body">
@@ -111,7 +111,7 @@ const ProductList: React.FC<Props> = ({ products, taxRate, lines, onAdd, onRemov
                             <>
                                 <img
                                     className="modal-image"
-                                    src={flowerImageUrl(selected.image_paths[imageIndex])}
+                                    src={selected.image_paths[imageIndex]}
                                     alt={selected.name}
                                 />
                                 {selected.image_paths.length > 1 && (
@@ -119,7 +119,7 @@ const ProductList: React.FC<Props> = ({ products, taxRate, lines, onAdd, onRemov
                                         {selected.image_paths.map((path, index) => (
                                             <img
                                                 key={path}
-                                                src={flowerImageUrl(path)}
+                                                src={path}
                                                 alt=""
                                                 className={index === imageIndex ? 'is-active' : ''}
                                                 onClick={() => setImageIndex(index)}

@@ -1536,3 +1536,37 @@ select {
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------- ログイン画面 ---------- */
+.fl-login-shell {
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+
+.fl-login-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.06);
+  padding: 32px 28px;
+  width: 100%;
+  max-width: 380px;
+  margin: auto;
+}
+
+.fl-login-logo {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto 12px;
+}
+
+.fl-login-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1f2937;
+  text-align: center;
+  margin-bottom: 24px;
+}

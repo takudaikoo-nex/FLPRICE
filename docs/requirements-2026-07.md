@@ -634,3 +634,66 @@ anonからの参照・更新を許可する形に変更した（`migrations/010_
 
 > anon key は公開サイトにも埋め込まれているため、鍵を取り出せる人は受注データを参照し得る。
 > 確実に閉じるにはユーザー画面へのログイン導入が必要（2026-07-26時点では現状維持と判断済み）。
+
+---
+
+## 15. 公開サイトから鍵を外し、ユーザー画面にログインを導入（2026-07-26）
+
+### 背景
+
+Supabase の anon key はブラウザ向けの構成上ビルド成果物に含まれる。
+供花の公開サイトは不特定多数が訪れるため、鍵を持たせたままRLSを緩めると
+「鍵を取り出せる人は業務データを参照できる」状態になってしまう。
+
+### 対応1: 公開サイトを Edge Function 経由にする
+
+`supabase/functions/flower-public/index.ts` を追加し、公開サイトからDBへの直接接続をやめた。
+
+| 変更前 | 変更後 |
+|---|---|
+| ブラウザ →[anon key]→ Supabase DB | ブラウザ →[認証情報なし]→ Edge Function →[service role]→ DB |
+
+- `verify_jwt = false` のため、公開サイトからは認証ヘッダなしの `fetch` で呼べる
+- 公開サイトは `lib/supabase` を一切参照しない（`flower/` から Supabase クライアントの依存を除去）
+- 表示用の整形関数は Supabase 非依存の `lib/format.ts` に分離した
+- 商品画像はEdge Functionが絶対URLに変換して返す
+- 受注通知メールもEdge Function側から送るようにした（ブラウザからの呼び出しを廃止）
+
+結果、**ビルド成果物から鍵が消え**、JSも 392KB → 211KB（gzip 111KB → 67KB）に軽くなった。
+
+公開されるのは関数のエンドポイントのみで、できることは次に限定される。
+
+| action | 制限 |
+|---|---|
+| `lookup` | 32桁の発注トークンを知っている葬儀のみ |
+| `products` | 公開中の商品のみ（もともと公開情報） |
+| `create_order` | 締切・受付状態・価格をサーバー側で検証 |
+
+### 対応2: 見積システムにログインを導入
+
+`components/LoginGate.tsx` を追加し、見積システム（ユーザー画面）にログインを必須にした。
+
+- 管理画面（`/admin`）と**同じSupabase認証**を使うため、どちらかでログインすれば両方使える
+- セッションはブラウザに保持されるため、毎回の入力は不要
+- 印刷ページ（`/?print=true`）は localStorage の内容だけで描画するため、ログインの前に返している
+
+### 対応3: RLSを閉じる
+
+`migrations/011_close_rls.sql`（**010の変更を打ち消す**）
+
+| テーブル | 変更後 |
+|---|---|
+| `estimates` / `customers` | authenticated のみ |
+| `funerals` / `flower_orders` / `flower_order_items` | authenticated のみ |
+| `flower_products` / `flower_settings` | authenticated のみ（公開読み取りを廃止） |
+| `plans` / `items` / `attendee_options` | 公開読み取りのまま（個人情報を含まないため） |
+
+公開サイト用のDB関数（`funeral_public_lookup` / `create_flower_order`）も anon の実行権限を剥奪し、
+Edge Function（service role）からのみ呼ぶ形にした。
+
+### 実行順
+
+1. `migrations/011_close_rls.sql` を実行
+2. `npx supabase functions deploy flower-public` を実行
+
+**2を先に行うか、1と2を続けて行うこと。** 1だけ実行して2を忘れると、公開サイトが商品を表示できなくなる。

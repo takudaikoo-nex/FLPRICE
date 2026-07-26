@@ -2,9 +2,16 @@ import { supabase } from './supabase';
 
 export const FLOWER_IMAGE_BUCKET = 'flower-images';
 
+// 表示用の整形関数は Supabase 非依存の format.ts に置いている。
+// 既存の呼び出し元のためにここから再エクスポートする。
+export {
+    formatYen, formatDateTime, toDatetimeLocal, fromDatetimeLocal,
+    isAcceptingOrders, downloadCsv,
+} from './format';
+
 /**
  * Storage のパスから公開URLを取得。
- * デモ用のローカル画像やデータURIはそのまま返す。
+ * すでにURL形式のもの（デモ用のローカル画像など）はそのまま返す。
  */
 export const flowerImageUrl = (path: string): string => {
     if (/^(https?:|data:|\/)/.test(path)) return path;
@@ -40,54 +47,4 @@ export const calcOrderDeadline = (ceremonyAt: string | null, hoursBefore: number
 export const buildOrderUrl = (baseUrl: string, token: string): string => {
     const base = (baseUrl || '').replace(/\/+$/, '');
     return `${base}/order/${token}`;
-};
-
-/** 2026/07/26 14:30 形式 */
-export const formatDateTime = (iso: string | null): string => {
-    if (!iso) return '—';
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return '—';
-    const p = (n: number) => n.toString().padStart(2, '0');
-    return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
-};
-
-/** ISO文字列 → <input type="datetime-local"> の値（ローカル時刻） */
-export const toDatetimeLocal = (iso: string | null): string => {
-    if (!iso) return '';
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return '';
-    const p = (n: number) => n.toString().padStart(2, '0');
-    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
-};
-
-/** <input type="datetime-local"> の値 → ISO文字列 */
-export const fromDatetimeLocal = (value: string): string | null => {
-    if (!value) return null;
-    const d = new Date(value);
-    return isNaN(d.getTime()) ? null : d.toISOString();
-};
-
-export const formatYen = (value: number): string => `¥${value.toLocaleString()}`;
-
-/** 受付中かどうか（受付フラグ・締切の両方を見る） */
-export const isAcceptingOrders = (isOpen: boolean, deadline: string | null): boolean => {
-    if (!isOpen) return false;
-    if (!deadline) return true;
-    return new Date(deadline).getTime() > Date.now();
-};
-
-/** CSV文字列を生成（Excelで開けるようBOM付き） */
-export const downloadCsv = (filename: string, rows: (string | number)[][]) => {
-    const escape = (v: string | number) => {
-        const s = String(v ?? '');
-        return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-    };
-    const csv = rows.map(r => r.map(escape).join(',')).join('\r\n');
-    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
 };

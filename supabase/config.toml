@@ -5,3 +5,8 @@ project_id = "kbifluukpqhbjmhhvbgg"
 # 関数側で Authorization ヘッダを検証している。
 # （請求書の送信はスタッフのログインを必須にしている）
 verify_jwt = false
+
+[functions.flower-public]
+# 供花の公開サイトから認証情報なしで呼び出す。
+# 参照できるのは「トークンを知っている葬儀の情報」と「公開中の商品」のみ。
+verify_jwt = false

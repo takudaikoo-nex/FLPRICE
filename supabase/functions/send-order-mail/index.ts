@@ -12,7 +12,7 @@
 // ================================================
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts';
+import { sendMail } from '../_shared/smtp.ts';
 import {
     buildInvoiceMail, buildInternalNoticeMail, buildPurchaseOrderMail,
 } from '../_shared/mailTemplates.ts';
@@ -45,37 +45,6 @@ const isStaff = async (req: Request): Promise<boolean> => {
 
     const { data, error } = await admin.auth.getUser(token);
     return !error && !!data.user;
-};
-
-const sendMail = async (
-    to: string[],
-    subject: string,
-    text: string,
-    from: string,
-    fromName: string,
-) => {
-    const client = new SMTPClient({
-        connection: {
-            hostname: env('SMTP_HOSTNAME'),
-            port: Number(env('SMTP_PORT') || '587'),
-            tls: env('SMTP_TLS') === 'true',
-            auth: {
-                username: env('SMTP_USERNAME'),
-                password: env('SMTP_PASSWORD'),
-            },
-        },
-    });
-
-    try {
-        await client.send({
-            from: fromName ? `${fromName} <${from}>` : from,
-            to,
-            subject,
-            content: text,
-        });
-    } finally {
-        await client.close();
-    }
 };
 
 Deno.serve(async (req: Request) => {

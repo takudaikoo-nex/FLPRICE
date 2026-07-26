@@ -1,6 +1,6 @@
 import React from 'react';
 import { OrderResult } from '../lib/api';
-import { formatYen } from '../../lib/flower';
+import { formatYen } from '../../lib/format';
 
 interface Props {
     result: OrderResult;
