@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { FlowerProduct } from '../../types';
-import { FLOWER_IMAGE_BUCKET, flowerImageUrl, formatYen, randomImageFileName } from '../../lib/flower';
+import { formatYen } from '../../lib/flower';
+import { FLOWER_IMAGE_BUCKET, storageImageUrl, uploadImages, removeImages } from '../../lib/storage';
 import { Plus, Edit, Trash2, ArrowUp, ArrowDown, ImagePlus, X, EyeOff } from 'lucide-react';
 
 const CATEGORIES = ['供花', '花環', '盛籠', '枕花'];
@@ -94,7 +95,7 @@ const FlowerProductsManager: React.FC = () => {
             if (error) throw error;
 
             if (product.image_paths.length > 0) {
-                await supabase.storage.from(FLOWER_IMAGE_BUCKET).remove(product.image_paths);
+                await removeImages(FLOWER_IMAGE_BUCKET, product.image_paths);
             }
             await fetchProducts();
         } catch (error: any) {
@@ -131,16 +132,7 @@ const FlowerProductsManager: React.FC = () => {
 
         setUploading(true);
         try {
-            const paths: string[] = [];
-            for (const file of Array.from(files)) {
-                const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-                const path = randomImageFileName(ext);
-                const { error } = await supabase.storage
-                    .from(FLOWER_IMAGE_BUCKET)
-                    .upload(path, file, { cacheControl: '3600', upsert: false });
-                if (error) throw error;
-                paths.push(path);
-            }
+            const paths = await uploadImages(FLOWER_IMAGE_BUCKET, Array.from(files));
             setEditing({ ...editing, image_paths: [...editing.image_paths, ...paths] });
         } catch (error: any) {
             console.error('Error uploading image:', error);
@@ -153,7 +145,7 @@ const FlowerProductsManager: React.FC = () => {
     const handleRemoveImage = async (path: string) => {
         if (!editing) return;
         setEditing({ ...editing, image_paths: editing.image_paths.filter(p => p !== path) });
-        await supabase.storage.from(FLOWER_IMAGE_BUCKET).remove([path]);
+        await removeImages(FLOWER_IMAGE_BUCKET, [path]);
     };
 
     const startNew = () => {
@@ -257,7 +249,7 @@ const FlowerProductsManager: React.FC = () => {
                                     {editing.image_paths.map(path => (
                                         <div key={path} className="relative">
                                             <img
-                                                src={flowerImageUrl(path)}
+                                                src={storageImageUrl(FLOWER_IMAGE_BUCKET, path)}
                                                 alt=""
                                                 className="w-24 h-24 object-cover rounded-lg border border-gray-200"
                                             />
@@ -322,7 +314,7 @@ const FlowerProductsManager: React.FC = () => {
                                 <td className="p-4">
                                     {product.image_paths[0] ? (
                                         <img
-                                            src={flowerImageUrl(product.image_paths[0])}
+                                            src={storageImageUrl(FLOWER_IMAGE_BUCKET, product.image_paths[0])}
                                             alt=""
                                             className="w-20 h-20 object-cover rounded-lg border border-gray-200"
                                         />

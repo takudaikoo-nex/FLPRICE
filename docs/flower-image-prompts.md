@@ -187,3 +187,84 @@ blurry, low quality, distorted flowers, extra stands
 - [ ] 商品カードに並べたときに違和感がない
 - [ ] サイトに「※画像はイメージです」の注記を入れた
 - [ ] 実物写真への差し替え時期を決めた
+
+---
+
+# 付録: 見積オプションの画像生成
+
+供花以外に、見積のオプション（お棺・祭壇・骨壷など）の画像もカタログに登録できます。
+共通スタイル指定は本編と同じものを使い、以下を差し替えてください。
+
+## 共通の追加指定
+
+供花と同じ「淡いウォームグレーの無地背景／やわらかい拡散光／正面／写実的／文字なし」に加えて、
+
+```
+Shot as a single product on a plain background, no room interior,
+no people, no funeral hall context. Centered, entire object in frame.
+```
+
+グレード違いは**同じアングル・同じ距離・同じ光**で作ってください。並べたときに違いが価格差として伝わる必要があります。
+
+## お棺
+
+```
+A Japanese funeral coffin (kan), closed, viewed from a three-quarter front angle.
+[GRADE] finish with a simple flat lid, no ornamentation on the surface.
+```
+
+グレードごとに `[GRADE]` を差し替えます。
+
+| グレード | 差し替え文 |
+|---|---|
+| 紫 | `light natural wood with a plain matte finish` |
+| 緑 | `polished light wood with subtle carved edge detailing` |
+| 椿 | `dark lacquered wood with fine gold-line detailing along the edges` |
+
+## 祭壇（生花祭壇）
+
+```
+A Japanese funeral flower altar (saidan), tiered, viewed straight on.
+Built mainly from white chrysanthemums and white lilies with green foliage.
+[SIZE] arrangement. Plain background, no hall interior, no portrait photo.
+```
+
+| グレード | 差し替え文 |
+|---|---|
+| 紫 | `A compact two-tier` |
+| 緑 | `A three-tier, wider` |
+| 椿 | `A large five-tier, full-width` |
+
+※ 遺影写真の枠が写らないよう `no portrait photo` を必ず入れてください。
+
+## 骨壷・骨箱
+
+```
+A Japanese cremation urn (kotsutsubo) with its lid, placed next to its wooden box.
+[STYLE]. Straight-on angle, plain background.
+```
+
+| グレード | 差し替え文 |
+|---|---|
+| 紫 | `Plain white porcelain, no pattern` |
+| 緑 | `White porcelain with a subtle pale blue floral pattern` |
+| 椿 | `Cream porcelain with a delicate gold-rimmed camellia motif` |
+
+## 遺影写真フレーム
+
+```
+An empty Japanese memorial photo frame (ieishashin), standing upright.
+[STYLE] frame with a plain mat. The photo area is empty and neutral gray.
+No face, no portrait, no person.
+```
+
+**人物の顔が生成されないよう**、`empty` と `no face` を必ず入れてください。
+
+## 登録の手順
+
+1. `/admin` →「アイテム管理」→ 対象アイテムを編集
+2. アイテム全体の画像は「基本情報」の**画像**欄へ
+3. グレードごとの画像は、プルダウンの各選択肢の行にある「**画像**」ボタンから
+4. **アップロード時に自動で圧縮**されるため、生成した画像をそのまま入れて構いません
+
+登録後、TOP画面の「オプション画像カタログ」または見積画面の「オプション画像」ボタンで確認できます。

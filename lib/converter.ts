@@ -11,6 +11,7 @@ export const convertDbItem = (item: any): Item => ({
     allowedPlans: item.allowed_plans || [],
     includedInPlans: item.included_in_plans || [],
     options: item.options,
+    imagePaths: item.image_paths || [],
     nonTaxable: item.non_taxable,
     reducedTax: item.reduced_tax,
 });
@@ -26,6 +27,7 @@ export const convertItemToDb = (item: Item): Record<string, any> => ({
     allowed_plans: item.allowedPlans,
     included_in_plans: item.includedInPlans,
     options: item.options,
+    image_paths: item.imagePaths || [],
     non_taxable: item.nonTaxable,
     reduced_tax: item.reducedTax,
 });

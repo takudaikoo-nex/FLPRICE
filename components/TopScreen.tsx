@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, PlusCircle, Search, Settings, LogOut, Link2, ClipboardList } from 'lucide-react';
+import { Users, PlusCircle, Search, Settings, LogOut, Link2, ClipboardList, Images } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface TopScreenProps {
@@ -73,6 +73,23 @@ const TopScreen: React.FC<TopScreenProps> = ({
                     </button>
                 </div>
             </main>
+
+            <section className="fl-subsection">
+                <h2 className="fl-subsection-title">オプション</h2>
+                <div className="fl-subtiles">
+                    <button
+                        type="button"
+                        className="fl-subtile"
+                        onClick={() => window.open('/?catalog=true', '_blank')}
+                    >
+                        <span className="fl-subtile-icon"><Images size={22} /></span>
+                        <span>
+                            <span className="fl-subtile-label">オプション画像カタログ</span>
+                            <span className="fl-subtile-desc">別タブで開き、お客様にお見せする</span>
+                        </span>
+                    </button>
+                </div>
+            </section>
 
             <section className="fl-subsection">
                 <h2 className="fl-subsection-title">供花発注</h2>

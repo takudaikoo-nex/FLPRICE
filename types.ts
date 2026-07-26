@@ -16,6 +16,8 @@ export interface DropdownOption {
   price: number; // デフォルト価格
   planPrices?: Record<string, number>; // プランごとに異なる場合
   allowedPlans: PlanId[];
+  /** グレードの画像（Storage の item-images 内のパス） */
+  imagePaths?: string[];
 }
 
 export interface Item {
@@ -28,6 +30,8 @@ export interface Item {
   allowedPlans: PlanId[];
   includedInPlans: PlanId[]; // このプランではプラン料金に含まれる（無料）
   options?: DropdownOption[];
+  /** アイテム本体の画像（Storage の item-images 内のパス） */
+  imagePaths?: string[];
   nonTaxable?: boolean;
   reducedTax?: boolean;
 }

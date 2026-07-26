@@ -14,6 +14,7 @@ import EstimateSearchPage from './components/EstimateSearchPage';
 import FlowerFuneralsPage from './components/flower/FlowerFuneralsPage';
 import FlowerOrdersPage from './components/flower/FlowerOrdersPage';
 import LoginGate from './components/LoginGate';
+import OptionCatalogPage from './components/OptionCatalogPage';
 import { supabase } from './lib/supabase';
 import { MoneyInput } from './components/MoneyInput';
 const EMPTY_CUSTOMER_INFO: CustomerInfo = {
@@ -43,6 +44,7 @@ const App: React.FC = () => {
   } = system;
 
   const [isMobile, setIsMobile] = useState(false);
+  const isCatalogMode = new URLSearchParams(window.location.search).get('catalog') === 'true';
   const [isIncludedOpen, setIsIncludedOpen] = useState(true);
   const [session, setSession] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -119,6 +121,9 @@ const App: React.FC = () => {
   );
   if (!session) return <LoginGate logoType={logoType} />;
 
+  // 接客時にお客様へお見せするカタログ。別タブで開く
+  if (isCatalogMode) return <OptionCatalogPage />;
+
   if (loading) return (
     <div className="flex items-center justify-center h-screen bg-gray-50">
       <div className="text-center"><div className="text-4xl mb-4">🌿</div><div className="text-lg font-medium text-gray-600">読み込み中...</div></div>
@@ -153,6 +158,7 @@ const App: React.FC = () => {
         <header className="bg-white border-b border-gray-200 py-3 px-6 flex-shrink-0 relative">
           <div style={{ position: 'absolute', top: '0.75rem', right: '1rem', display: 'flex', gap: '0.5rem' }}>
             <button onClick={() => setViewMode('top')} className="text-sm text-gray-400 hover:text-gray-600 border border-gray-200 hover:border-gray-400 rounded-lg px-3 py-1.5 transition-colors">TOP</button>
+            <button onClick={() => window.open('/?catalog=true', '_blank')} className="text-sm text-gray-400 hover:text-gray-600 border border-gray-200 hover:border-gray-400 rounded-lg px-3 py-1.5 transition-colors">オプション画像</button>
             <button onClick={handleLoadEstimate} className="text-sm text-gray-400 hover:text-gray-600 border border-gray-200 hover:border-gray-400 rounded-lg px-3 py-1.5 transition-colors">呼出</button>
           </div>
           <div className="max-w-7xl mx-auto flex items-center gap-3">

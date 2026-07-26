@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Item, Plan, ItemType } from '../../types';
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { ITEM_IMAGE_BUCKET, storageImageUrl, uploadImages, removeImages } from '../../lib/storage';
+import { ArrowLeft, Plus, Trash2, ImagePlus, X } from 'lucide-react';
 
 interface ItemEditorProps {
     item: Item;
@@ -12,9 +13,66 @@ interface ItemEditorProps {
 
 const ItemEditor: React.FC<ItemEditorProps> = ({ item, isNew, onSave, onCancel, plans }) => {
     const [editingItem, setEditingItem] = useState<Item>(JSON.parse(JSON.stringify(item)));
+    const [uploading, setUploading] = useState(false);
 
     const handleSave = async () => {
         await onSave(editingItem);
+    };
+
+    /** アイテム本体の画像を追加する（アップロード時に自動で圧縮される） */
+    const handleUploadItemImages = async (files: FileList | null) => {
+        if (!files || files.length === 0) return;
+        setUploading(true);
+        try {
+            const paths = await uploadImages(ITEM_IMAGE_BUCKET, Array.from(files));
+            setEditingItem({
+                ...editingItem,
+                imagePaths: [...(editingItem.imagePaths || []), ...paths],
+            });
+        } catch (error: any) {
+            console.error('Error uploading item image:', error);
+            alert(`画像のアップロードに失敗しました: ${error.message}`);
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const handleRemoveItemImage = async (path: string) => {
+        setEditingItem({
+            ...editingItem,
+            imagePaths: (editingItem.imagePaths || []).filter(p => p !== path),
+        });
+        await removeImages(ITEM_IMAGE_BUCKET, [path]);
+    };
+
+    /** グレード（選択肢）ごとの画像を追加する */
+    const handleUploadOptionImages = async (index: number, files: FileList | null) => {
+        if (!files || files.length === 0) return;
+        setUploading(true);
+        try {
+            const paths = await uploadImages(ITEM_IMAGE_BUCKET, Array.from(files));
+            const newOptions = [...(editingItem.options || [])];
+            newOptions[index] = {
+                ...newOptions[index],
+                imagePaths: [...(newOptions[index].imagePaths || []), ...paths],
+            };
+            setEditingItem({ ...editingItem, options: newOptions });
+        } catch (error: any) {
+            console.error('Error uploading option image:', error);
+            alert(`画像のアップロードに失敗しました: ${error.message}`);
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const handleRemoveOptionImage = async (index: number, path: string) => {
+        const newOptions = [...(editingItem.options || [])];
+        newOptions[index] = {
+            ...newOptions[index],
+            imagePaths: (newOptions[index].imagePaths || []).filter(p => p !== path),
+        };
+        setEditingItem({ ...editingItem, options: newOptions });
+        await removeImages(ITEM_IMAGE_BUCKET, [path]);
     };
 
     return (
@@ -81,6 +139,42 @@ const ItemEditor: React.FC<ItemEditorProps> = ({ item, isNew, onSave, onCancel, 
                                 className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none h-24"
                                 placeholder="アイテムの簡単な説明を入力"
                             />
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">画像</label>
+                            <p className="text-xs text-gray-400 mb-2">
+                                お客様にお見せするカタログページに表示されます。アップロード時に自動で圧縮されます。
+                            </p>
+                            <div className="flex flex-wrap gap-3 mb-3">
+                                {(editingItem.imagePaths || []).map(path => (
+                                    <div key={path} className="relative">
+                                        <img
+                                            src={storageImageUrl(ITEM_IMAGE_BUCKET, path)}
+                                            alt=""
+                                            className="w-24 h-24 object-cover rounded-lg border border-gray-200"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveItemImage(path)}
+                                            className="absolute top-0 right-0 p-1 bg-white rounded-full border border-gray-200 text-gray-500 hover:text-red-600"
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                            <label className="inline-flex items-center gap-2 px-4 py-3 bg-gray-100 rounded-lg cursor-pointer hover:bg-gray-200">
+                                <ImagePlus size={18} />
+                                {uploading ? 'アップロード中...' : '画像を追加'}
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    disabled={uploading}
+                                    onChange={e => handleUploadItemImages(e.target.files)}
+                                    className="hidden"
+                                />
+                            </label>
                         </div>
                     </div>
                 </section>
@@ -159,7 +253,8 @@ const ItemEditor: React.FC<ItemEditorProps> = ({ item, isNew, onSave, onCancel, 
                                         <p className="text-xs text-emerald-600">※ 選択肢がありません。追加ボタンを押して追加してください。</p>
                                     ) : (
                                         (editingItem.options || []).map((opt, idx) => (
-                                            <div key={idx} className="flex gap-2 items-center bg-white p-2 rounded border border-emerald-100 shadow-sm">
+                                            <div key={idx} className="bg-white p-2 rounded border border-emerald-100 shadow-sm">
+                                              <div className="flex gap-2 items-center">
                                                 <input
                                                     type="text"
                                                     value={opt.name}
@@ -194,6 +289,38 @@ const ItemEditor: React.FC<ItemEditorProps> = ({ item, isNew, onSave, onCancel, 
                                                 >
                                                     <Trash2 size={16} />
                                                 </button>
+                                              </div>
+
+                                              <div className="flex flex-wrap items-center gap-2 mt-2 pl-1">
+                                                {(opt.imagePaths || []).map(path => (
+                                                    <div key={path} className="relative">
+                                                        <img
+                                                            src={storageImageUrl(ITEM_IMAGE_BUCKET, path)}
+                                                            alt=""
+                                                            className="w-20 h-20 object-cover rounded border border-gray-200"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleRemoveOptionImage(idx, path)}
+                                                            className="absolute top-0 right-0 p-1 bg-white rounded-full border border-gray-200 text-gray-500 hover:text-red-600"
+                                                        >
+                                                            <X size={12} />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                                <label className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded cursor-pointer hover:bg-gray-200 text-xs text-gray-600">
+                                                    <ImagePlus size={14} />
+                                                    画像
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        multiple
+                                                        disabled={uploading}
+                                                        onChange={e => handleUploadOptionImages(idx, e.target.files)}
+                                                        className="hidden"
+                                                    />
+                                                </label>
+                                              </div>
                                             </div>
                                         ))
                                     )}

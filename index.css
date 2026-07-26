@@ -1644,3 +1644,160 @@ select {
   border: 1px solid #e5e7eb;
   border-radius: 8px;
 }
+
+/* ---------- オプション画像カタログ ---------- */
+.fl-catalog-filter {
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  background: #fff;
+  color: #4b5563;
+}
+
+.fl-catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 18px;
+}
+
+.fl-catalog-card {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  padding: 0;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.fl-catalog-card:hover {
+  border-color: #059669;
+  box-shadow: 0 8px 18px rgb(0 0 0 / 0.08);
+}
+
+.fl-catalog-thumb {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  background: #f3f4f6;
+}
+
+.fl-catalog-body {
+  display: block;
+  padding: 12px 14px 14px;
+}
+
+.fl-catalog-item {
+  display: block;
+  font-size: 0.76rem;
+  color: #6b7280;
+}
+
+.fl-catalog-option {
+  display: block;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-top: 2px;
+}
+
+.fl-catalog-price {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #047857;
+  margin-top: 6px;
+}
+
+.fl-catalog-price small {
+  font-size: 0.68rem;
+  color: #9ca3af;
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+.fl-catalog-count {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 0.7rem;
+  color: #9ca3af;
+}
+
+/* ---------- 拡大表示 ---------- */
+.fl-lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 80;
+}
+
+.fl-lightbox-close {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.fl-lightbox-inner {
+  max-width: 900px;
+  width: 100%;
+  text-align: center;
+}
+
+.fl-lightbox-image {
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  border-radius: 8px;
+  margin: 0 auto;
+}
+
+.fl-lightbox-thumbs {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.fl-lightbox-thumbs img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.fl-lightbox-thumbs img.is-active {
+  border-color: #fff;
+  opacity: 1;
+}
+
+.fl-lightbox-caption {
+  color: #fff;
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+}
+
+.fl-lightbox-caption .fl-catalog-price {
+  color: #6ee7b7;
+}
