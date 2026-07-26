@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Item } from '../types';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ITEM_IMAGE_BUCKET, storageImageUrl } from '../lib/storage';
+import { X, ChevronLeft, ChevronRight, Images } from 'lucide-react';
 
 interface DetailModalProps {
   item: Item | null;
@@ -10,33 +11,52 @@ interface DetailModalProps {
 }
 
 const DetailModal: React.FC<DetailModalProps> = ({ item, selectedGrade, onClose }) => {
-  const [currentSrc, setCurrentSrc] = useState<string>('');
-  const [imageError, setImageError] = useState(false);
+  const [candidateIndex, setCandidateIndex] = useState(0);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+
+  /** 管理画面から登録された画像（グレードのものを優先） */
+  const catalogImages = useMemo(() => {
+    if (!item) return [];
+    const grade = selectedGrade
+      ? (item.options || []).find(option => option.id === selectedGrade)
+      : undefined;
+
+    return [
+      ...(grade?.imagePaths || []),
+      ...(item.imagePaths || []),
+    ].map(path => storageImageUrl(ITEM_IMAGE_BUCKET, path));
+  }, [item, selectedGrade]);
+
+  /**
+   * 表示を試す画像の候補。
+   * 登録済みの画像を優先し、無い場合は従来の /images/ 配下を見る。
+   */
+  const candidates = useMemo(() => {
+    if (!item) return [];
+    const legacy = selectedGrade
+      ? [`/images/${item.id}_${selectedGrade}.jpg`, `/images/${item.id}.jpg`]
+      : [`/images/${item.id}.jpg`];
+    return [...catalogImages, ...legacy];
+  }, [item, selectedGrade, catalogImages]);
 
   // Reset state when item or grade changes
   useEffect(() => {
     if (!item) return;
-    setImageError(false);
+    setCandidateIndex(0);
     setCurrentSlideIndex(0);
-
-    // Try specific image first if grade is selected, otherwise generic
-    if (selectedGrade) {
-      setCurrentSrc(`/images/${item.id}_${selectedGrade}.jpg`);
-    } else {
-      setCurrentSrc(`/images/${item.id}.jpg`);
-    }
   }, [item, selectedGrade]);
 
-  const handleImageError = () => {
-    // If we were trying a specific image, fallback to generic
-    if (currentSrc.includes('_')) {
-      if (item) setCurrentSrc(`/images/${item.id}.jpg`);
-    } else {
-      // If we failed on generic (or already were on generic), show gradient
-      setImageError(true);
-    }
-  };
+  const currentSrc = candidates[candidateIndex] || '';
+  const imageError = candidateIndex >= candidates.length;
+
+  /** 表示できなかった場合は次の候補へ進む */
+  const handleImageError = () => setCandidateIndex(prev => prev + 1);
+
+  /** カタログに載せられる画像があるか */
+  const hasCatalogImages = !!item && (
+    (item.imagePaths || []).length > 0
+    || (item.options || []).some(option => (option.imagePaths || []).length > 0)
+  );
 
   if (!item) return null;
 
@@ -130,7 +150,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ item, selectedGrade, onClose 
           <div className="flex-1 overflow-y-auto flex flex-col h-full animate-fade-in">
             {/* Image Section */}
             <div className="relative aspect-4-3 bg-gray-200 flex-shrink-0">
-              {currentSlide.image ? (
+              {currentSlide.image && !(currentSlide.isMain && imageError) ? (
                 <img
                   src={currentSlide.image}
                   alt={currentSlide.title || item.name}
@@ -172,6 +192,17 @@ const DetailModal: React.FC<DetailModalProps> = ({ item, selectedGrade, onClose 
                   <span className="text-gray-400 italic">説明はありません</span>
                 )}
               </p>
+
+              {currentSlide.isMain && hasCatalogImages && (
+                <button
+                  type="button"
+                  onClick={() => window.open(`/?catalog=true&item=${item.id}`, '_blank')}
+                  className="mt-4 inline-flex items-center gap-2 px-4 py-3 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 text-sm font-bold"
+                >
+                  <Images size={16} />
+                  画像を一覧で見る
+                </button>
+              )}
             </div>
           </div>
         </div>

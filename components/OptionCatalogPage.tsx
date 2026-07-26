@@ -23,6 +23,12 @@ const OptionCatalogPage: React.FC = () => {
     const [items, setItems] = useState<Item[]>([]);
     const [plans, setPlans] = useState<Plan[]>([]);
     const [planId, setPlanId] = useState<string>('all');
+    // 見積画面のモーダルから開いた場合、そのアイテムだけを表示する
+    const [focusItemId, setFocusItemId] = useState<number | null>(() => {
+        const raw = new URLSearchParams(window.location.search).get('item');
+        const parsed = raw ? parseInt(raw, 10) : NaN;
+        return isNaN(parsed) ? null : parsed;
+    });
     const [loading, setLoading] = useState(true);
     const [zoomed, setZoomed] = useState<CatalogEntry | null>(null);
     const [zoomIndex, setZoomIndex] = useState(0);
@@ -54,6 +60,7 @@ const OptionCatalogPage: React.FC = () => {
         const result: CatalogEntry[] = [];
 
         for (const item of items) {
+            if (focusItemId !== null && item.id !== focusItemId) continue;
             if (planId !== 'all' && !item.allowedPlans.includes(planId)) continue;
 
             if ((item.imagePaths || []).length > 0) {
@@ -83,7 +90,11 @@ const OptionCatalogPage: React.FC = () => {
         }
 
         return result;
-    }, [items, planId]);
+    }, [items, planId, focusItemId]);
+
+    const focusedItem = focusItemId !== null
+        ? items.find(item => item.id === focusItemId)
+        : undefined;
 
     if (loading) {
         return <div className="fl-shell"><div className="fl-empty">読み込み中...</div></div>;
@@ -93,9 +104,18 @@ const OptionCatalogPage: React.FC = () => {
         <div className="fl-shell">
             <header className="fl-header">
                 <div className="fl-header-left">
-                    <h1>オプション画像カタログ</h1>
+                    <h1>{focusedItem ? focusedItem.name : 'オプション画像カタログ'}</h1>
                 </div>
                 <div className="fl-header-actions">
+                    {focusItemId !== null && (
+                        <button
+                            type="button"
+                            className="fl-header-btn"
+                            onClick={() => setFocusItemId(null)}
+                        >
+                            すべてのオプションを見る
+                        </button>
+                    )}
                     <select
                         value={planId}
                         onChange={e => setPlanId(e.target.value)}
