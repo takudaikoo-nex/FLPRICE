@@ -16,7 +16,9 @@ export const fetchCustomers = async (): Promise<Customer[]> => {
     const { data, error } = await supabase
         .from('customers')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        // 移行で一括作成した顧客は created_at が同一のため、顧客番号で並びを確定させる
+        .order('customer_no', { ascending: false });
 
     if (error) throw error;
     return data || [];

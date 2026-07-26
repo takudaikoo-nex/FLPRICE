@@ -63,17 +63,25 @@ const CustomerListPage: React.FC<Props> = ({ onBack, onOpenEstimate }) => {
         [estimates],
     );
 
+    /** 並び替えの基準: 最新の見積の作成日。見積が無ければ顧客の登録日 */
+    const sortKey = (customer: Customer): string => {
+        const latest = (estimatesByCustomer.get(customer.id) || [])[0];
+        return latest?.createdAt || customer.created_at || '';
+    };
+
     const visibleCustomers = useMemo(() => {
         const q = keyword.trim().toLowerCase();
-        if (!q) return customers;
 
-        return customers.filter(customer => {
+        const filtered = !q ? customers : customers.filter(customer => {
             const own = [customer.name, customer.kana, customer.phone, customer.customer_no]
                 .some(value => (value || '').toLowerCase().includes(q));
             if (own) return true;
 
             return (estimatesByCustomer.get(customer.id) || []).some(e => matchesKeyword(e, keyword));
         });
+
+        // 新しい順（直近に見積を作った顧客が上）
+        return [...filtered].sort((a, b) => sortKey(b).localeCompare(sortKey(a)));
     }, [customers, keyword, estimatesByCustomer]);
 
     const selected = selectedId ? customers.find(c => c.id === selectedId) ?? null : null;
