@@ -131,6 +131,10 @@ export interface Funeral {
   public_token: string;
   is_order_open: boolean;
   note: string;
+  /** 発注URL発行時に設定する割引 */
+  discount_type: 'none' | 'amount' | 'percent';
+  discount_value: number;
+  discount_note: string;
   purchase_order_sent_at?: string | null;
   created_at?: string;
 }
@@ -167,6 +171,7 @@ export interface FlowerOrder {
   payment_status: FlowerPaymentStatus;
   order_status: FlowerOrderStatus;
   subtotal: number;
+  discount: number;
   tax: number;
   total: number;
   remarks: string;
@@ -174,5 +179,5 @@ export interface FlowerOrder {
   invoice_sent_at: string | null;
   notified_at: string | null;
   flower_order_items?: FlowerOrderItem[];
-  funerals?: Pick<Funeral, 'id' | 'deceased_name' | 'ceremony_at' | 'venue_name' | 'venue_address'>;
+  funerals?: Pick<Funeral, 'id' | 'deceased_name' | 'ceremony_at' | 'venue_name' | 'venue_address' | 'public_token'>;
 }

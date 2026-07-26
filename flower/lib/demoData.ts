@@ -21,6 +21,9 @@ export const DEMO_FUNERAL: FuneralPublic = {
     wake_at: hoursFromNow(48),
     ceremony_at: hoursFromNow(72),
     order_deadline: hoursFromNow(48),
+    discount_type: 'amount',
+    discount_value: 2000,
+    discount_note: 'ご紹介割引',
     tax_rate: 0.1,
     card_payment_enabled: true,
 };
@@ -74,14 +77,16 @@ export const isDemoMode = (): boolean =>
     new URLSearchParams(window.location.search).get('demo') === '1';
 
 /** デモ用のダミー注文結果（DBには何も保存されない） */
-export const demoSubmit = (subtotal: number, taxRate: number): Promise<OrderResult> => {
-    const tax = Math.round(subtotal * taxRate);
+export const demoSubmit = (subtotal: number, discount: number, taxRate: number): Promise<OrderResult> => {
+    const taxable = subtotal - discount;
+    const tax = Math.round(taxable * taxRate);
     return new Promise(resolve => {
         setTimeout(() => resolve({
             order_number: 'FO-DEMO01',
             subtotal,
+            discount,
             tax,
-            total: subtotal + tax,
+            total: taxable + tax,
         }), 700);
     });
 };

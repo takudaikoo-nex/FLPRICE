@@ -7,6 +7,11 @@ interface SendOrderMailArgs {
     orderNumber?: string;
     /** purchase_order で必要（葬儀単位でまとめて送る） */
     funeralId?: string;
+    /**
+     * 対象の葬儀の発注トークン。
+     * ログインのないユーザー画面から送信する際の本人確認に使う（管理画面からはログインで判定）。
+     */
+    funeralToken?: string;
 }
 
 /**
@@ -24,6 +29,7 @@ export const sendOrderMail = async (type: OrderMailType, args: SendOrderMailArgs
             type,
             order_number: normalized.orderNumber,
             funeral_id: normalized.funeralId,
+            funeral_token: normalized.funeralToken,
         },
     });
 

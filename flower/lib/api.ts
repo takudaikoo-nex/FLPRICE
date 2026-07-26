@@ -11,6 +11,9 @@ export interface FuneralPublic {
     wake_at: string | null;
     ceremony_at: string | null;
     order_deadline: string | null;
+    discount_type: 'none' | 'amount' | 'percent';
+    discount_value: number;
+    discount_note: string;
     tax_rate: number;
     card_payment_enabled: boolean;
 }
@@ -46,9 +49,21 @@ export interface OrdererInput {
 export interface OrderResult {
     order_number: string;
     subtotal: number;
+    discount: number;
     tax: number;
     total: number;
 }
+
+/** 発注URLに設定された割引額（税抜の小計に対して適用） */
+export const calcDiscount = (subtotal: number, funeral: FuneralPublic): number => {
+    if (funeral.discount_type === 'amount') {
+        return Math.min(funeral.discount_value, subtotal);
+    }
+    if (funeral.discount_type === 'percent') {
+        return Math.min(Math.round(subtotal * funeral.discount_value / 100), subtotal);
+    }
+    return 0;
+};
 
 /** URL（/order/<token> もしくは ?t=<token>）から発注トークンを取り出す */
 export const readTokenFromUrl = (): string | null => {

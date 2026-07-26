@@ -9,7 +9,7 @@ import {
     fetchEstimateSummaries, funeralDateToCeremonyIso, matchesKeyword, formatDate, EstimateSummary,
 } from '../../lib/estimateQueries';
 import { sendOrderMail } from '../../lib/mail';
-import { Plus, Edit, Trash2, Link2, Settings, Check, FileSearch, Send } from 'lucide-react';
+import { ChevronLeft, Plus, Edit, Trash2, Link2, Check, FileSearch, Send } from 'lucide-react';
 
 const emptyFuneral = (): Funeral => ({
     id: '',
@@ -24,15 +24,21 @@ const emptyFuneral = (): Funeral => ({
     public_token: generatePublicToken(),
     is_order_open: true,
     note: '',
+    discount_type: 'none',
+    discount_value: 0,
+    discount_note: '',
 });
 
-const FuneralsManager: React.FC = () => {
+interface Props {
+    onBack: () => void;
+}
+
+const FlowerFuneralsPage: React.FC<Props> = ({ onBack }) => {
     const [funerals, setFunerals] = useState<Funeral[]>([]);
     const [settings, setSettings] = useState<FlowerSettings | null>(null);
     const [loading, setLoading] = useState(true);
     const [editing, setEditing] = useState<Funeral | null>(null);
     const [isNew, setIsNew] = useState(false);
-    const [showSettings, setShowSettings] = useState(false);
     const [copiedId, setCopiedId] = useState<string | null>(null);
 
     // 見積から受付を作成するためのピッカー
@@ -135,6 +141,9 @@ const FuneralsManager: React.FC = () => {
             public_token: editing.public_token,
             is_order_open: editing.is_order_open,
             note: editing.note,
+            discount_type: editing.discount_type,
+            discount_value: editing.discount_type === 'none' ? 0 : editing.discount_value,
+            discount_note: editing.discount_note,
         };
 
         try {
@@ -201,7 +210,7 @@ const FuneralsManager: React.FC = () => {
 
         setSendingPoId(funeral.id);
         try {
-            await sendOrderMail('purchase_order', { funeralId: funeral.id });
+            await sendOrderMail('purchase_order', { funeralId: funeral.id, funeralToken: funeral.public_token });
             alert('発注書を送信しました。');
             await fetchData();
         } catch (error: any) {
@@ -226,50 +235,6 @@ const FuneralsManager: React.FC = () => {
         }
     };
 
-    const handleSaveSettings = async () => {
-        if (!settings) return;
-        try {
-            const { error } = await supabase
-                .from('flower_settings')
-                .update({
-                    site_base_url: settings.site_base_url.trim(),
-                    order_deadline_hours: settings.order_deadline_hours,
-                    notify_emails: settings.notify_emails,
-                    card_payment_enabled: settings.card_payment_enabled,
-                    mail_from: settings.mail_from.trim(),
-                    mail_from_name: settings.mail_from_name,
-                    company_name: settings.company_name,
-                    company_postal_code: settings.company_postal_code,
-                    company_address: settings.company_address,
-                    company_tel: settings.company_tel,
-                    invoice_registration_number: settings.invoice_registration_number,
-                    payment_due_days: settings.payment_due_days,
-                    bank_info: settings.bank_info,
-                    supplier_name: settings.supplier_name,
-                    supplier_email: settings.supplier_email.trim(),
-                })
-                .eq('id', 1);
-            if (error) throw error;
-
-            const upcoming = funerals.filter(f => f.ceremony_at && new Date(f.ceremony_at).getTime() > Date.now());
-            if (upcoming.length > 0 && confirm(`今後の葬儀 ${upcoming.length} 件の受付締切を再計算しますか？`)) {
-                for (const f of upcoming) {
-                    const { error: updateError } = await supabase
-                        .from('funerals')
-                        .update({ order_deadline: calcOrderDeadline(f.ceremony_at, settings.order_deadline_hours) })
-                        .eq('id', f.id);
-                    if (updateError) throw updateError;
-                }
-            }
-
-            await fetchData();
-            setShowSettings(false);
-        } catch (error: any) {
-            console.error('Error saving flower settings:', error);
-            alert(`設定の保存に失敗しました: ${error.message}`);
-        }
-    };
-
     if (loading) return <div className="p-4">読み込み中...</div>;
 
     const deadlinePreview = editing && settings
@@ -277,17 +242,16 @@ const FuneralsManager: React.FC = () => {
         : '—';
 
     return (
-        <div>
+        <div className="admin-scope fl-shell">
+          <div className="fl-page">
             <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-bold text-gray-700">葬儀・発注受付管理</h3>
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => setShowSettings(true)}
-                        className="inline-flex items-center gap-2 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
-                    >
-                        <Settings size={18} />
-                        設定
+                <div className="flex items-center gap-3">
+                    <button type="button" className="fl-back" onClick={onBack}>
+                        <ChevronLeft size={16} />TOP
                     </button>
+                    <h3 className="text-lg font-bold text-gray-700">供花 発注URL発行</h3>
+                </div>
+                <div className="flex items-center gap-2">
                     <button
                         onClick={() => { setEditing(emptyFuneral()); setIsNew(true); }}
                         className="inline-flex items-center gap-2 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
@@ -378,225 +342,6 @@ const FuneralsManager: React.FC = () => {
                                 className="px-4 py-3 text-gray-600 hover:bg-gray-100 rounded-lg"
                             >
                                 キャンセル
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {showSettings && settings && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl p-6 modal-scroll">
-                        <h3 className="text-xl font-bold mb-4">供花発注の設定</h3>
-
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    供花サイトのベースURL
-                                </label>
-                                <input
-                                    type="text"
-                                    value={settings.site_base_url}
-                                    onChange={e => setSettings({ ...settings, site_base_url: e.target.value })}
-                                    placeholder="https://example.com"
-                                    className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
-                                />
-                                <p className="text-xs text-gray-400 mt-1">
-                                    発注URLは「ベースURL/order/トークン」の形式で発行されます
-                                </p>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    受付締切（告別式の何時間前）
-                                </label>
-                                <input
-                                    type="number"
-                                    value={settings.order_deadline_hours}
-                                    onChange={e => setSettings({ ...settings, order_deadline_hours: Number(e.target.value) })}
-                                    className="w-32 p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    受注通知メール（カンマ区切り）
-                                </label>
-                                <input
-                                    type="text"
-                                    value={settings.notify_emails.join(', ')}
-                                    onChange={e => setSettings({
-                                        ...settings,
-                                        notify_emails: e.target.value.split(',').map(s => s.trim()).filter(Boolean),
-                                    })}
-                                    placeholder="info@example.com, staff@example.com"
-                                    className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
-                                />
-                                <p className="text-xs text-gray-400 mt-1">メール送信の実装はP4で対応します</p>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                                <input
-                                    id="card_payment_enabled"
-                                    type="checkbox"
-                                    checked={settings.card_payment_enabled}
-                                    onChange={e => setSettings({ ...settings, card_payment_enabled: e.target.checked })}
-                                    className="w-4 h-4 cursor-pointer"
-                                />
-                                <label htmlFor="card_payment_enabled" className="text-sm text-gray-700 cursor-pointer">
-                                    発注サイトでクレジットカード決済を受け付ける
-                                </label>
-                            </div>
-                            <p className="text-xs text-gray-400">
-                                Stripe連携（P3）が完了するまではオフのままにしてください。オフの間は請求書払いのみ表示されます。
-                            </p>
-
-                            <div className="pt-4 border-t border-gray-200">
-                                <h4 className="font-bold text-gray-700 mb-1">供花業者</h4>
-                                <p className="text-xs text-gray-400 mb-4">
-                                    発注書の送信先です。発注書は葬儀ごとに、その葬儀の全注文をまとめて1通送ります。
-                                </p>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">業者名</label>
-                                        <input
-                                            type="text"
-                                            value={settings.supplier_name}
-                                            onChange={e => setSettings({ ...settings, supplier_name: e.target.value })}
-                                            placeholder="〇〇生花店"
-                                            className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">業者のメールアドレス</label>
-                                        <input
-                                            type="text"
-                                            value={settings.supplier_email}
-                                            onChange={e => setSettings({ ...settings, supplier_email: e.target.value })}
-                                            className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="pt-4 border-t border-gray-200">
-                                <h4 className="font-bold text-gray-700 mb-1">請求書・メール送信</h4>
-                                <p className="text-xs text-gray-400 mb-4">
-                                    請求書メールに記載する自社情報です。SMTPの接続情報はここではなくSupabaseのシークレットに設定します。
-                                </p>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">送信元メールアドレス</label>
-                                        <input
-                                            type="text"
-                                            value={settings.mail_from}
-                                            onChange={e => setSettings({ ...settings, mail_from: e.target.value })}
-                                            placeholder="info@example.co.jp"
-                                            className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">送信元の表示名</label>
-                                        <input
-                                            type="text"
-                                            value={settings.mail_from_name}
-                                            onChange={e => setSettings({ ...settings, mail_from_name: e.target.value })}
-                                            placeholder="ファーストリーフ"
-                                            className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="mt-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">事業者名</label>
-                                    <input
-                                        type="text"
-                                        value={settings.company_name}
-                                        onChange={e => setSettings({ ...settings, company_name: e.target.value })}
-                                        className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4 mt-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">郵便番号</label>
-                                        <input
-                                            type="text"
-                                            value={settings.company_postal_code}
-                                            onChange={e => setSettings({ ...settings, company_postal_code: e.target.value })}
-                                            className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">電話番号</label>
-                                        <input
-                                            type="text"
-                                            value={settings.company_tel}
-                                            onChange={e => setSettings({ ...settings, company_tel: e.target.value })}
-                                            className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="mt-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">住所</label>
-                                    <input
-                                        type="text"
-                                        value={settings.company_address}
-                                        onChange={e => setSettings({ ...settings, company_address: e.target.value })}
-                                        className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4 mt-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">インボイス登録番号</label>
-                                        <input
-                                            type="text"
-                                            value={settings.invoice_registration_number}
-                                            onChange={e => setSettings({ ...settings, invoice_registration_number: e.target.value })}
-                                            placeholder="T1234567890123"
-                                            className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">支払期限（注文日から何日）</label>
-                                        <input
-                                            type="number"
-                                            value={settings.payment_due_days}
-                                            onChange={e => setSettings({ ...settings, payment_due_days: Number(e.target.value) })}
-                                            className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="mt-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">お振込先</label>
-                                    <textarea
-                                        value={settings.bank_info}
-                                        onChange={e => setSettings({ ...settings, bank_info: e.target.value })}
-                                        placeholder={'  〇〇銀行 〇〇支店\n  普通 1234567\n  カ)ファーストリーフ'}
-                                        className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none h-24"
-                                    />
-                                    <p className="text-xs text-gray-400 mt-1">請求書メールにこのまま記載されます（改行可）</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex justify-end gap-3 mt-6">
-                            <button
-                                onClick={() => { setShowSettings(false); fetchData(); }}
-                                className="px-4 py-3 text-gray-600 hover:bg-gray-100 rounded-lg"
-                            >
-                                キャンセル
-                            </button>
-                            <button
-                                onClick={handleSaveSettings}
-                                className="px-4 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
-                            >
-                                保存する
                             </button>
                         </div>
                     </div>
@@ -712,6 +457,66 @@ const FuneralsManager: React.FC = () => {
                                         供花の受付を開始する
                                     </label>
                                 </div>
+                            </div>
+
+                            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                <div className="text-sm font-medium text-gray-700 mb-3">
+                                    このURLからの注文に適用する割引
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">割引の種類</label>
+                                        <select
+                                            value={editing.discount_type}
+                                            onChange={e => setEditing({
+                                                ...editing,
+                                                discount_type: e.target.value as Funeral['discount_type'],
+                                            })}
+                                            className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
+                                        >
+                                            <option value="none">割引なし</option>
+                                            <option value="amount">金額で割引（円）</option>
+                                            <option value="percent">率で割引（％）</option>
+                                        </select>
+                                    </div>
+
+                                    {editing.discount_type !== 'none' && (
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                {editing.discount_type === 'amount' ? '割引額（税抜・円）' : '割引率（％）'}
+                                            </label>
+                                            <input
+                                                type="number"
+                                                value={editing.discount_value}
+                                                onChange={e => setEditing({
+                                                    ...editing,
+                                                    discount_value: Math.max(0, Number(e.target.value)),
+                                                })}
+                                                className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+
+                                {editing.discount_type !== 'none' && (
+                                    <div className="mt-4">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            割引の表示名（発注画面に表示されます）
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={editing.discount_note}
+                                            onChange={e => setEditing({ ...editing, discount_note: e.target.value })}
+                                            placeholder="ご紹介割引"
+                                            className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
+                                        />
+                                    </div>
+                                )}
+
+                                <p className="text-xs text-gray-400 mt-3">
+                                    税抜の小計に対して適用し、消費税は割引後の金額で計算します。1注文ごとの適用です。
+                                </p>
                             </div>
 
                             <div>
@@ -842,8 +647,9 @@ const FuneralsManager: React.FC = () => {
                     </tbody>
                 </table>
             </div>
+          </div>
         </div>
     );
 };
 
-export default FuneralsManager;
+export default FlowerFuneralsPage;

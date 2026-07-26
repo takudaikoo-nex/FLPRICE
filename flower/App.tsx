@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     readTokenFromUrl, lookupFuneral, fetchProducts, submitOrder, toUserMessage,
-    FuneralPublic, PublicProduct, CartLine, OrdererInput, OrderResult,
+    calcDiscount, FuneralPublic, PublicProduct, CartLine, OrdererInput, OrderResult,
 } from './lib/api';
 import { isDemoMode, DEMO_FUNERAL, DEMO_PRODUCTS, demoSubmit } from './lib/demoData';
 import { formatYen } from '../lib/flower';
@@ -93,9 +93,11 @@ const App: React.FC = () => {
         setSubmitting(true);
         setSubmitError('');
         try {
+            const demoSubtotal = lines.reduce((sum, line) => sum + line.product.price * line.quantity, 0);
             const orderResult = demo
                 ? await demoSubmit(
-                    lines.reduce((sum, line) => sum + line.product.price * line.quantity, 0),
+                    demoSubtotal,
+                    calcDiscount(demoSubtotal, DEMO_FUNERAL),
                     DEMO_FUNERAL.tax_rate,
                 )
                 : await submitOrder(token!, orderer, lines, paymentMethod);
@@ -165,7 +167,8 @@ const App: React.FC = () => {
     }
 
     const subtotal = lines.reduce((sum, line) => sum + line.product.price * line.quantity, 0);
-    const total = subtotal + Math.round(subtotal * funeral.tax_rate);
+    const discount = calcDiscount(subtotal, funeral);
+    const total = (subtotal - discount) + Math.round((subtotal - discount) * funeral.tax_rate);
 
     return (
         <>
@@ -223,7 +226,10 @@ const App: React.FC = () => {
                 <div className="cart-bar">
                     <div className="cart-bar-inner">
                         <div className="cart-total">
-                            <div className="label">{lines.length}点 / 合計（税込）</div>
+                            <div className="label">
+                                {lines.length}点 / 合計（税込）
+                                {discount > 0 && `　${funeral.discount_note || '割引'} -${formatYen(discount)}`}
+                            </div>
                             <div className="value">{formatYen(total)}</div>
                         </div>
                         <button

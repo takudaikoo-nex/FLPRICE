@@ -1462,3 +1462,77 @@ select {
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------- TOP画面の供花セクション ---------- */
+.fl-subsection {
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 20px 48px;
+}
+
+.fl-subsection-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #6b7280;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 14px;
+}
+
+.fl-subtiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.fl-subtile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.fl-subtile:hover {
+  border-color: #059669;
+  box-shadow: 0 6px 14px rgb(5 150 105 / 0.08);
+}
+
+.fl-subtile-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #ecfdf5;
+  color: #047857;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.fl-subtile-label {
+  display: block;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.fl-subtile-desc {
+  display: block;
+  font-size: 0.76rem;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+@media (max-width: 768px) {
+  .fl-subtiles {
+    grid-template-columns: 1fr;
+  }
+}

@@ -18,7 +18,7 @@ export const useEstimateSystem = () => {
     const [freeInputValues, setFreeInputValues] = useState<Map<number, number>>(new Map());
     const [modalItem, setModalItem] = useState<Item | null>(null);
     const [loadedCustomerInfo, setLoadedCustomerInfo] = useState<CustomerInfo | null>(null);
-    const [viewMode, setViewMode] = useState<'top' | 'customers' | 'search' | 'start' | 'home' | 'input'>('top');
+    const [viewMode, setViewMode] = useState<'top' | 'customers' | 'search' | 'flowerFunerals' | 'flowerOrders' | 'start' | 'home' | 'input'>('top');
     const [isSaving, setIsSaving] = useState(false);
     const [logoType, setLogoType] = useState<'FL' | 'LS'>('FL');
 

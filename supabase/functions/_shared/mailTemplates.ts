@@ -23,6 +23,7 @@ export interface MailOrder {
     orderer_address: string;
     payment_method: 'card' | 'invoice';
     subtotal: number;
+    discount: number;
     tax: number;
     total: number;
     remarks: string;
@@ -129,7 +130,8 @@ ${itemLines(items)}
 ■ ご請求金額
 ──────────────────────────────
   小計（税抜）: ${yen(order.subtotal)}
-  消費税:       ${yen(order.tax)}
+${order.discount > 0 ? `  割引:         -${yen(order.discount)}
+` : ''}  消費税:       ${yen(order.tax)}
   ご請求額:     ${yen(order.total)}（税込）
 
   お支払期限: ${addDays(order.created_at, settings.payment_due_days)}

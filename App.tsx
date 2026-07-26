@@ -11,6 +11,8 @@ import MobileEstimatePage from './components/MobileEstimatePage';
 import TopScreen from './components/TopScreen';
 import CustomerListPage from './components/CustomerListPage';
 import EstimateSearchPage from './components/EstimateSearchPage';
+import FlowerFuneralsPage from './components/flower/FlowerFuneralsPage';
+import FlowerOrdersPage from './components/flower/FlowerOrdersPage';
 import { MoneyInput } from './components/MoneyInput';
 const EMPTY_CUSTOMER_INFO: CustomerInfo = {
   deathDate: '', deceasedName: '', birthDate: '', age: '', address: '', honseki: '',
@@ -102,8 +104,12 @@ const App: React.FC = () => {
       onCustomerList={() => setViewMode('customers')}
       onCreateNew={handleStartNew}
       onSearch={() => setViewMode('search')}
+      onFlowerFunerals={() => setViewMode('flowerFunerals')}
+      onFlowerOrders={() => setViewMode('flowerOrders')}
     />
   );
+  if (viewMode === 'flowerFunerals') return <FlowerFuneralsPage onBack={() => setViewMode('top')} />;
+  if (viewMode === 'flowerOrders') return <FlowerOrdersPage onBack={() => setViewMode('top')} />;
   if (viewMode === 'customers') return <CustomerListPage onBack={() => setViewMode('top')} onOpenEstimate={handleOpenEstimate} />;
   if (viewMode === 'search') return <EstimateSearchPage onBack={() => setViewMode('top')} onOpenEstimate={handleOpenEstimate} />;
   if (viewMode === 'start') return <StartScreen onLoad={handleStartLoad} onCreateNew={handleStartNew} logoType={logoType} onToggleLogo={toggleLogo} />;

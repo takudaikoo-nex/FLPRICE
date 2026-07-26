@@ -4,7 +4,7 @@ import { FlowerOrder, FlowerOrderStatus, FlowerPaymentStatus, Funeral, FlowerSet
 import { formatDateTime, formatYen, downloadCsv } from '../../lib/flower';
 import { sendOrderMail } from '../../lib/mail';
 import { buildInvoiceMail } from '../../supabase/functions/_shared/mailTemplates';
-import { Download, Eye, X, Mail, Check } from 'lucide-react';
+import { ChevronLeft, Download, Eye, X, Mail, Check } from 'lucide-react';
 
 const PAYMENT_METHOD_LABEL: Record<string, string> = {
     card: 'クレジットカード',
@@ -25,7 +25,11 @@ const ORDER_STATUS_LABEL: Record<FlowerOrderStatus, string> = {
     cancelled: 'キャンセル',
 };
 
-const FlowerOrdersManager: React.FC = () => {
+interface Props {
+    onBack: () => void;
+}
+
+const FlowerOrdersPage: React.FC<Props> = ({ onBack }) => {
     const [orders, setOrders] = useState<FlowerOrder[]>([]);
     const [funerals, setFunerals] = useState<Funeral[]>([]);
     const [loading, setLoading] = useState(true);
@@ -46,7 +50,7 @@ const FlowerOrdersManager: React.FC = () => {
             const [ordersResult, funeralsResult, settingsResult] = await Promise.all([
                 supabase
                     .from('flower_orders')
-                    .select('*, flower_order_items(*), funerals(id, deceased_name, ceremony_at, venue_name, venue_address)')
+                    .select('*, flower_order_items(*), funerals(id, deceased_name, ceremony_at, venue_name, venue_address, public_token)')
                     .order('created_at', { ascending: false }),
                 supabase.from('funerals').select('*').order('ceremony_at', { ascending: false, nullsFirst: false }),
                 supabase.from('flower_settings').select('*').eq('id', 1).single(),
@@ -95,7 +99,7 @@ const FlowerOrdersManager: React.FC = () => {
 
         setSending(true);
         try {
-            await sendOrderMail('invoice', order.order_number);
+            await sendOrderMail('invoice', { orderNumber: order.order_number, funeralToken: order.funerals?.public_token });
             alert('請求書を送信しました。');
             setPreview(null);
             await fetchData();
@@ -142,9 +146,15 @@ const FlowerOrdersManager: React.FC = () => {
     if (loading) return <div className="p-4">読み込み中...</div>;
 
     return (
-        <div>
+        <div className="admin-scope fl-shell">
+          <div className="fl-page">
             <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-bold text-gray-700">供花 受注一覧</h3>
+                <div className="flex items-center gap-3">
+                    <button type="button" className="fl-back" onClick={onBack}>
+                        <ChevronLeft size={16} />TOP
+                    </button>
+                    <h3 className="text-lg font-bold text-gray-700">供花 発注者一覧</h3>
+                </div>
                 <button
                     onClick={exportNafudaCsv}
                     className="inline-flex items-center gap-2 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
@@ -233,7 +243,9 @@ const FlowerOrdersManager: React.FC = () => {
                                 </table>
                                 <div className="flex justify-between items-center pt-4 mt-2 border-t border-gray-200">
                                     <span className="text-sm text-gray-500">
-                                        小計 {formatYen(detail.subtotal)} / 消費税 {formatYen(detail.tax)}
+                                        小計 {formatYen(detail.subtotal)}
+                                        {detail.discount > 0 && ` / 割引 -${formatYen(detail.discount)}`}
+                                        {' / '}消費税 {formatYen(detail.tax)}
                                     </span>
                                     <span className="text-xl font-bold text-gray-800">
                                         合計 {formatYen(detail.total)}
@@ -452,8 +464,9 @@ const FlowerOrdersManager: React.FC = () => {
                     </tbody>
                 </table>
             </div>
+          </div>
         </div>
     );
 };
 
-export default FlowerOrdersManager;
+export default FlowerOrdersPage;

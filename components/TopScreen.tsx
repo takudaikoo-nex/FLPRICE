@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, PlusCircle, Search, Settings, LogOut } from 'lucide-react';
+import { Users, PlusCircle, Search, Settings, LogOut, Link2, ClipboardList } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface TopScreenProps {
@@ -8,10 +8,13 @@ interface TopScreenProps {
     onCustomerList: () => void;
     onCreateNew: () => void;
     onSearch: () => void;
+    onFlowerFunerals: () => void;
+    onFlowerOrders: () => void;
 }
 
 const TopScreen: React.FC<TopScreenProps> = ({
     logoType, onToggleLogo, onCustomerList, onCreateNew, onSearch,
+    onFlowerFunerals, onFlowerOrders,
 }) => {
     const handleSettings = () => {
         window.open('/admin/', '_blank');
@@ -70,6 +73,27 @@ const TopScreen: React.FC<TopScreenProps> = ({
                     </button>
                 </div>
             </main>
+
+            <section className="fl-subsection">
+                <h2 className="fl-subsection-title">供花発注</h2>
+                <div className="fl-subtiles">
+                    <button type="button" className="fl-subtile" onClick={onFlowerFunerals}>
+                        <span className="fl-subtile-icon"><Link2 size={22} /></span>
+                        <span>
+                            <span className="fl-subtile-label">発注URL発行</span>
+                            <span className="fl-subtile-desc">葬儀ごとに供花の発注URLを発行する</span>
+                        </span>
+                    </button>
+
+                    <button type="button" className="fl-subtile" onClick={onFlowerOrders}>
+                        <span className="fl-subtile-icon"><ClipboardList size={22} /></span>
+                        <span>
+                            <span className="fl-subtile-label">発注者一覧</span>
+                            <span className="fl-subtile-desc">供花の申し込み状況を確認する</span>
+                        </span>
+                    </button>
+                </div>
+            </section>
         </div>
     );
 };

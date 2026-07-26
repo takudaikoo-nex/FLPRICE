@@ -1,5 +1,5 @@
 import React from 'react';
-import { CartLine, OrdererInput, FuneralPublic } from '../lib/api';
+import { calcDiscount, CartLine, OrdererInput, FuneralPublic } from '../lib/api';
 import { formatYen } from '../../lib/flower';
 
 interface Props {
@@ -17,7 +17,8 @@ const ConfirmView: React.FC<Props> = ({
     funeral, lines, orderer, paymentMethod, submitting, error, onBack, onSubmit,
 }) => {
     const subtotal = lines.reduce((sum, line) => sum + line.product.price * line.quantity, 0);
-    const tax = Math.round(subtotal * funeral.tax_rate);
+    const discount = calcDiscount(subtotal, funeral);
+    const tax = Math.round((subtotal - discount) * funeral.tax_rate);
 
     return (
         <div className="section">
@@ -38,8 +39,16 @@ const ConfirmView: React.FC<Props> = ({
 
                 <div className="totals">
                     <div><span>小計（税抜）</span><span>{formatYen(subtotal)}</span></div>
+                    {discount > 0 && (
+                        <div>
+                            <span>{funeral.discount_note || '割引'}</span>
+                            <span>-{formatYen(discount)}</span>
+                        </div>
+                    )}
                     <div><span>消費税</span><span>{formatYen(tax)}</span></div>
-                    <div className="grand"><span>合計</span><span>{formatYen(subtotal + tax)}</span></div>
+                    <div className="grand">
+                        <span>合計</span><span>{formatYen(subtotal - discount + tax)}</span>
+                    </div>
                 </div>
             </div>
 

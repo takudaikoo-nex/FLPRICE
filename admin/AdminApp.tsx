@@ -4,13 +4,12 @@ import LoginForm from './components/LoginForm';
 import PlansManager from './components/PlansManager';
 import ItemsManager from './components/ItemsManager';
 import AttendeesManager from './components/AttendeesManager';
-import { LogOut, LayoutDashboard, List, Users, DatabaseBackup, Flower2, CalendarClock, ClipboardList } from 'lucide-react';
+import { LogOut, LayoutDashboard, List, Users, DatabaseBackup, Flower2, Settings } from 'lucide-react';
 import BackupManager from './components/BackupManager';
 import FlowerProductsManager from './components/FlowerProductsManager';
-import FuneralsManager from './components/FuneralsManager';
-import FlowerOrdersManager from './components/FlowerOrdersManager';
+import FlowerSettingsManager from './components/FlowerSettingsManager';
 
-type AdminTab = 'plans' | 'items' | 'attendees' | 'backup' | 'flowerProducts' | 'funerals' | 'flowerOrders';
+type AdminTab = 'plans' | 'items' | 'attendees' | 'backup' | 'flowerProducts' | 'flowerSettings';
 
 const AdminApp: React.FC = () => {
     const [session, setSession] = useState<any>(null);
@@ -119,25 +118,14 @@ const AdminApp: React.FC = () => {
                         </button>
 
                         <button
-                            onClick={() => setActiveTab('funerals')}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'funerals'
+                            onClick={() => setActiveTab('flowerSettings')}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'flowerSettings'
                                 ? 'bg-emerald-50 text-emerald-700 font-bold'
                                 : 'text-gray-600 hover:bg-gray-50'
                                 }`}
                         >
-                            <CalendarClock size={20} />
-                            葬儀・発注受付
-                        </button>
-
-                        <button
-                            onClick={() => setActiveTab('flowerOrders')}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'flowerOrders'
-                                ? 'bg-emerald-50 text-emerald-700 font-bold'
-                                : 'text-gray-600 hover:bg-gray-50'
-                                }`}
-                        >
-                            <ClipboardList size={20} />
-                            供花 受注一覧
+                            <Settings size={20} />
+                            供花の設定
                         </button>
                     </div>
                 </nav>
@@ -176,12 +164,8 @@ const AdminApp: React.FC = () => {
                         <FlowerProductsManager />
                     )}
 
-                    {activeTab === 'funerals' && (
-                        <FuneralsManager />
-                    )}
-
-                    {activeTab === 'flowerOrders' && (
-                        <FlowerOrdersManager />
+                    {activeTab === 'flowerSettings' && (
+                        <FlowerSettingsManager />
                     )}
                 </div>
             </main>

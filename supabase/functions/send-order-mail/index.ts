@@ -88,16 +88,15 @@ Deno.serve(async (req: Request) => {
     }
 
     try {
-        const { type, order_number, funeral_id } = await req.json();
+        const { type, order_number, funeral_id, funeral_token } = await req.json();
 
         if (type !== 'invoice' && type !== 'internal_notice' && type !== 'purchase_order') {
             return json({ error: 'invalid_type' }, 400);
         }
 
-        // 請求書と発注書の送信はスタッフ（ログイン済み）のみ
-        if (type !== 'internal_notice' && !(await isStaff(req))) {
-            return json({ error: 'unauthorized' }, 401);
-        }
+        // 請求書と発注書の送信は、管理画面のログインか、
+        // 対象の葬儀の発注トークンを知っていること（＝運用画面からの操作）を条件とする。
+        const staff = type === 'internal_notice' ? true : await isStaff(req);
 
         const { data: settingsRow, error: settingsRowError } = await admin
             .from('flower_settings')
@@ -123,12 +122,16 @@ Deno.serve(async (req: Request) => {
 
             const { data: funeralRow, error: funeralError } = await admin
                 .from('funerals')
-                .select('id, deceased_name, venue_name, venue_address, ceremony_at')
+                .select('id, deceased_name, venue_name, venue_address, ceremony_at, public_token')
                 .eq('id', funeral_id)
                 .single();
 
             if (funeralError || !funeralRow) {
                 return json({ error: 'funeral_not_found' }, 404);
+            }
+
+            if (!staff && funeralRow.public_token !== funeral_token) {
+                return json({ error: 'unauthorized' }, 401);
             }
 
             const { data: orderRows, error: ordersError } = await admin
@@ -171,12 +174,16 @@ Deno.serve(async (req: Request) => {
         // ---- データ取得 ----
         const { data: order, error: orderError } = await admin
             .from('flower_orders')
-            .select('*, flower_order_items(*), funerals(deceased_name, venue_name, venue_address, ceremony_at)')
+            .select('*, flower_order_items(*), funerals(deceased_name, venue_name, venue_address, ceremony_at, public_token)')
             .eq('order_number', order_number)
             .single();
 
         if (orderError || !order) {
             return json({ error: 'order_not_found' }, 404);
+        }
+
+        if (type === 'invoice' && !staff && order.funerals?.public_token !== funeral_token) {
+            return json({ error: 'unauthorized' }, 401);
         }
 
         const settings = settingsRow;
