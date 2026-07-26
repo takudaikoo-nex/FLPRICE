@@ -2,46 +2,53 @@ import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts';
 
 const env = (key: string): string => Deno.env.get(key) ?? '';
 
-/** UTF-8文字列をbase64に変換する */
-const toBase64 = (text: string): string => {
-    const bytes = new TextEncoder().encode(text);
-    let binary = '';
-    for (const byte of bytes) binary += String.fromCharCode(byte);
-    return btoa(binary);
+/**
+ * denomailer が件名をエンコードしたときの文字数を数える。
+ *
+ * denomailer は件名を `=?utf-8?Q?...?=` に変換し、中身が74文字を超えると
+ * `=\r\n` で折り返す。これは本文用の折り返し方式で、件名（encoded-word）の
+ * 中では規約違反となり、受信側はヘッダーが終わったと解釈して
+ * 以降を本文として表示してしまう。
+ *
+ * また `=?` で始まる文字列は再度エンコードされるため、
+ * 呼び出し側で先にエンコードしておくことはできない。
+ * 収まる長さに保つことが唯一の対処になる。
+ *
+ * 日本語は1文字＝3バイト＝9文字に膨らむ点に注意。
+ */
+const QP_HEADER_LIMIT = 74;
+
+const encodedLength = (text: string): number => {
+    const encoder = new TextEncoder();
+    let length = 0;
+
+    for (const char of text) {
+        const bytes = encoder.encode(char);
+        // 印字可能ASCII（"=" を除く）とタブはそのまま1文字
+        if (bytes.length === 1) {
+            const code = bytes[0];
+            if ((code >= 32 && code <= 126 && code !== 61) || code === 9) {
+                length += 1;
+                continue;
+            }
+        }
+        // それ以外は1バイトにつき "=XX" の3文字
+        length += bytes.length * 3;
+    }
+
+    return length;
 };
 
-/**
- * 件名を RFC 2047 の encoded-word に変換する。
- *
- * denomailer は日本語の長い件名を折り返す際に encoded-word の途中で改行してしまい、
- * ヘッダー領域が壊れて件名も本文も文字化けする。
- * そのため、ここで正しい形（1つ75文字以内・継続行は先頭に空白）に組み立てる。
- * ASCIIのみの件名はそのまま返す（denomailer側もエンコードしない）。
- */
-const encodeSubject = (subject: string): string => {
-    if (/^[\x20-\x7E]*$/.test(subject)) return subject;
+/** 折り返しが起きない長さまで件名を切り詰める */
+export const fitSubject = (subject: string): string => {
+    if (encodedLength(subject) <= QP_HEADER_LIMIT) return subject;
 
-    // "=?utf-8?B?" + base64 + "?=" で75文字以内に収めるため、1語あたり45バイトまで
-    const MAX_BYTES = 45;
-    const encoder = new TextEncoder();
-    const words: string[] = [];
-    let current = '';
-    let currentBytes = 0;
-
-    // 文字単位で区切る（バイト単位で切るとマルチバイト文字が壊れるため）
+    let result = '';
     for (const char of subject) {
-        const size = encoder.encode(char).length;
-        if (currentBytes + size > MAX_BYTES) {
-            words.push(current);
-            current = '';
-            currentBytes = 0;
-        }
-        current += char;
-        currentBytes += size;
+        if (encodedLength(result + char + '…') > QP_HEADER_LIMIT) break;
+        result += char;
     }
-    if (current) words.push(current);
-
-    return words.map(word => `=?utf-8?B?${toBase64(word)}?=`).join('\r\n ');
+    return result + '…';
 };
 
 /** 既存のメールサーバー（SMTP）経由で送信する */
@@ -78,7 +85,7 @@ export const sendMail = async (
             client.send({
                 from: fromName ? `${fromName} <${from}>` : from,
                 to,
-                subject: encodeSubject(subject),
+                subject: fitSubject(subject),
                 // SMTPは改行がCRLFである前提のため揃えておく
                 content: text.replace(/\r?\n/g, '\r\n'),
             }),

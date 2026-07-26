@@ -74,6 +74,15 @@ const dateTime = (iso: string | null): string => {
     return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 ${p(d.getHours())}:${p(d.getMinutes())}`;
 };
 
+/** 件名用の短い日付（2026-08-02）。「年月日」は1文字9文字分に膨らむため使わない */
+const dateCompact = (iso: string | null): string => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    const p = (n: number) => n.toString().padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+};
+
 const addDays = (iso: string, days: number): string => {
     const d = new Date(iso);
     if (isNaN(d.getTime())) return '—';
@@ -154,7 +163,8 @@ ${settings.invoice_registration_number ? `登録番号: ${settings.invoice_regis
 `;
 
     return {
-        subject: `【ご請求】供花のお申し込み（注文番号 ${order.order_number}）`,
+        // 日本語1文字が9文字に膨らむため、件名は短く保つ（詳細は本文に記載）
+        subject: `供花ご請求 ${order.order_number}`,
         text,
     };
 };
@@ -234,7 +244,7 @@ TEL: ${settings.company_tel}
 `;
 
     return {
-        subject: `【供花発注】故 ${funeral.deceased_name} 様（${dateOnly(funeral.ceremony_at)}）合計${totalCount}基`,
+        subject: `供花発注 ${dateCompact(funeral.ceremony_at)} (${totalCount})`,
         text,
     };
 };
@@ -272,7 +282,7 @@ ${order.remarks ? `\n■ 備考\n  ${order.remarks}\n` : ''}
 `;
 
     return {
-        subject: `【供花受注】故 ${funeral.deceased_name} 様 / ${order.order_number}`,
+        subject: `供花受注 ${order.order_number}`,
         text,
     };
 };
