@@ -33,7 +33,22 @@ export const sendOrderMail = async (type: OrderMailType, args: SendOrderMailArgs
         },
     });
 
-    if (error) throw error;
+    if (error) {
+        // supabase-js は関数が返したエラー本文を message に載せないため、
+        // レスポンスから実際のエラーコードを取り出す
+        let code = '';
+        const response = (error as { context?: Response }).context;
+        if (response && typeof response.json === 'function') {
+            try {
+                const body = await response.json();
+                code = body?.error || '';
+            } catch {
+                // 本文が読めない場合は元のメッセージを使う
+            }
+        }
+        throw new Error(code || error.message);
+    }
+
     if (data?.error) throw new Error(data.error);
     return data as { sent?: boolean; skipped?: string; orders?: number };
 };
