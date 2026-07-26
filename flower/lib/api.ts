@@ -63,6 +63,22 @@ export interface OrderResult {
     total: number;
 }
 
+export interface CompanyInfo {
+    company_name: string;
+    company_postal_code: string;
+    company_address: string;
+    company_tel: string;
+    representative_name: string;
+    contact_tel: string;
+    contact_hours: string;
+    cancellation_policy: string;
+    privacy_note: string;
+    mail_from: string;
+    payment_due_days: number;
+    card_payment_enabled: boolean;
+    tax_rate: number;
+}
+
 /** 発注URLに設定された割引額（税抜の小計に対して適用） */
 export const calcDiscount = (subtotal: number, funeral: FuneralPublic): number => {
     if (funeral.discount_type === 'amount') {
@@ -109,6 +125,13 @@ export const lookupFuneral = (token: string): Promise<FuneralPublic> =>
 
 export const fetchProducts = (): Promise<PublicProduct[]> =>
     callApi<PublicProduct[]>({ action: 'products' });
+
+export const fetchCompany = (): Promise<CompanyInfo> =>
+    callApi<CompanyInfo>({ action: 'company' });
+
+/** 表示に使う問い合わせ電話番号 */
+export const contactTel = (company: CompanyInfo | null): string =>
+    company?.contact_tel || company?.company_tel || '';
 
 export const submitOrder = (
     token: string,

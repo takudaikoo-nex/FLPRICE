@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
     readTokenFromUrl, lookupFuneral, fetchProducts, submitOrder, toUserMessage,
-    calcDiscount, FuneralPublic, PublicProduct, CartLine, OrdererInput, OrderResult,
+    calcDiscount, fetchCompany,
+    FuneralPublic, PublicProduct, CartLine, OrdererInput, OrderResult, CompanyInfo,
 } from './lib/api';
 import { isDemoMode, DEMO_FUNERAL, DEMO_PRODUCTS, demoSubmit } from './lib/demoData';
 import { formatYen } from '../lib/format';
@@ -11,6 +12,8 @@ import OrderForm from './components/OrderForm';
 import ConfirmView from './components/ConfirmView';
 import CompleteView from './components/CompleteView';
 import Notice from './components/Notice';
+import SiteFooter from './components/SiteFooter';
+import LegalPage from './components/LegalPage';
 
 type Step = 'catalog' | 'form' | 'confirm' | 'complete';
 
@@ -34,8 +37,18 @@ const App: React.FC = () => {
     const [submitError, setSubmitError] = useState('');
     const [result, setResult] = useState<OrderResult | null>(null);
 
+    const [company, setCompany] = useState<CompanyInfo | null>(null);
+
     const demo = isDemoMode();
     const token = readTokenFromUrl();
+    const legalPage = new URLSearchParams(window.location.search).get('p');
+
+    // 事業者情報はどの画面でもフッターに出すため、最初に読んでおく
+    useEffect(() => {
+        fetchCompany()
+            .then(setCompany)
+            .catch(error => console.error('Failed to load company info:', error));
+    }, []);
 
     useEffect(() => {
         if (demo) {
@@ -111,34 +124,52 @@ const App: React.FC = () => {
         }
     };
 
+    if (legalPage === 'tokushoho' || legalPage === 'privacy') {
+        return (
+            <>
+                <LegalPage page={legalPage} company={company} />
+                <SiteFooter company={company} />
+            </>
+        );
+    }
+
     if (loading) {
         return <div className="loading">読み込んでいます...</div>;
     }
 
     if ((!demo && !token) || loadFailed || !funeral || funeral.status === 'not_found') {
         return (
-            <Notice
-                title="ページが見つかりません"
-                message="お手元のご案内に記載されたURLをご確認ください。ご不明な場合は葬儀社までお問い合わせください。"
-            />
+            <>
+                <Notice
+                    title="ページが見つかりません"
+                    message="お手元のご案内に記載されたURLをご確認ください。ご不明な場合は下記までお問い合わせください。"
+                />
+                <SiteFooter company={company} />
+            </>
         );
     }
 
     if (funeral.status === 'closed') {
         return (
-            <Notice
-                title="供花の受付は終了しました"
-                message={`故 ${funeral.deceased_name} 様への供花のお申し込みは締め切らせていただきました。`}
-            />
+            <>
+                <Notice
+                    title="供花の受付は終了しました"
+                    message={`故 ${funeral.deceased_name} 様への供花のお申し込みは締め切らせていただきました。`}
+                />
+                <SiteFooter company={company} />
+            </>
         );
     }
 
     if (funeral.status === 'deadline_passed') {
         return (
-            <Notice
-                title="受付締切を過ぎています"
-                message={`故 ${funeral.deceased_name} 様への供花のお申し込みは受付を終了いたしました。お急ぎの場合は葬儀社までお問い合わせください。`}
-            />
+            <>
+                <Notice
+                    title="受付締切を過ぎています"
+                    message={`故 ${funeral.deceased_name} 様への供花のお申し込みは受付を終了いたしました。お急ぎの場合は下記までお問い合わせください。`}
+                />
+                <SiteFooter company={company} />
+            </>
         );
     }
 
@@ -155,6 +186,7 @@ const App: React.FC = () => {
                     paymentMethod={paymentMethod}
                     email={orderer.email}
                 />
+                <SiteFooter company={company} />
             </>
         );
     }
@@ -210,10 +242,9 @@ const App: React.FC = () => {
                     />
                 )}
 
-                <footer className="site-footer">
-                    お申し込みに関するお問い合わせは葬儀社までご連絡ください。
-                </footer>
             </div>
+
+            <SiteFooter company={company} />
 
             {step === 'catalog' && lines.length > 0 && (
                 <div className="cart-bar">

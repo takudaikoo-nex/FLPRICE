@@ -111,6 +111,11 @@ export interface FlowerSettings {
   mail_from_name: string;
   supplier_name: string;
   supplier_email: string;
+  representative_name: string;
+  contact_tel: string;
+  contact_hours: string;
+  cancellation_policy: string;
+  privacy_note: string;
 }
 
 export interface FlowerProduct {

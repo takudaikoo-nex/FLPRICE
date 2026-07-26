@@ -632,3 +632,142 @@ textarea {
     font-size: 0.78rem;
     color: var(--muted);
 }
+
+/* ---------- フッター ---------- */
+.site-footer {
+    background: #fff;
+    border-top: 1px solid var(--line);
+    margin-top: 40px;
+    padding: 28px 16px 40px;
+    text-align: center;
+}
+
+.footer-contact-label {
+    font-size: 0.78rem;
+    color: var(--muted);
+}
+
+.footer-company {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-top: 4px;
+}
+
+.footer-tel {
+    display: inline-block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary);
+    text-decoration: none;
+    letter-spacing: 0.04em;
+    margin-top: 6px;
+}
+
+.footer-hours {
+    font-size: 0.76rem;
+    color: var(--muted);
+    margin-top: 2px;
+}
+
+.footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 20px;
+    margin-top: 20px;
+}
+
+.footer-links a {
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-decoration: underline;
+}
+
+.footer-links a:hover {
+    color: var(--primary);
+}
+
+.footer-copyright {
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-top: 20px;
+}
+
+/* ---------- 規約ページ ---------- */
+.legal-page {
+    padding-bottom: 40px;
+}
+
+.legal-table {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-top: 24px;
+}
+
+.legal-row {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    border-bottom: 1px solid var(--line);
+}
+
+.legal-row:last-child {
+    border-bottom: none;
+}
+
+.legal-label {
+    background: #FAF9F7;
+    padding: 14px 16px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.legal-value {
+    padding: 14px 16px;
+    font-size: 0.9rem;
+}
+
+.legal-body {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-top: 24px;
+    font-size: 0.92rem;
+}
+
+.legal-body h2 {
+    font-size: 0.95rem;
+    color: var(--primary);
+    margin: 22px 0 8px;
+}
+
+.legal-body h2:first-of-type {
+    margin-top: 12px;
+}
+
+.legal-body ul {
+    padding-left: 1.2em;
+    margin: 6px 0;
+}
+
+.legal-body p {
+    margin-bottom: 6px;
+}
+
+@media (max-width: 600px) {
+    .legal-row {
+        grid-template-columns: 1fr;
+    }
+
+    .legal-label {
+        padding-bottom: 4px;
+    }
+
+    .legal-value {
+        padding-top: 4px;
+    }
+}

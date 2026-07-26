@@ -64,6 +64,11 @@ const FlowerSettingsManager: React.FC = () => {
                     bank_info: settings.bank_info,
                     supplier_name: settings.supplier_name,
                     supplier_email: settings.supplier_email.trim(),
+                    representative_name: settings.representative_name,
+                    contact_tel: settings.contact_tel.trim(),
+                    contact_hours: settings.contact_hours,
+                    cancellation_policy: settings.cancellation_policy,
+                    privacy_note: settings.privacy_note,
                 })
                 .eq('id', 1);
 
@@ -190,6 +195,68 @@ const FlowerSettingsManager: React.FC = () => {
                 <p className="text-xs text-gray-400">
                     発注書は葬儀ごとに、その葬儀の全注文をまとめて1通送ります。
                 </p>
+            </div>
+
+            <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4 mt-6">
+                <h4 className="font-bold text-gray-700">発注サイトの表記（特商法・プライバシーポリシー）</h4>
+                <p className="text-xs text-gray-400">
+                    発注サイトのフッターと、そこから開く規約ページに表示されます。
+                    事業者名・住所・電話番号は下の「メール送信・請求書」の設定を使います。
+                </p>
+
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">運営統括責任者</label>
+                        <input
+                            type="text"
+                            value={settings.representative_name}
+                            onChange={e => update({ representative_name: e.target.value })}
+                            placeholder="代表者のお名前"
+                            className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">問い合わせ電話番号</label>
+                        <input
+                            type="text"
+                            value={settings.contact_tel}
+                            onChange={e => update({ contact_tel: e.target.value })}
+                            placeholder="0467-38-5617"
+                            className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
+                        />
+                    </div>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">受付時間</label>
+                    <input
+                        type="text"
+                        value={settings.contact_hours}
+                        onChange={e => update({ contact_hours: e.target.value })}
+                        placeholder="24時間365日受付"
+                        className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">返品・キャンセルについて</label>
+                    <textarea
+                        value={settings.cancellation_policy}
+                        onChange={e => update({ cancellation_policy: e.target.value })}
+                        className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none h-24"
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        プライバシーポリシーの補足（任意）
+                    </label>
+                    <textarea
+                        value={settings.privacy_note}
+                        onChange={e => update({ privacy_note: e.target.value })}
+                        className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none h-24"
+                    />
+                </div>
             </div>
 
             <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4 mt-6">

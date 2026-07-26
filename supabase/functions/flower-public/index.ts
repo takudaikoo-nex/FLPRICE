@@ -8,6 +8,7 @@
 //   POST { action: 'lookup',       token }
 //   POST { action: 'products' }
 //   POST { action: 'create_order', token, orderer, items, payment_method }
+//   POST { action: 'company' }      … 特商法・プライバシーポリシー用の事業者情報
 // ================================================
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -113,6 +114,20 @@ Deno.serve(async (req: Request) => {
                 ...product,
                 image_paths: (product.image_paths ?? []).map(imageUrl),
             })));
+        }
+
+        // ---- 事業者情報（特商法・プライバシーポリシー・フッター用）----
+        if (action === 'company') {
+            const { data, error } = await admin
+                .from('flower_settings')
+                .select('company_name, company_postal_code, company_address, company_tel, '
+                    + 'representative_name, contact_tel, contact_hours, cancellation_policy, '
+                    + 'privacy_note, mail_from, payment_due_days, card_payment_enabled, tax_rate')
+                .eq('id', 1)
+                .single();
+
+            if (error) throw error;
+            return json(data);
         }
 
         // ---- 注文の作成 ----
