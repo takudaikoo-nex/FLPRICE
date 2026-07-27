@@ -59,35 +59,47 @@ export interface BuiltMail {
 
 const yen = (value: number): string => `¥${value.toLocaleString('ja-JP')}`;
 
+/**
+ * 日本時間（+09:00）で日付を組み立てる。
+ *
+ * Edge Function は UTC で動くため、getHours() などをそのまま使うと
+ * 9時間ずれた時刻が表示される。日本に時差変更（サマータイム）は無いので、
+ * 固定で9時間足したうえで UTC 系のメソッドを使う。
+ */
+const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
+
+const toJst = (iso: string | null): Date | null => {
+    if (!iso) return null;
+    const date = new Date(iso);
+    if (isNaN(date.getTime())) return null;
+    return new Date(date.getTime() + JST_OFFSET_MS);
+};
+
 const dateOnly = (iso: string | null): string => {
-    if (!iso) return '—';
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return '—';
-    return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+    const d = toJst(iso);
+    if (!d) return '—';
+    return `${d.getUTCFullYear()}年${d.getUTCMonth() + 1}月${d.getUTCDate()}日`;
 };
 
 const dateTime = (iso: string | null): string => {
-    if (!iso) return '—';
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return '—';
+    const d = toJst(iso);
+    if (!d) return '—';
     const p = (n: number) => n.toString().padStart(2, '0');
-    return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 ${p(d.getHours())}:${p(d.getMinutes())}`;
+    return `${d.getUTCFullYear()}年${d.getUTCMonth() + 1}月${d.getUTCDate()}日 ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
 };
 
 /** 件名用の短い日付（2026-08-02）。「年月日」は1文字9文字分に膨らむため使わない */
 const dateCompact = (iso: string | null): string => {
-    if (!iso) return '';
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return '';
+    const d = toJst(iso);
+    if (!d) return '';
     const p = (n: number) => n.toString().padStart(2, '0');
-    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+    return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())}`;
 };
 
 const addDays = (iso: string, days: number): string => {
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return '—';
-    d.setDate(d.getDate() + days);
-    return dateOnly(d.toISOString());
+    const date = new Date(iso);
+    if (isNaN(date.getTime())) return '—';
+    return dateOnly(new Date(date.getTime() + days * 24 * 60 * 60 * 1000).toISOString());
 };
 
 const itemLines = (items: MailOrderItem[]): string =>
