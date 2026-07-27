@@ -175,8 +175,9 @@ ${settings.invoice_registration_number ? `登録番号: ${settings.invoice_regis
 `;
 
     return {
-        // 日本語1文字が9文字に膨らむため、件名は短く保つ（詳細は本文に記載）
-        subject: `供花のご請求書 ${order.order_number}`,
+        // 件名はエンコード後74文字までで、日本語1文字が9文字に膨らむ。
+        // 注文番号は本文の冒頭に記載しているため件名からは省いている。
+        subject: '供花代金のご請求',
         text,
     };
 };
