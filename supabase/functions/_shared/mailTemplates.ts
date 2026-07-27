@@ -123,9 +123,9 @@ export const buildInvoiceMail = (
 このたびは供花のお申し込みを賜り、誠にありがとうございました。
 下記のとおりご請求申し上げます。
 
-──────────────────────────────
+───────────────
 ■ ご注文内容
-──────────────────────────────
+───────────────
   注文番号: ${order.order_number}
   お申し込み日: ${dateOnly(order.created_at)}
 
@@ -135,9 +135,9 @@ ${funeral.venue_address ? `  住所: ${funeral.venue_address}\n` : ''}  告別�
 
 ${itemLines(items)}
 
-──────────────────────────────
+───────────────
 ■ ご請求金額
-──────────────────────────────
+───────────────
   小計（税抜）: ${yen(order.subtotal)}
 ${order.discount > 0 ? `  割引:         -${yen(order.discount)}
 ` : ''}  消費税:       ${yen(order.tax)}
@@ -145,19 +145,19 @@ ${order.discount > 0 ? `  割引:         -${yen(order.discount)}
 
   お支払期限: ${addDays(order.created_at, settings.payment_due_days)}
 
-──────────────────────────────
+───────────────
 ■ お振込先
-──────────────────────────────
+───────────────
 ${settings.bank_info || '  （別途ご連絡いたします）'}
 
   ※ 恐れ入りますが、振込手数料はお客様のご負担にてお願いいたします。
 
-──────────────────────────────
+───────────────
 ${settings.company_name}
 ${settings.company_postal_code ? `〒${settings.company_postal_code} ` : ''}${settings.company_address}
 TEL: ${settings.company_tel}
 ${settings.invoice_registration_number ? `登録番号: ${settings.invoice_registration_number}` : ''}
-──────────────────────────────
+───────────────
 
 末筆ながら、心よりお悔やみ申し上げます。
 `;
@@ -214,30 +214,30 @@ export const buildPurchaseOrderMail = (
 いつもお世話になっております。${settings.company_name}です。
 下記のとおり供花の手配をお願いいたします。
 
-──────────────────────────────
+───────────────
 ■ お届け先
-──────────────────────────────
+───────────────
   故 ${funeral.deceased_name} 様
   式場: ${funeral.venue_name || '—'}
 ${funeral.venue_address ? `  住所: ${funeral.venue_address}\n` : ''}  告別式: ${dateTime(funeral.ceremony_at)}
 
   ※ 告別式の開始までに設営をお願いいたします。
 
-──────────────────────────────
+───────────────
 ■ ご手配品（合計 ${totalCount} 基）
-──────────────────────────────
+───────────────
 ${summary}
 
-──────────────────────────────
+───────────────
 ■ 名札一覧
-──────────────────────────────
+───────────────
 ${nafudaList}
 
-──────────────────────────────
+───────────────
 ${settings.company_name}
 ${settings.company_postal_code ? `〒${settings.company_postal_code} ` : ''}${settings.company_address}
 TEL: ${settings.company_tel}
-──────────────────────────────
+───────────────
 
 ご不明な点がございましたらご連絡ください。
 何卒よろしくお願いいたします。
