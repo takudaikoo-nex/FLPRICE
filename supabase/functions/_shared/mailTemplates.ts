@@ -176,7 +176,7 @@ ${settings.invoice_registration_number ? `登録番号: ${settings.invoice_regis
 
     return {
         // 日本語1文字が9文字に膨らむため、件名は短く保つ（詳細は本文に記載）
-        subject: `供花ご請求 ${order.order_number}`,
+        subject: `供花のご請求書 ${order.order_number}`,
         text,
     };
 };
