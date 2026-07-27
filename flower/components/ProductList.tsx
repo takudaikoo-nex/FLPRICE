@@ -5,6 +5,8 @@ import { formatYen } from '../../lib/format';
 interface Props {
     products: PublicProduct[];
     taxRate: number;
+    /** 割引がある場合の表示名。無い場合は空 */
+    discountLabel: string;
     lines: CartLine[];
     onAdd: (product: PublicProduct, quantity: number, nafudaName: string) => void;
     onRemove: (productId: string) => void;
@@ -12,7 +14,7 @@ interface Props {
 
 const taxIncluded = (price: number, taxRate: number) => Math.round(price * (1 + taxRate));
 
-const ProductList: React.FC<Props> = ({ products, taxRate, lines, onAdd, onRemove }) => {
+const ProductList: React.FC<Props> = ({ products, taxRate, discountLabel, lines, onAdd, onRemove }) => {
     const [category, setCategory] = useState('all');
     const [selected, setSelected] = useState<PublicProduct | null>(null);
     const [imageIndex, setImageIndex] = useState(0);
@@ -49,6 +51,12 @@ const ProductList: React.FC<Props> = ({ products, taxRate, lines, onAdd, onRemov
     return (
         <div className="section">
             <h2 className="section-title">お供物をお選びください</h2>
+
+            {discountLabel && (
+                <p className="hint" style={{ marginBottom: 14 }}>
+                    表示価格から{discountLabel}が適用されます。割引後の金額はご確認画面に表示されます。
+                </p>
+            )}
 
             {categories.length > 2 && (
                 <div className="category-tabs">

@@ -1,6 +1,6 @@
 import React from 'react';
 import { FuneralPublic } from '../lib/api';
-import { formatDateTime } from '../../lib/format';
+import { formatDateTime, formatYen } from '../../lib/format';
 
 interface Props {
     funeral: FuneralPublic;
@@ -34,6 +34,20 @@ const FuneralHeader: React.FC<Props> = ({ funeral }) => (
         {funeral.order_deadline && (
             <p className="deadline-note">
                 お申し込みの受付は <strong>{formatDateTime(funeral.order_deadline)}</strong> までとなります。
+            </p>
+        )}
+
+        {funeral.discount_type !== 'none' && funeral.discount_value > 0 && (
+            <p className="discount-note">
+                <strong>{funeral.discount_note || '割引'}</strong>
+                <span className="discount-amount">
+                    {funeral.discount_type === 'amount'
+                        ? `${formatYen(funeral.discount_value)} 引き`
+                        : `${funeral.discount_value}％ 引き`}
+                </span>
+                <span className="discount-hint">
+                    こちらのページからのお申し込みに適用されます（お申し込み1件につき1回）
+                </span>
             </p>
         )}
     </div>

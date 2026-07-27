@@ -18,6 +18,12 @@ const CompleteView: React.FC<Props> = ({ result, paymentMethod, email }) => (
             {email} 宛に確認のご連絡をいたします。
         </p>
 
+        {result.discount > 0 && (
+            <p className="complete-discount">
+                割引 -{formatYen(result.discount)} を適用しています
+            </p>
+        )}
+
         <p style={{ marginTop: 16 }}>
             {paymentMethod === 'invoice'
                 ? '後日、請求書をメールにてお送りいたします。'

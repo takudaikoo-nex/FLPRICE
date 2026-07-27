@@ -211,6 +211,9 @@ const App: React.FC = () => {
                     <ProductList
                         products={products}
                         taxRate={funeral.tax_rate}
+                        discountLabel={discount > 0 || funeral.discount_type !== 'none'
+                            ? (funeral.discount_note || '割引')
+                            : ''}
                         lines={lines}
                         onAdd={handleAdd}
                         onRemove={handleRemove}
@@ -250,10 +253,12 @@ const App: React.FC = () => {
                 <div className="cart-bar">
                     <div className="cart-bar-inner">
                         <div className="cart-total">
-                            <div className="label">
-                                {lines.length}点 / 合計（税込）
-                                {discount > 0 && `　${funeral.discount_note || '割引'} -${formatYen(discount)}`}
-                            </div>
+                            <div className="label">{lines.length}点 / 合計（税込）</div>
+                            {discount > 0 && (
+                                <div className="cart-discount">
+                                    {funeral.discount_note || '割引'} -{formatYen(discount)}
+                                </div>
+                            )}
                             <div className="value">{formatYen(total)}</div>
                         </div>
                         <button

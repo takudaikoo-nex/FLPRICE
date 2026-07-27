@@ -771,3 +771,46 @@ textarea {
         padding-top: 4px;
     }
 }
+
+/* ---------- 割引の案内 ---------- */
+.discount-note {
+    margin-top: 12px;
+    padding: 12px 14px;
+    background: #F1F7F3;
+    border: 1px solid #CFE3D6;
+    border-radius: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 12px;
+}
+
+.discount-note strong {
+    color: var(--primary);
+    font-size: 0.92rem;
+}
+
+.discount-amount {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.discount-hint {
+    width: 100%;
+    font-size: 0.75rem;
+    color: var(--muted);
+}
+
+.cart-discount {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.complete-discount {
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: var(--primary);
+    font-weight: 700;
+}
