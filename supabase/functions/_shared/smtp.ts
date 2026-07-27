@@ -51,6 +51,28 @@ export const fitSubject = (subject: string): string => {
     return result + '…';
 };
 
+/**
+ * 本文をbase64に変換し、76文字ごとに改行する（RFC 2045）。
+ *
+ * denomailer の quotedPrintableEncode は74文字ごとに折り返す際、
+ * 多バイト文字の途中で切れた分を次の行へ送る調整をしているが、
+ * 最後のかたまりだけその調整が反映されず、末尾付近の文字が脱落する。
+ *
+ * mimeContent で渡した内容はこのエンコーダを通らないため、
+ * 自前でbase64に変換して渡すことで回避する。
+ */
+export const toBase64Body = (text: string): string => {
+    // SMTPは改行がCRLFである前提
+    const normalized = text.replace(/\r?\n/g, '\r\n');
+    const bytes = new TextEncoder().encode(normalized);
+
+    let binary = '';
+    for (const byte of bytes) binary += String.fromCharCode(byte);
+
+    const encoded = btoa(binary);
+    return (encoded.match(/.{1,76}/g) ?? []).join('\r\n');
+};
+
 /** 既存のメールサーバー（SMTP）経由で送信する */
 export const sendMail = async (
     to: string[],
@@ -86,8 +108,11 @@ export const sendMail = async (
                 from: fromName ? `${fromName} <${from}>` : from,
                 to,
                 subject: fitSubject(subject),
-                // SMTPは改行がCRLFである前提のため揃えておく
-                content: text.replace(/\r?\n/g, '\r\n'),
+                mimeContent: [{
+                    mimeType: 'text/plain; charset="utf-8"',
+                    content: toBase64Body(text),
+                    transferEncoding: 'base64',
+                }],
             }),
             new Promise((_, reject) =>
                 setTimeout(
