@@ -13,7 +13,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { sendMail } from '../_shared/smtp.ts';
-import { buildInternalNoticeMail } from '../_shared/mailTemplates.ts';
+import { buildInternalNoticeMail, buildInvoiceMail } from '../_shared/mailTemplates.ts';
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -40,8 +40,13 @@ const IMAGE_BASE = `${env('SUPABASE_URL')}/storage/v1/object/public/flower-image
 const imageUrl = (path: string): string =>
     /^(https?:|data:|\/)/.test(path) ? path : IMAGE_BASE + path;
 
-/** 注文受付後の自社通知。失敗しても注文は成立しているため握りつぶす */
-const notifyInternal = async (orderId: number) => {
+/**
+ * 注文受付後のメール送信。
+ *   ・自社への受注通知
+ *   ・請求書払いのお客様への請求書
+ * どちらも失敗しても注文自体は成立しているため、ログに残して続行する。
+ */
+const sendOrderMails = async (orderId: number) => {
     try {
         const { data: order } = await admin
             .from('flower_orders')
@@ -53,29 +58,55 @@ const notifyInternal = async (orderId: number) => {
             .from('flower_settings').select('*').eq('id', 1).single();
 
         if (!order) {
-            console.error('internal notice skipped: order not found', orderId);
+            console.error('order mails skipped: order not found', orderId);
             return;
         }
         if (!settings?.mail_from) {
-            console.error('internal notice skipped: mail_from is not configured in flower_settings');
+            console.error('order mails skipped: mail_from is not configured in flower_settings');
             return;
         }
 
+        const items = order.flower_order_items ?? [];
+
+        // ---- 自社への受注通知 ----
         const recipients: string[] = settings.notify_emails ?? [];
         if (recipients.length === 0) {
             console.error('internal notice skipped: notify_emails is empty in flower_settings');
-            return;
+        } else {
+            try {
+                const notice = buildInternalNoticeMail(order, order.funerals, items);
+                await sendMail(recipients, notice.subject, notice.text, settings.mail_from, settings.mail_from_name);
+                await admin
+                    .from('flower_orders')
+                    .update({ notified_at: new Date().toISOString() })
+                    .eq('id', orderId);
+            } catch (error) {
+                console.error('internal notice failed:', error);
+            }
         }
 
-        const mail = buildInternalNoticeMail(order, order.funerals, order.flower_order_items ?? []);
-        await sendMail(recipients, mail.subject, mail.text, settings.mail_from, settings.mail_from_name);
-
-        await admin
-            .from('flower_orders')
-            .update({ notified_at: new Date().toISOString() })
-            .eq('id', orderId);
+        // ---- お客様への請求書（請求書払いのみ）----
+        // カード払いは決済時に確定するため、ここでは送らない。
+        if (order.payment_method === 'invoice') {
+            try {
+                const invoice = buildInvoiceMail(order, order.funerals, items, settings);
+                await sendMail(
+                    [order.orderer_email],
+                    invoice.subject,
+                    invoice.text,
+                    settings.mail_from,
+                    settings.mail_from_name,
+                );
+                await admin
+                    .from('flower_orders')
+                    .update({ invoice_sent_at: new Date().toISOString() })
+                    .eq('id', orderId);
+            } catch (error) {
+                console.error('invoice mail failed:', error);
+            }
+        }
     } catch (error) {
-        console.error('internal notice failed:', error);
+        console.error('order mails failed:', error);
     }
 };
 
@@ -150,7 +181,7 @@ Deno.serve(async (req: Request) => {
                 .eq('order_number', data.order_number)
                 .single();
 
-            if (created) await notifyInternal(created.id);
+            if (created) await sendOrderMails(created.id);
 
             return json(data);
         }

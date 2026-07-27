@@ -88,27 +88,15 @@ const OrderForm: React.FC<Props> = ({
                     </div>
                 </div>
 
-                <div className="form-row">
-                    <div className="field">
-                        <label htmlFor="postal">郵便番号</label>
-                        <input
-                            id="postal"
-                            type="text"
-                            value={orderer.postal_code}
-                            onChange={e => update({ postal_code: e.target.value })}
-                            placeholder="2480000"
-                        />
-                    </div>
-                    <div className="field">
-                        <label htmlFor="relation">故人さまとのご関係</label>
-                        <input
-                            id="relation"
-                            type="text"
-                            value={orderer.relation}
-                            onChange={e => update({ relation: e.target.value })}
-                            placeholder="例）ご友人、取引先"
-                        />
-                    </div>
+                <div className="field">
+                    <label htmlFor="postal">郵便番号</label>
+                    <input
+                        id="postal"
+                        type="text"
+                        value={orderer.postal_code}
+                        onChange={e => update({ postal_code: e.target.value })}
+                        placeholder="2480000"
+                    />
                 </div>
 
                 <div className="field">
@@ -120,6 +108,17 @@ const OrderForm: React.FC<Props> = ({
                         onChange={e => update({ address: e.target.value })}
                     />
                     <p className="hint">請求書をお送りする場合に使用します</p>
+                </div>
+
+                <div className="field">
+                    <label htmlFor="relation">故人さまとのご関係</label>
+                    <input
+                        id="relation"
+                        type="text"
+                        value={orderer.relation}
+                        onChange={e => update({ relation: e.target.value })}
+                        placeholder="例）ご友人、取引先"
+                    />
                 </div>
 
                 <div className="field">

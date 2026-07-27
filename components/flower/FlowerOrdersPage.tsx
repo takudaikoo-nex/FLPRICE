@@ -350,7 +350,7 @@ const FlowerOrdersPage: React.FC<Props> = ({ onBack }) => {
                                         <div className="text-xs text-gray-400 mt-1">
                                             {detail.invoice_sent_at
                                                 ? `${formatDateTime(detail.invoice_sent_at)} に ${detail.orderer_email} へ送信済み`
-                                                : `送信先: ${detail.orderer_email}`}
+                                                : `未送信（送信先: ${detail.orderer_email}）`}
                                         </div>
                                         <div className="text-xs text-gray-400 mt-1">
                                             {detail.notified_at
@@ -382,7 +382,7 @@ const FlowerOrdersPage: React.FC<Props> = ({ onBack }) => {
                                             className="inline-flex items-center gap-2 px-4 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
                                         >
                                             <Mail size={16} />
-                                            {detail.invoice_sent_at ? '再送する' : '請求書を送信'}
+                                            {detail.invoice_sent_at ? '請求書を再送' : '請求書を送信'}
                                         </button>
                                     </div>
                                 </div>
