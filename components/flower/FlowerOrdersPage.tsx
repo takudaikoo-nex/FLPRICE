@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
-import { FlowerOrder, FlowerOrderStatus, FlowerPaymentStatus, Funeral, FlowerSettings } from '../../types';
+import {
+    FlowerOrder, FlowerOrderItem, FlowerOrderStatus, FlowerPaymentStatus, Funeral, FlowerSettings,
+} from '../../types';
 import { formatDateTime, formatYen, downloadCsv } from '../../lib/flower';
 import { sendOrderMail } from '../../lib/mail';
 import { buildInvoiceMail } from '../../supabase/functions/_shared/mailTemplates';
@@ -39,6 +41,10 @@ const FlowerOrdersPage: React.FC<Props> = ({ onBack }) => {
     const [settings, setSettings] = useState<FlowerSettings | null>(null);
     const [preview, setPreview] = useState<{ subject: string; text: string } | null>(null);
     const [sending, setSending] = useState(false);
+
+    // 明細（商品コード・名札表記）の編集
+    const [itemsDirty, setItemsDirty] = useState(false);
+    const [savingItems, setSavingItems] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -86,6 +92,63 @@ const FlowerOrdersPage: React.FC<Props> = ({ onBack }) => {
         } catch (error: any) {
             console.error('Error updating flower order:', error);
             alert(`更新に失敗しました: ${error.message}`);
+        }
+    };
+
+    const openDetail = (order: FlowerOrder) => {
+        setDetail(order);
+        setItemsDirty(false);
+    };
+
+    const closeDetail = () => {
+        if (itemsDirty && !confirm('保存していない明細の変更があります。破棄して閉じますか？')) return;
+        setDetail(null);
+        setItemsDirty(false);
+    };
+
+    const patchDetailItem = (itemId: number, patch: Partial<FlowerOrderItem>) => {
+        setDetail(prev => (prev ? {
+            ...prev,
+            flower_order_items: (prev.flower_order_items || []).map(item => (
+                item.id === itemId ? { ...item, ...patch } : item
+            )),
+        } : prev));
+        setItemsDirty(true);
+    };
+
+    /**
+     * 商品コードと名札表記を保存する。
+     *
+     * お客様が入力した名札の表記を、こちらで直せるようにするためのもの。
+     * 保存した内容は請求書メールと業者への発注書の両方に使われる。
+     */
+    const saveDetailItems = async () => {
+        if (!detail) return;
+
+        const original = orders.find(o => o.id === detail.id);
+        setSavingItems(true);
+        try {
+            for (const item of detail.flower_order_items || []) {
+                const before = (original?.flower_order_items || []).find(i => i.id === item.id);
+                if (before && before.product_code === item.product_code && before.nafuda_name === item.nafuda_name) {
+                    continue;
+                }
+
+                const { error } = await supabase
+                    .from('flower_order_items')
+                    .update({ product_code: item.product_code.trim(), nafuda_name: item.nafuda_name.trim() })
+                    .eq('id', item.id);
+                if (error) throw error;
+            }
+
+            setItemsDirty(false);
+            await fetchData();
+            alert('注文内容を保存しました。');
+        } catch (error: any) {
+            console.error('Error saving order items:', error);
+            alert(`保存に失敗しました: ${error.message}`);
+        } finally {
+            setSavingItems(false);
         }
     };
 
@@ -234,7 +297,7 @@ const FlowerOrdersPage: React.FC<Props> = ({ onBack }) => {
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-xl font-bold">注文 {detail.order_number}</h3>
                             <button
-                                onClick={() => setDetail(null)}
+                                onClick={() => closeDetail()}
                                 className="p-1 text-gray-400 hover:text-gray-700 rounded"
                             >
                                 <X size={20} />
@@ -253,14 +316,26 @@ const FlowerOrdersPage: React.FC<Props> = ({ onBack }) => {
                             </div>
 
                             <div>
-                                <div className="text-sm font-medium text-gray-700 mb-2">注文内容</div>
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="text-sm font-medium text-gray-700">注文内容</div>
+                                    <button
+                                        onClick={saveDetailItems}
+                                        disabled={!itemsDirty || savingItems}
+                                        className={`px-4 py-1 rounded-lg text-xs ${itemsDirty
+                                            ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                                            : 'bg-gray-100 text-gray-400'
+                                            }`}
+                                    >
+                                        {savingItems ? '保存中...' : '注文内容を保存'}
+                                    </button>
+                                </div>
                                 <table className="w-full text-left border-collapse">
                                     <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
                                         <tr>
                                             <th className="p-2">商品</th>
                                             <th className="p-2">名札表記</th>
-                                            <th className="p-2 text-center">数量</th>
-                                            <th className="p-2 text-right">金額</th>
+                                            <th className="p-2 text-center w-16">数量</th>
+                                            <th className="p-2 text-right w-24">金額</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
@@ -268,9 +343,23 @@ const FlowerOrdersPage: React.FC<Props> = ({ onBack }) => {
                                             <tr key={item.id}>
                                                 <td className="p-2">
                                                     <div className="text-gray-800">{item.product_name}</div>
-                                                    <div className="text-xs text-gray-400">{item.product_code}</div>
+                                                    <input
+                                                        type="text"
+                                                        value={item.product_code}
+                                                        onChange={e => patchDetailItem(item.id, { product_code: e.target.value })}
+                                                        placeholder="商品コード"
+                                                        className="w-full mt-1 p-1 border rounded text-xs focus:ring-2 focus:ring-emerald-500 outline-none"
+                                                    />
                                                 </td>
-                                                <td className="p-2 text-gray-700">{item.nafuda_name || '—'}</td>
+                                                <td className="p-2">
+                                                    <input
+                                                        type="text"
+                                                        value={item.nafuda_name}
+                                                        onChange={e => patchDetailItem(item.id, { nafuda_name: e.target.value })}
+                                                        placeholder="（記載なし）"
+                                                        className="w-full p-1 border rounded text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                                                    />
+                                                </td>
                                                 <td className="p-2 text-center text-gray-700">{item.quantity}</td>
                                                 <td className="p-2 text-right text-gray-700">
                                                     {formatYen(item.unit_price * item.quantity)}
@@ -279,6 +368,9 @@ const FlowerOrdersPage: React.FC<Props> = ({ onBack }) => {
                                         ))}
                                     </tbody>
                                 </table>
+                                <p className="text-xs text-gray-400 mt-2">
+                                    名札表記と商品コードはこちらで修正できます。保存すると請求書メールと業者への発注書に反映されます。
+                                </p>
                                 <div className="flex justify-between items-center pt-4 mt-2 border-t border-gray-200">
                                     <span className="text-sm text-gray-500">
                                         小計 {formatYen(detail.subtotal)}
@@ -391,7 +483,7 @@ const FlowerOrdersPage: React.FC<Props> = ({ onBack }) => {
 
                         <div className="flex justify-end gap-3 mt-6">
                             <button
-                                onClick={() => setDetail(null)}
+                                onClick={() => closeDetail()}
                                 className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
                             >
                                 閉じる
@@ -492,7 +584,7 @@ const FlowerOrdersPage: React.FC<Props> = ({ onBack }) => {
                                 <td className="p-4 text-right font-bold text-gray-700">{formatYen(order.total)}</td>
                                 <td className="p-4 text-center">
                                     <button
-                                        onClick={() => setDetail(order)}
+                                        onClick={() => openDetail(order)}
                                         className="p-1 text-gray-400 hover:text-emerald-600 rounded"
                                         title="詳細"
                                     >
