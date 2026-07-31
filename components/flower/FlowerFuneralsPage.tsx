@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Funeral, FlowerSettings } from '../../types';
+import { Funeral, FlowerSettings, FlowerOrder, FlowerOrderItem } from '../../types';
 import {
     generatePublicToken, calcOrderDeadline, buildOrderUrl,
     formatDateTime, toDatetimeLocal, fromDatetimeLocal, isAcceptingOrders,
@@ -9,7 +9,8 @@ import {
     fetchEstimateSummaries, funeralDateToCeremonyIso, matchesKeyword, formatDate, EstimateSummary,
 } from '../../lib/estimateQueries';
 import { sendOrderMail } from '../../lib/mail';
-import { ChevronLeft, Plus, Edit, Trash2, Link2, Check, FileSearch, Send } from 'lucide-react';
+import { buildPurchaseOrderMail, isPurchaseOrderTarget } from '../../supabase/functions/_shared/mailTemplates';
+import { ChevronLeft, Plus, Edit, Trash2, Link2, Check, FileSearch, Send, X, Eye } from 'lucide-react';
 
 const emptyFuneral = (): Funeral => ({
     id: '',
@@ -20,6 +21,7 @@ const emptyFuneral = (): Funeral => ({
     venue_address: '',
     wake_at: null,
     ceremony_at: null,
+    setup_deadline: null,
     order_deadline: null,
     public_token: generatePublicToken(),
     is_order_open: true,
@@ -28,6 +30,14 @@ const emptyFuneral = (): Funeral => ({
     discount_value: 0,
     discount_note: '',
 });
+
+/** 発注書の編集画面に出す注文の状態ラベル */
+const orderStateLabel = (order: FlowerOrder): string => {
+    if (order.order_status === 'cancelled') return 'キャンセル（受注）';
+    if (order.payment_status === 'cancelled') return 'キャンセル（入金）';
+    if (order.payment_status === 'refunded') return '返金済';
+    return '';
+};
 
 interface Props {
     onBack: () => void;
@@ -47,9 +57,17 @@ const FlowerFuneralsPage: React.FC<Props> = ({ onBack }) => {
     const [estimatesLoading, setEstimatesLoading] = useState(false);
     const [estimateKeyword, setEstimateKeyword] = useState('');
 
-    // 葬儀ごとの注文件数（発注書の送信可否の判定に使う）
-    const [orderCounts, setOrderCounts] = useState<Map<string, number>>(new Map());
-    const [sendingPoId, setSendingPoId] = useState<string | null>(null);
+    // 葬儀ごとの注文件数（total = 全注文、target = 発注書に載る注文）
+    const [orderCounts, setOrderCounts] = useState<Map<string, { total: number; target: number }>>(new Map());
+
+    // 発注書の作成（内容を確認・編集してから送信する）
+    const [poFuneral, setPoFuneral] = useState<Funeral | null>(null);
+    const [poOrders, setPoOrders] = useState<FlowerOrder[]>([]);
+    const [poOriginal, setPoOriginal] = useState<FlowerOrder[]>([]);
+    const [poSetupDeadline, setPoSetupDeadline] = useState<string | null>(null);
+    const [poLoading, setPoLoading] = useState(false);
+    const [poSending, setPoSending] = useState(false);
+    const [poPreviewOpen, setPoPreviewOpen] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -61,16 +79,21 @@ const FlowerFuneralsPage: React.FC<Props> = ({ onBack }) => {
             const [funeralsResult, settingsResult, ordersResult] = await Promise.all([
                 supabase.from('funerals').select('*').order('ceremony_at', { ascending: false, nullsFirst: false }),
                 supabase.from('flower_settings').select('*').eq('id', 1).single(),
-                supabase.from('flower_orders').select('funeral_id').neq('order_status', 'cancelled'),
+                supabase
+                    .from('flower_orders')
+                    .select('funeral_id, order_status, payment_status, include_in_purchase_order'),
             ]);
 
             if (funeralsResult.error) throw funeralsResult.error;
             if (settingsResult.error) throw settingsResult.error;
             if (ordersResult.error) throw ordersResult.error;
 
-            const counts = new Map<string, number>();
+            const counts = new Map<string, { total: number; target: number }>();
             for (const row of ordersResult.data || []) {
-                counts.set(row.funeral_id, (counts.get(row.funeral_id) || 0) + 1);
+                const current = counts.get(row.funeral_id) || { total: 0, target: 0 };
+                current.total += 1;
+                if (isPurchaseOrderTarget(row)) current.target += 1;
+                counts.set(row.funeral_id, current);
             }
 
             setFunerals(funeralsResult.data || []);
@@ -139,6 +162,7 @@ const FlowerFuneralsPage: React.FC<Props> = ({ onBack }) => {
             venue_address: editing.venue_address,
             wake_at: editing.wake_at,
             ceremony_at: editing.ceremony_at,
+            setup_deadline: editing.setup_deadline,
             order_deadline: calcOrderDeadline(editing.ceremony_at, settings.order_deadline_hours),
             public_token: editing.public_token,
             is_order_open: editing.is_order_open,
@@ -193,33 +217,152 @@ const FlowerFuneralsPage: React.FC<Props> = ({ onBack }) => {
         }
     };
 
-    /** 業者へ発注書を送る（その葬儀の全注文をまとめて1通） */
-    const handleSendPurchaseOrder = async (funeral: Funeral) => {
-        const count = orderCounts.get(funeral.id) || 0;
-        if (count === 0) {
-            alert('この葬儀にはまだ注文がありません。');
-            return;
-        }
+    /** 発注書の作成画面を開く（その葬儀の注文をすべて読み込む） */
+    const openPurchaseOrder = async (funeral: Funeral) => {
         if (!settings?.supplier_email) {
             alert('先に「設定」で供花業者のメールアドレスを登録してください。');
             return;
         }
 
-        const message = funeral.purchase_order_sent_at
-            ? `発注書を再送します（注文 ${count} 件）。よろしいですか？`
-            : `${settings.supplier_email} 宛に発注書を送信します（注文 ${count} 件）。よろしいですか？`;
+        setPoFuneral(funeral);
+        setPoSetupDeadline(funeral.setup_deadline);
+        setPoOrders([]);
+        setPoOriginal([]);
+        setPoLoading(true);
+        try {
+            const { data, error } = await supabase
+                .from('flower_orders')
+                .select('*, flower_order_items(*)')
+                .eq('funeral_id', funeral.id)
+                .order('created_at', { ascending: true });
+            if (error) throw error;
+
+            // 名札の通し番号がメール本文と揃うよう、明細は id 順に固定する
+            const rows: FlowerOrder[] = (data || []).map(order => ({
+                ...order,
+                flower_order_items: [...(order.flower_order_items || [])].sort((a, b) => a.id - b.id),
+            }));
+
+            setPoOrders(rows);
+            setPoOriginal(JSON.parse(JSON.stringify(rows)));
+        } catch (error: any) {
+            console.error('Error fetching orders for purchase order:', error);
+            alert(`注文の取得に失敗しました: ${error.message || error}`);
+            setPoFuneral(null);
+        } finally {
+            setPoLoading(false);
+        }
+    };
+
+    const closePurchaseOrder = () => {
+        setPoFuneral(null);
+        setPoPreviewOpen(false);
+        setPoOrders([]);
+        setPoOriginal([]);
+    };
+
+    const setPoOrderIncluded = (orderId: number, included: boolean) => {
+        setPoOrders(prev => prev.map(order => (
+            order.id === orderId ? { ...order, include_in_purchase_order: included } : order
+        )));
+    };
+
+    const patchPoItem = (orderId: number, itemId: number, patch: Partial<FlowerOrderItem>) => {
+        setPoOrders(prev => prev.map(order => (
+            order.id !== orderId ? order : {
+                ...order,
+                flower_order_items: (order.flower_order_items || []).map(item => (
+                    item.id === itemId ? { ...item, ...patch } : item
+                )),
+            }
+        )));
+    };
+
+    /** 画面で変更した箇所（設営期日・発注書の対象・商品コード・名札）だけを保存する */
+    const savePurchaseOrderEdits = async () => {
+        if (!poFuneral) return;
+
+        if (poSetupDeadline !== poFuneral.setup_deadline) {
+            const { error } = await supabase
+                .from('funerals')
+                .update({ setup_deadline: poSetupDeadline })
+                .eq('id', poFuneral.id);
+            if (error) throw error;
+        }
+
+        for (const order of poOrders) {
+            const before = poOriginal.find(o => o.id === order.id);
+            if (!before) continue;
+
+            if ((before.include_in_purchase_order ?? null) !== (order.include_in_purchase_order ?? null)) {
+                const { error } = await supabase
+                    .from('flower_orders')
+                    .update({ include_in_purchase_order: order.include_in_purchase_order })
+                    .eq('id', order.id);
+                if (error) throw error;
+            }
+
+            for (const item of order.flower_order_items || []) {
+                const itemBefore = (before.flower_order_items || []).find(i => i.id === item.id);
+                if (!itemBefore) continue;
+                if (itemBefore.product_code === item.product_code && itemBefore.nafuda_name === item.nafuda_name) continue;
+
+                const { error } = await supabase
+                    .from('flower_order_items')
+                    .update({ product_code: item.product_code.trim(), nafuda_name: item.nafuda_name.trim() })
+                    .eq('id', item.id);
+                if (error) throw error;
+            }
+        }
+    };
+
+    const handleSavePurchaseOrder = async () => {
+        setPoSending(true);
+        try {
+            await savePurchaseOrderEdits();
+            setPoOriginal(JSON.parse(JSON.stringify(poOrders)));
+            setPoFuneral(prev => (prev ? { ...prev, setup_deadline: poSetupDeadline } : prev));
+            await fetchData();
+            alert('発注書の内容を保存しました。');
+        } catch (error: any) {
+            console.error('Error saving purchase order edits:', error);
+            alert(`保存に失敗しました: ${error.message || error}`);
+        } finally {
+            setPoSending(false);
+        }
+    };
+
+    /** 業者へ発注書を送る（その葬儀の対象注文をまとめて1通） */
+    const handleSendPurchaseOrder = async () => {
+        if (!poFuneral || !settings) return;
+
+        const targets = poOrders.filter(isPurchaseOrderTarget);
+        if (targets.length === 0) {
+            alert('発注書に含める注文がありません。');
+            return;
+        }
+
+        const message = poFuneral.purchase_order_sent_at
+            ? `発注書を再送します（注文 ${targets.length} 件）。よろしいですか？`
+            : `${settings.supplier_email} 宛に発注書を送信します（注文 ${targets.length} 件）。よろしいですか？`;
         if (!confirm(message)) return;
 
-        setSendingPoId(funeral.id);
+        setPoSending(true);
         try {
-            await sendOrderMail('purchase_order', { funeralId: funeral.id, funeralToken: funeral.public_token });
+            // 画面の編集内容を先に保存してから、その内容でメールを組み立てさせる
+            await savePurchaseOrderEdits();
+            await sendOrderMail('purchase_order', {
+                funeralId: poFuneral.id,
+                funeralToken: poFuneral.public_token,
+            });
             alert('発注書を送信しました。');
+            closePurchaseOrder();
             await fetchData();
         } catch (error: any) {
             console.error('Error sending purchase order:', error);
             alert(`送信に失敗しました: ${error.message || error}`);
         } finally {
-            setSendingPoId(null);
+            setPoSending(false);
         }
     };
 
@@ -236,6 +379,18 @@ const FlowerFuneralsPage: React.FC<Props> = ({ onBack }) => {
             alert('コピーに失敗しました');
         }
     };
+
+    /** 発注書メールのプレビュー（送信されるのと同じ組み立てを使う） */
+    const poMail = useMemo(() => {
+        if (!poFuneral || !settings) return null;
+        return buildPurchaseOrderMail(
+            { ...poFuneral, setup_deadline: poSetupDeadline },
+            poOrders.map(order => ({ ...order, items: order.flower_order_items || [] })),
+            settings,
+        );
+    }, [poFuneral, poOrders, poSetupDeadline, settings]);
+
+    const poTargetCount = poOrders.filter(isPurchaseOrderTarget).length;
 
     if (loading) return <div className="p-4">読み込み中...</div>;
 
@@ -425,6 +580,21 @@ const FlowerFuneralsPage: React.FC<Props> = ({ onBack }) => {
                                 </div>
                             </div>
 
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">設営期日（任意）</label>
+                                    <input
+                                        type="datetime-local"
+                                        value={toDatetimeLocal(editing.setup_deadline)}
+                                        onChange={e => setEditing({ ...editing, setup_deadline: fromDatetimeLocal(e.target.value) })}
+                                        className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
+                                    />
+                                    <p className="text-xs text-gray-400 mt-1">
+                                        業者への発注書に記載します。未設定のときは「告別式の開始まで」と記載します。
+                                    </p>
+                                </div>
+                            </div>
+
                             <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                                 <div className="text-sm text-gray-600">
                                     受付締切（告別式の {settings?.order_deadline_hours ?? 24} 時間前・自動計算）
@@ -549,6 +719,222 @@ const FlowerFuneralsPage: React.FC<Props> = ({ onBack }) => {
                 </div>
             )}
 
+            {poFuneral && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl p-6 modal-scroll">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xl font-bold">発注書の作成</h3>
+                            <button
+                                onClick={closePurchaseOrder}
+                                className="p-1 text-gray-400 hover:text-gray-700 rounded"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
+                            <div className="font-bold text-gray-800">
+                                故 {poFuneral.deceased_name} 様 / {poFuneral.venue_name || '式場未設定'}
+                            </div>
+                            <div className="text-sm text-gray-600 mt-1">
+                                告別式: {formatDateTime(poFuneral.ceremony_at)}
+                            </div>
+                            <div className="mt-3">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">設営期日</label>
+                                <input
+                                    type="datetime-local"
+                                    value={toDatetimeLocal(poSetupDeadline)}
+                                    onChange={e => setPoSetupDeadline(fromDatetimeLocal(e.target.value))}
+                                    className="p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
+                                />
+                                <p className="text-xs text-gray-400 mt-1">
+                                    未設定のときは「告別式の開始までに設営をお願いいたします。」と記載します。
+                                </p>
+                            </div>
+                        </div>
+
+                        {poLoading ? (
+                            <div className="p-6 text-center text-gray-400">読み込み中...</div>
+                        ) : (
+                            <>
+                                <div className="text-sm text-gray-500 mb-2">
+                                    発注書に載せる注文 {poTargetCount} / {poOrders.length} 件
+                                    （キャンセルの注文は既定で外れています）
+                                </div>
+
+                                <div className="space-y-3">
+                                    {poOrders.map(order => {
+                                        const included = isPurchaseOrderTarget(order);
+                                        const stateLabel = orderStateLabel(order);
+                                        return (
+                                            <div
+                                                key={order.id}
+                                                className={`p-4 rounded-lg border ${included
+                                                    ? 'border-gray-200 bg-white'
+                                                    : 'border-gray-200 bg-gray-50 opacity-60'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <input
+                                                        id={`po-order-${order.id}`}
+                                                        type="checkbox"
+                                                        checked={included}
+                                                        onChange={e => setPoOrderIncluded(order.id, e.target.checked)}
+                                                        className="w-4 h-4 cursor-pointer"
+                                                    />
+                                                    <label
+                                                        htmlFor={`po-order-${order.id}`}
+                                                        className="text-sm text-gray-700 cursor-pointer"
+                                                    >
+                                                        <span className="font-bold">{order.order_number}</span>
+                                                        <span className="text-gray-500 ml-2">
+                                                            {order.orderer_company
+                                                                ? `${order.orderer_company} / ${order.orderer_name}`
+                                                                : order.orderer_name}
+                                                        </span>
+                                                    </label>
+                                                    {stateLabel && (
+                                                        <span className="px-2 py-0.5 rounded-full bg-red-50 text-red-600 text-xs font-bold">
+                                                            {stateLabel}
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                <table className="w-full text-left border-collapse mt-3">
+                                                    <thead className="text-gray-400 text-xs">
+                                                        <tr>
+                                                            <th className="py-1 w-32">商品コード</th>
+                                                            <th className="py-1 w-16 text-center">数量</th>
+                                                            <th className="py-1">名札表記</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {(order.flower_order_items || []).map(item => (
+                                                            <tr key={item.id}>
+                                                                <td className="py-1 pr-2">
+                                                                    <input
+                                                                        type="text"
+                                                                        value={item.product_code}
+                                                                        onChange={e => patchPoItem(order.id, item.id, {
+                                                                            product_code: e.target.value,
+                                                                        })}
+                                                                        className="w-full p-1 border rounded text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                                                                    />
+                                                                </td>
+                                                                <td className="py-1 text-center text-sm text-gray-600">
+                                                                    {item.quantity}
+                                                                </td>
+                                                                <td className="py-1">
+                                                                    <input
+                                                                        type="text"
+                                                                        value={item.nafuda_name}
+                                                                        onChange={e => patchPoItem(order.id, item.id, {
+                                                                            nafuda_name: e.target.value,
+                                                                        })}
+                                                                        className="w-full p-1 border rounded text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                                                                    />
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                <p className="text-xs text-gray-400 mt-3">
+                                    商品コードと名札表記の変更は注文データにも反映され、請求書メールにも使われます。
+                                </p>
+                            </>
+                        )}
+
+                        <div className="flex justify-end gap-3 mt-6">
+                            <button
+                                onClick={closePurchaseOrder}
+                                className="px-4 py-3 text-gray-600 hover:bg-gray-100 rounded-lg"
+                            >
+                                閉じる
+                            </button>
+                            <button
+                                onClick={handleSavePurchaseOrder}
+                                disabled={poSending || poLoading}
+                                className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                            >
+                                内容を保存
+                            </button>
+                            <button
+                                onClick={() => setPoPreviewOpen(true)}
+                                disabled={poLoading}
+                                className="inline-flex items-center gap-2 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                            >
+                                <Eye size={16} />
+                                内容を確認
+                            </button>
+                            <button
+                                onClick={handleSendPurchaseOrder}
+                                disabled={poSending || poLoading}
+                                className="inline-flex items-center gap-2 px-4 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+                            >
+                                <Send size={16} />
+                                {poSending
+                                    ? '送信中...'
+                                    : poFuneral.purchase_order_sent_at ? '発注書を再送' : '発注書を送信'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {poPreviewOpen && poMail && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl p-6 modal-scroll">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xl font-bold">発注書メールの内容</h3>
+                            <button
+                                onClick={() => setPoPreviewOpen(false)}
+                                className="p-1 text-gray-400 hover:text-gray-700 rounded"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="mb-4">
+                            <div className="text-sm font-medium text-gray-700 mb-1">
+                                件名（宛先: {settings?.supplier_email}）
+                            </div>
+                            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 text-gray-800">
+                                {poMail.subject}
+                            </div>
+                        </div>
+
+                        <div>
+                            <div className="text-sm font-medium text-gray-700 mb-1">本文</div>
+                            <pre className="p-4 bg-gray-50 rounded-lg border border-gray-200 text-sm text-gray-800 mail-preview">
+                                {poMail.text}
+                            </pre>
+                        </div>
+
+                        <div className="flex justify-end gap-3 mt-6">
+                            <button
+                                onClick={() => setPoPreviewOpen(false)}
+                                className="px-4 py-3 text-gray-600 hover:bg-gray-100 rounded-lg"
+                            >
+                                閉じる
+                            </button>
+                            <button
+                                onClick={handleSendPurchaseOrder}
+                                disabled={poSending}
+                                className="inline-flex items-center gap-2 px-4 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+                            >
+                                <Send size={16} />
+                                {poSending ? '送信中...' : 'この内容で送信'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="bg-white rounded-xl border border-gray-200">
                 <table className="w-full text-left border-collapse">
                     <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
@@ -589,8 +975,14 @@ const FlowerFuneralsPage: React.FC<Props> = ({ onBack }) => {
                                     </td>
                                     <td className="p-4">
                                         <div className="text-sm text-gray-600">
-                                            注文 {orderCounts.get(funeral.id) || 0} 件
+                                            注文 {orderCounts.get(funeral.id)?.total || 0} 件
                                         </div>
+                                        {(orderCounts.get(funeral.id)?.total || 0)
+                                            !== (orderCounts.get(funeral.id)?.target || 0) && (
+                                            <div className="text-xs text-gray-400 mt-1">
+                                                発注書に載せる注文 {orderCounts.get(funeral.id)?.target || 0} 件
+                                            </div>
+                                        )}
                                         {funeral.purchase_order_sent_at ? (
                                             <div className="text-xs text-emerald-700 mt-1">
                                                 発注書 {formatDateTime(funeral.purchase_order_sent_at)} 送信済
@@ -598,16 +990,13 @@ const FlowerFuneralsPage: React.FC<Props> = ({ onBack }) => {
                                         ) : (
                                             <div className="text-xs text-gray-400 mt-1">発注書 未送信</div>
                                         )}
-                                        {(orderCounts.get(funeral.id) || 0) > 0 && (
+                                        {(orderCounts.get(funeral.id)?.total || 0) > 0 && (
                                             <button
-                                                onClick={() => handleSendPurchaseOrder(funeral)}
-                                                disabled={sendingPoId === funeral.id}
+                                                onClick={() => openPurchaseOrder(funeral)}
                                                 className="inline-flex items-center gap-1 px-4 py-1 mt-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-xs"
                                             >
                                                 <Send size={12} />
-                                                {sendingPoId === funeral.id
-                                                    ? '送信中...'
-                                                    : funeral.purchase_order_sent_at ? '発注書を再送' : '発注書を送信'}
+                                                {funeral.purchase_order_sent_at ? '発注書を再作成' : '発注書を作成'}
                                             </button>
                                         )}
                                     </td>

@@ -14,7 +14,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { sendMail } from '../_shared/smtp.ts';
 import {
-    buildInvoiceMail, buildInternalNoticeMail, buildPurchaseOrderMail,
+    buildInvoiceMail, buildInternalNoticeMail, buildPurchaseOrderMail, isPurchaseOrderTarget,
 } from '../_shared/mailTemplates.ts';
 
 const corsHeaders = {
@@ -91,7 +91,7 @@ Deno.serve(async (req: Request) => {
 
             const { data: funeralRow, error: funeralError } = await admin
                 .from('funerals')
-                .select('id, deceased_name, venue_name, venue_address, ceremony_at, public_token')
+                .select('id, deceased_name, venue_name, venue_address, ceremony_at, setup_deadline, public_token')
                 .eq('id', funeral_id)
                 .single();
 
@@ -107,17 +107,24 @@ Deno.serve(async (req: Request) => {
                 .from('flower_orders')
                 .select('*, flower_order_items(*)')
                 .eq('funeral_id', funeral_id)
-                .neq('order_status', 'cancelled')
                 .order('created_at', { ascending: true });
 
             if (ordersError) {
                 return json({ error: 'orders_fetch_failed' }, 500);
             }
-            if (!orderRows || orderRows.length === 0) {
+
+            // キャンセル済み・手動で外した注文の除外は管理画面と同じ判定を使う
+            // 明細は id 順に固定する（名札の通し番号を管理画面のプレビューと揃えるため）
+            const orders = (orderRows ?? [])
+                .filter(isPurchaseOrderTarget)
+                .map((row: any) => ({
+                    ...row,
+                    items: [...(row.flower_order_items ?? [])].sort((a: any, b: any) => a.id - b.id),
+                }));
+
+            if (orders.length === 0) {
                 return json({ error: 'no_orders' }, 400);
             }
-
-            const orders = orderRows.map((row: any) => ({ ...row, items: row.flower_order_items ?? [] }));
             const mail = buildPurchaseOrderMail(funeralRow, orders, settingsRow);
 
             await sendMail(

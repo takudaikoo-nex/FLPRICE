@@ -35,12 +35,33 @@ export interface MailFuneral {
     venue_name: string;
     venue_address: string;
     ceremony_at: string | null;
+    /** 設営期日。未設定なら「告別式の開始まで」と案内する */
+    setup_deadline?: string | null;
 }
 
 /** 発注書の対象となる、葬儀にぶら下がる注文1件 */
 export interface MailOrderWithItems extends MailOrder {
     items: MailOrderItem[];
+    order_status?: string;
+    payment_status?: string;
+    /** 発注書に含めるかの手動指定。null/undefined なら状態から自動で判定する */
+    include_in_purchase_order?: boolean | null;
 }
+
+/**
+ * その注文を業者への発注書に載せるか。
+ *
+ * 手動指定があればそれに従い、無ければキャンセル済みを除外する。
+ * 管理画面のプレビューと Edge Function で同じ判定を使うため、ここに置いている。
+ */
+export const isPurchaseOrderTarget = (order: {
+    order_status?: string;
+    payment_status?: string;
+    include_in_purchase_order?: boolean | null;
+}): boolean => {
+    if (typeof order.include_in_purchase_order === 'boolean') return order.include_in_purchase_order;
+    return order.order_status !== 'cancelled' && order.payment_status !== 'cancelled';
+};
 
 export interface MailSettings {
     company_name: string;
@@ -191,7 +212,8 @@ export const buildPurchaseOrderMail = (
     orders: MailOrderWithItems[],
     settings: MailSettings & { supplier_name: string },
 ): BuiltMail => {
-    const allItems = orders.flatMap(order => order.items);
+    // キャンセル済み（または手動で外した）注文は載せない
+    const allItems = orders.filter(isPurchaseOrderTarget).flatMap(order => order.items);
 
     // 商品ごとの本数を集計
     const totals = new Map<string, { name: string; code: string; quantity: number }>();
@@ -210,17 +232,23 @@ export const buildPurchaseOrderMail = (
         .join('\n');
 
     // 名札の一覧（設営順に使えるよう注文順に並べる）
+    // 商品名はどれも「供花」で区別がつかないため、商品コードを併記する。
     let index = 0;
     const nafudaList = allItems.map(item => {
+        const label = item.product_code ? `${item.product_name}（${item.product_code}）` : item.product_name;
         const lines: string[] = [];
         for (let i = 0; i < item.quantity; i++) {
             index += 1;
-            lines.push(`  ${String(index).padStart(2, '0')}. ${item.product_name}　／　名札: ${item.nafuda_name || '（記載なし）'}`);
+            lines.push(`  ${String(index).padStart(2, '0')}. ${label}　／　名札: ${item.nafuda_name || '（記載なし）'}`);
         }
         return lines.join('\n');
     }).join('\n');
 
     const totalCount = allItems.reduce((sum, item) => sum + item.quantity, 0);
+
+    const setupNote = funeral.setup_deadline
+        ? `  ※ ${dateTime(funeral.setup_deadline)} までに設営をお願いいたします。`
+        : '  ※ 告別式の開始までに設営をお願いいたします。';
 
     const text = `${settings.supplier_name ? `${settings.supplier_name} 御中` : '御中'}
 
@@ -234,7 +262,7 @@ export const buildPurchaseOrderMail = (
   式場: ${funeral.venue_name || '—'}
 ${funeral.venue_address ? `  住所: ${funeral.venue_address}\n` : ''}  告別式: ${dateTime(funeral.ceremony_at)}
 
-  ※ 告別式の開始までに設営をお願いいたします。
+${setupNote}
 
 ───────────────
 ■ ご手配品（合計 ${totalCount} 基）

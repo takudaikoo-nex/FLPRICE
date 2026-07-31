@@ -139,6 +139,8 @@ export interface Funeral {
   venue_address: string;
   wake_at: string | null;
   ceremony_at: string | null;
+  /** 設営期日（業者への発注書に記載。未設定なら「告別式の開始まで」） */
+  setup_deadline: string | null;
   order_deadline: string | null;
   public_token: string;
   is_order_open: boolean;
@@ -187,6 +189,8 @@ export interface FlowerOrder {
   tax: number;
   total: number;
   remarks: string;
+  /** 発注書に含めるかの手動指定。null なら状態から自動で判定する */
+  include_in_purchase_order: boolean | null;
   created_at: string;
   invoice_sent_at: string | null;
   notified_at: string | null;
