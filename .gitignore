@@ -26,3 +26,6 @@ dist-ssr
 .vercel
 
 dist-flower
+
+# Supabase CLI が接続先の情報を書き出す一時ファイル
+supabase/.temp/
