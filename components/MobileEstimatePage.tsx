@@ -5,7 +5,8 @@ import MobileFooter from './MobileFooter';
 import { Info, Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { useEstimateSystem } from '../hooks/useEstimateSystem';
 import { MoneyInput } from './MoneyInput';
-import { MultiGradeInput } from './MultiGradeInput';
+import { MultiGradeButton } from './MultiGradeButton';
+import { MultiGradeModal } from './MultiGradeModal';
 import { getMultiGradeSubtotal } from '../lib/pricing';
 
 interface MobileEstimatePageProps {
@@ -26,7 +27,7 @@ const MobileEstimatePage: React.FC<MobileEstimatePageProps> = ({ system, onOutpu
     const {
         category, selectedPlanId,
         selectedOptions, selectedGrades, freeInputValues, multiGradeValues,
-        modalItem, setModalItem,
+        modalItem, setModalItem, multiGradeModalItem, setMultiGradeModalItem,
         plans, items,
         handleCategoryChange, handlePlanChange, toggleOption, setGrade, setFreeInputValue,
         setGradeQuantity, setItemDiscount,
@@ -143,12 +144,12 @@ const MobileEstimatePage: React.FC<MobileEstimatePageProps> = ({ system, onOutpu
                                             </select>
                                         )}
                                         {item.type === 'multi_grade' && item.options && (
-                                            <MultiGradeInput
+                                            <MultiGradeButton
                                                 item={item}
                                                 planId={selectedPlanId}
                                                 selection={multiGradeValues.get(item.id)}
-                                                onQuantityChange={(gradeId, qty) => setGradeQuantity(item.id, gradeId, qty)}
-                                                onDiscountChange={(type, value) => setItemDiscount(item.id, type, value)}
+                                                onClick={() => setMultiGradeModalItem(item)}
+                                                className="w-full p-3"
                                             />
                                         )}
                                         {item.type === 'free_input' && (
@@ -169,6 +170,16 @@ const MobileEstimatePage: React.FC<MobileEstimatePageProps> = ({ system, onOutpu
 
             <MobileFooter total={totalCost} onInputClick={goToInputPage} onOutputClick={onOutputClick} onInvoiceClick={onInvoiceClick} onReceiptClick={onReceiptClick} />
             {modalItem && <DetailModal item={modalItem} onClose={() => setModalItem(null)} />}
+            {multiGradeModalItem && (
+                <MultiGradeModal
+                    item={multiGradeModalItem}
+                    planId={selectedPlanId}
+                    selection={multiGradeValues.get(multiGradeModalItem.id)}
+                    onQuantityChange={(gradeId, qty) => setGradeQuantity(multiGradeModalItem.id, gradeId, qty)}
+                    onDiscountChange={(type, value) => setItemDiscount(multiGradeModalItem.id, type, value)}
+                    onClose={() => setMultiGradeModalItem(null)}
+                />
+            )}
         </div>
     );
 };

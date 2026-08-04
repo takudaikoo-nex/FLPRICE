@@ -43,6 +43,11 @@ export const getMultiGradeDiscount = (
     return Math.min(discount, subtotal);
 };
 
+/** 数量入力型の割引後の金額 */
+export const getMultiGradeTotal = (
+    item: Item, planId: PlanId, selection?: MultiGradeSelection,
+): number => getMultiGradeSubtotal(item, planId, selection) - getMultiGradeDiscount(item, planId, selection);
+
 /** 数量入力型の内訳ラベル（例: YW-3×2, YW-2×1） */
 export const getMultiGradeLabel = (
     item: Item, selection?: MultiGradeSelection,

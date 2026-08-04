@@ -20,6 +20,8 @@ export const useEstimateSystem = () => {
     // 数量入力型（供花など）: アイテムID → グレードごとの個数と割引
     const [multiGradeValues, setMultiGradeValues] = useState<Map<number, MultiGradeSelection>>(new Map());
     const [modalItem, setModalItem] = useState<Item | null>(null);
+    // 数量入力型の入力モーダルで開いているアイテム
+    const [multiGradeModalItem, setMultiGradeModalItem] = useState<Item | null>(null);
     const [loadedCustomerInfo, setLoadedCustomerInfo] = useState<CustomerInfo | null>(null);
     // 読み込み中の案件（見積）。ある場合は帳票を出しても新規採番せず、この案件を更新する
     const [loadedEstimateId, setLoadedEstimateId] = useState<number | null>(null);
@@ -320,6 +322,7 @@ export const useEstimateSystem = () => {
         freeInputValues, setFreeInputValues,
         multiGradeValues, setMultiGradeValues,
         modalItem, setModalItem,
+        multiGradeModalItem, setMultiGradeModalItem,
         loadedCustomerInfo, setLoadedCustomerInfo,
         loadedEstimateId, setLoadedEstimateId,
         viewMode, setViewMode,

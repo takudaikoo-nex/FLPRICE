@@ -17,7 +17,8 @@ import LoginGate from './components/LoginGate';
 import OptionCatalogPage from './components/OptionCatalogPage';
 import { supabase } from './lib/supabase';
 import { MoneyInput } from './components/MoneyInput';
-import { MultiGradeInput } from './components/MultiGradeInput';
+import { MultiGradeButton } from './components/MultiGradeButton';
+import { MultiGradeModal } from './components/MultiGradeModal';
 import { getMultiGradeSubtotal } from './lib/pricing';
 const EMPTY_CUSTOMER_INFO: CustomerInfo = {
   deathDate: '', deceasedName: '', birthDate: '', age: '', address: '', honseki: '',
@@ -38,7 +39,8 @@ const App: React.FC = () => {
   const {
     isPrintMode, category, selectedPlanId,
     selectedOptions, selectedGrades, freeInputValues, multiGradeValues,
-    modalItem, setModalItem, loadedCustomerInfo, setLoadedCustomerInfo,
+    modalItem, setModalItem, multiGradeModalItem, setMultiGradeModalItem,
+    loadedCustomerInfo, setLoadedCustomerInfo,
     viewMode, setViewMode, isSaving, logoType,
     plans, items, loading,
     handleCategoryChange, handlePlanChange, toggleOption, setGrade, setFreeInputValue,
@@ -346,15 +348,13 @@ const App: React.FC = () => {
                               )}
 
                               {item.type === 'multi_grade' && item.options && (
-                                <div className="inline-block text-left">
-                                  <MultiGradeInput
-                                    item={item}
-                                    planId={selectedPlanId}
-                                    selection={multiGradeValues.get(item.id)}
-                                    onQuantityChange={(gradeId, qty) => setGradeQuantity(item.id, gradeId, qty)}
-                                    onDiscountChange={(type, value) => setItemDiscount(item.id, type, value)}
-                                  />
-                                </div>
+                                <MultiGradeButton
+                                  item={item}
+                                  planId={selectedPlanId}
+                                  selection={multiGradeValues.get(item.id)}
+                                  onClick={() => setMultiGradeModalItem(item)}
+                                  className="min-w-[220px]"
+                                />
                               )}
 
                               {item.type === 'free_input' && (
@@ -380,6 +380,16 @@ const App: React.FC = () => {
 
         <Footer total={totalCost} onInputClick={goToInputPage} onOutputClick={handleOutputClick} onInvoiceClick={handleInvoiceClick} onReceiptClick={handleReceiptClick} />
         {modalItem && <DetailModal item={modalItem} onClose={() => setModalItem(null)} />}
+        {multiGradeModalItem && (
+          <MultiGradeModal
+            item={multiGradeModalItem}
+            planId={selectedPlanId}
+            selection={multiGradeValues.get(multiGradeModalItem.id)}
+            onQuantityChange={(gradeId, qty) => setGradeQuantity(multiGradeModalItem.id, gradeId, qty)}
+            onDiscountChange={(type, value) => setItemDiscount(multiGradeModalItem.id, type, value)}
+            onClose={() => setMultiGradeModalItem(null)}
+          />
+        )}
       </div>
     </div>
   );
