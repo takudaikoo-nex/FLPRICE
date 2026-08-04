@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { PlanCategory, PlanId, Item, Plan, CustomerInfo } from '../types';
+import { PlanCategory, PlanId, Item, Plan, CustomerInfo, MultiGradeSelection, DiscountType } from '../types';
 import { serializePrintData } from '../lib/serialization';
-import { getItemPrice } from '../lib/pricing';
+import { getItemPrice, emptyMultiGrade } from '../lib/pricing';
 import { convertDbItem, convertDbPlan } from '../lib/converter';
 import { findOrCreateCustomerForEstimate } from '../lib/customers';
 import { statusAfterDocument, EstimateStatus } from '../lib/estimateStatus';
@@ -17,6 +17,8 @@ export const useEstimateSystem = () => {
     const [selectedOptions, setSelectedOptions] = useState<Set<number>>(new Set());
     const [selectedGrades, setSelectedGrades] = useState<Map<number, string>>(new Map());
     const [freeInputValues, setFreeInputValues] = useState<Map<number, number>>(new Map());
+    // 数量入力型（供花など）: アイテムID → グレードごとの個数と割引
+    const [multiGradeValues, setMultiGradeValues] = useState<Map<number, MultiGradeSelection>>(new Map());
     const [modalItem, setModalItem] = useState<Item | null>(null);
     const [loadedCustomerInfo, setLoadedCustomerInfo] = useState<CustomerInfo | null>(null);
     // 読み込み中の案件（見積）。ある場合は帳票を出しても新規採番せず、この案件を更新する
@@ -75,6 +77,7 @@ export const useEstimateSystem = () => {
         setSelectedOptions(new Set());
         setSelectedGrades(new Map());
         setFreeInputValues(new Map());
+        setMultiGradeValues(new Map());
     };
 
     const handlePlanChange = (planId: PlanId) => {
@@ -90,6 +93,21 @@ export const useEstimateSystem = () => {
                         next.delete(itemId);
                     }
                 }
+            }
+            return next;
+        });
+        // 数量入力型も、プランに対応しないグレードの個数を落とす
+        setMultiGradeValues(prev => {
+            const next = new Map(prev);
+            for (const [itemId, selection] of next.entries()) {
+                const item = items.find(i => i.id === itemId);
+                if (!item?.options) continue;
+                const quantities: Record<string, number> = {};
+                for (const [gradeId, qty] of Object.entries(selection.quantities)) {
+                    const opt = item.options.find(o => o.id === gradeId);
+                    if (opt && opt.allowedPlans.includes(planId)) quantities[gradeId] = qty;
+                }
+                next.set(itemId, { ...selection, quantities });
             }
             return next;
         });
@@ -116,6 +134,33 @@ export const useEstimateSystem = () => {
         setFreeInputValues(newMap);
     };
 
+    /** 数量入力型: グレードごとの個数を設定する */
+    const setGradeQuantity = (itemId: number, gradeId: string, quantity: number) => {
+        setMultiGradeValues(prev => {
+            const next = new Map(prev);
+            const current = next.get(itemId) ?? emptyMultiGrade();
+            const quantities = { ...current.quantities };
+            if (quantity > 0) quantities[gradeId] = quantity;
+            else delete quantities[gradeId];
+            next.set(itemId, { ...current, quantities });
+            return next;
+        });
+    };
+
+    /** 数量入力型: 小計に対する割引を設定する */
+    const setItemDiscount = (itemId: number, discountType: DiscountType, discountValue: number) => {
+        setMultiGradeValues(prev => {
+            const next = new Map(prev);
+            const current = next.get(itemId) ?? emptyMultiGrade();
+            next.set(itemId, {
+                ...current,
+                discountType,
+                discountValue: discountType === 'none' ? 0 : discountValue,
+            });
+            return next;
+        });
+    };
+
     // --- Calculations ---
     const currentPlan = plans.find(p => p.id === selectedPlanId);
 
@@ -125,11 +170,11 @@ export const useEstimateSystem = () => {
 
         items.forEach(item => {
             if (!item.allowedPlans.includes(selectedPlanId)) return;
-            total += getItemPrice(item, selectedPlanId, selectedOptions, selectedGrades, freeInputValues);
+            total += getItemPrice(item, selectedPlanId, selectedOptions, selectedGrades, freeInputValues, multiGradeValues);
         });
 
         return total;
-    }, [currentPlan, selectedPlanId, selectedOptions, selectedGrades, freeInputValues, items]);
+    }, [currentPlan, selectedPlanId, selectedOptions, selectedGrades, freeInputValues, multiGradeValues, items]);
 
     const toggleLogo = () => setLogoType(prev => prev === 'FL' ? 'LS' : 'FL');
 
@@ -142,6 +187,7 @@ export const useEstimateSystem = () => {
                 selectedOptions: Array.from(selectedOptions),
                 selectedGrades: Array.from(selectedGrades.entries()),
                 freeInputValues: Array.from(freeInputValues.entries()),
+                multiGradeValues: Array.from(multiGradeValues.entries()),
                 totalCost, customerInfo, logoType
             };
 
@@ -202,7 +248,7 @@ export const useEstimateSystem = () => {
             setLoadedCustomerInfo(customerInfo);
 
             const serialized = serializePrintData(
-                currentPlan, items, selectedOptions, selectedGrades, freeInputValues,
+                currentPlan, items, selectedOptions, selectedGrades, freeInputValues, multiGradeValues,
                 totalCost, customerInfo, estimateId!, logoType, documentType
             );
             localStorage.setItem('print_data', serialized);
@@ -238,8 +284,21 @@ export const useEstimateSystem = () => {
                 }
             }
             if (content.selectedOptions) setSelectedOptions(new Set(content.selectedOptions));
-            if (content.selectedGrades) setSelectedGrades(new Map<number, string>(content.selectedGrades));
             if (content.freeInputValues) setFreeInputValues(new Map<number, number>(content.freeInputValues));
+
+            const loadedGrades = new Map<number, string>(content.selectedGrades || []);
+            // 旧データには multiGradeValues が無いので、無ければ空から始める
+            const loadedMultiGrades = new Map<number, MultiGradeSelection>(content.multiGradeValues || []);
+            // 数量入力型に変わったアイテムがプルダウンで選ばれていたら、個数1として引き継ぐ
+            for (const [itemId, gradeId] of Array.from(loadedGrades.entries())) {
+                if (items.find(i => i.id === itemId)?.type !== 'multi_grade') continue;
+                if (!loadedMultiGrades.has(itemId)) {
+                    loadedMultiGrades.set(itemId, { ...emptyMultiGrade(), quantities: { [gradeId]: 1 } });
+                }
+                loadedGrades.delete(itemId);
+            }
+            setSelectedGrades(loadedGrades);
+            setMultiGradeValues(loadedMultiGrades);
             if (content.logoType) setLogoType(content.logoType);
             if (content.customerInfo) setLoadedCustomerInfo(content.customerInfo);
             setLoadedEstimateId(id);
@@ -259,6 +318,7 @@ export const useEstimateSystem = () => {
         selectedOptions, setSelectedOptions,
         selectedGrades, setSelectedGrades,
         freeInputValues, setFreeInputValues,
+        multiGradeValues, setMultiGradeValues,
         modalItem, setModalItem,
         loadedCustomerInfo, setLoadedCustomerInfo,
         loadedEstimateId, setLoadedEstimateId,
@@ -266,6 +326,7 @@ export const useEstimateSystem = () => {
         isSaving, logoType,
         plans, items, loading,
         handleCategoryChange, handlePlanChange, toggleOption, setGrade, setFreeInputValue,
+        setGradeQuantity, setItemDiscount,
         currentPlan, totalCost, toggleLogo, handleSaveAndPrint, executeLoadEstimate
     };
 };

@@ -170,8 +170,8 @@ export const ITEMS: Item[] = [
     ],
   },
   {
-    id: 32, name: '供花', type: 'dropdown',
-    description: '会社関係や親族が出すお花です。祭壇との組み合わせで手配いたします。',
+    id: 32, name: '供花', type: 'multi_grade',
+    description: '会社関係や親族が出すお花です。グレードごとに本数を入力してください。祭壇との組み合わせで手配いたします。',
     allowedPlans: ['plan_03', 'plan_04', 'plan_05'],
     includedInPlans: [],
     options: [

@@ -1,4 +1,4 @@
-import { Plan, Item } from '../types';
+import { Plan, Item, MultiGradeSelection } from '../types';
 
 export interface PrintData {
     plan: Plan;
@@ -6,6 +6,8 @@ export interface PrintData {
     selectedOptions: number[];
     selectedGrades: [number, string][];
     freeInputValues: [number, number][];
+    /** 数量入力型（供花など）。旧データには存在しない */
+    multiGradeValues?: [number, MultiGradeSelection][];
     totalCost: number;
     customerInfo?: any;
     estimateId?: number;
@@ -19,6 +21,7 @@ export const serializePrintData = (
     selectedOptions: Set<number>,
     selectedGrades: Map<number, string>,
     freeInputValues: Map<number, number>,
+    multiGradeValues: Map<number, MultiGradeSelection>,
     totalCost: number,
     customerInfo?: any,
     estimateId?: number,
@@ -31,6 +34,7 @@ export const serializePrintData = (
         selectedOptions: Array.from(selectedOptions),
         selectedGrades: Array.from(selectedGrades.entries()),
         freeInputValues: Array.from(freeInputValues.entries()),
+        multiGradeValues: Array.from(multiGradeValues.entries()),
         totalCost,
         customerInfo,
         estimateId,
@@ -49,6 +53,7 @@ export const deserializePrintData = (json: string) => {
             selectedOptions: new Set(data.selectedOptions),
             selectedGrades: new Map<number, string>(data.selectedGrades),
             freeInputValues: new Map<number, number>(data.freeInputValues),
+            multiGradeValues: new Map<number, MultiGradeSelection>(data.multiGradeValues || []),
             totalCost: data.totalCost,
             customerInfo: data.customerInfo,
             estimateId: data.estimateId,

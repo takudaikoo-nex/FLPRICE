@@ -1,8 +1,8 @@
 import React from 'react';
-import { Plan, Item } from '../types';
+import { Plan, Item, MultiGradeSelection } from '../types';
 import { COMPANY_INFO } from '../constants';
 import { formatDateWithMode } from '../lib/dateUtils';
-import { getItemPrice, TAX_RATE, REDUCED_TAX_RATE } from '../lib/pricing';
+import { getItemPrice, getItemDetailLabel, TAX_RATE, REDUCED_TAX_RATE } from '../lib/pricing';
 
 interface QuoteDocumentProps {
     plan: Plan;
@@ -10,6 +10,7 @@ interface QuoteDocumentProps {
     selectedOptions: Set<number>;
     selectedGrades: Map<number, string>;
     freeInputValues: Map<number, number>;
+    multiGradeValues?: Map<number, MultiGradeSelection>;
     totalCost: number;
     customerInfo?: any;
     estimateId?: number;
@@ -17,7 +18,7 @@ interface QuoteDocumentProps {
 }
 
 const QuoteDocument: React.FC<QuoteDocumentProps> = ({
-    plan, items, selectedOptions, selectedGrades, freeInputValues,
+    plan, items, selectedOptions, selectedGrades, freeInputValues, multiGradeValues,
     totalCost, customerInfo, estimateId, logoType
 }) => {
     const info = COMPANY_INFO[logoType];
@@ -25,7 +26,7 @@ const QuoteDocument: React.FC<QuoteDocumentProps> = ({
     const formattedDate = `${today.getFullYear()}年 ${today.getMonth() + 1}月 ${today.getDate()}日`;
 
     const planId = plan.id;
-    const getPrice = (item: Item) => getItemPrice(item, planId, selectedOptions, selectedGrades, freeInputValues);
+    const getPrice = (item: Item) => getItemPrice(item, planId, selectedOptions, selectedGrades, freeInputValues, multiGradeValues);
 
     // 含まれるアイテム
     const includedItems = items.filter(i => i.allowedPlans.includes(planId) && i.includedInPlans.includes(planId));
@@ -55,15 +56,9 @@ const QuoteDocument: React.FC<QuoteDocumentProps> = ({
     const reducedTaxAmount = Math.floor(reducedOptionsTotal * REDUCED_TAX_RATE);
     const finalTotal = taxableSubtotal + taxAmount + reducedOptionsTotal + reducedTaxAmount + nonTaxableTotal;
 
-    // ドロップダウン内容取得
-    const getGradeLabel = (item: Item): string => {
-        const gradeId = selectedGrades.get(item.id);
-        if (gradeId && item.options) {
-            const opt = item.options.find(o => o.id === gradeId);
-            return opt?.name || '';
-        }
-        return '';
-    };
+    // 明細の内訳（グレード名、供花などは個数と割引）
+    const getGradeLabel = (item: Item): string =>
+        getItemDetailLabel(item, planId, selectedGrades, multiGradeValues);
 
     // free_input（割引調整額など）を末尾に配置
     const allOptionsForTable = [...standardTaxableOptions, ...reducedTaxOptions];
@@ -172,7 +167,7 @@ const QuoteDocument: React.FC<QuoteDocumentProps> = ({
                                 <div key={i} className="flex border-b border-gray-200 min-h-[30px] items-center text-xs">
                                     <div className="flex-1 px-3 border-r border-gray-200 h-full flex items-center overflow-hidden">
                                         <span className="truncate">{row.name}</span>
-                                        {row.detail && <span className="text-[10px] text-gray-500 bg-gray-100 px-1 rounded shrink-0 ml-2">{row.detail}</span>}
+                                        {row.detail && <span className="text-[10px] text-gray-500 bg-gray-100 px-1 rounded ml-2 truncate max-w-[65%]">{row.detail}</span>}
                                         {row.reducedTax && <span className="text-[9px] text-orange-600 bg-orange-50 px-1 rounded shrink-0 ml-1">軽減8%</span>}
                                     </div>
                                     <div className={`w-[120px] text-right px-3 h-full flex items-center justify-end font-mono ${(row.price ?? 0) < 0 ? 'text-red-600' : 'text-gray-700'}`}>

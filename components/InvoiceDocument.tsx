@@ -1,7 +1,7 @@
 import React from 'react';
-import { Plan, Item } from '../types';
+import { Plan, Item, MultiGradeSelection } from '../types';
 import { COMPANY_INFO } from '../constants';
-import { getItemPrice, TAX_RATE, REDUCED_TAX_RATE } from '../lib/pricing';
+import { getItemPrice, getItemDetailLabel, TAX_RATE, REDUCED_TAX_RATE } from '../lib/pricing';
 
 interface InvoiceDocumentProps {
     plan: Plan;
@@ -9,6 +9,7 @@ interface InvoiceDocumentProps {
     selectedOptions: Set<number>;
     selectedGrades: Map<number, string>;
     freeInputValues: Map<number, number>;
+    multiGradeValues?: Map<number, MultiGradeSelection>;
     totalCost: number;
     customerInfo?: any;
     estimateId?: number;
@@ -16,7 +17,7 @@ interface InvoiceDocumentProps {
 }
 
 const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
-    plan, items, selectedOptions, selectedGrades, freeInputValues,
+    plan, items, selectedOptions, selectedGrades, freeInputValues, multiGradeValues,
     customerInfo, logoType
 }) => {
     const info = COMPANY_INFO[logoType];
@@ -40,7 +41,7 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
     }
 
     const planId = plan.id;
-    const getPrice = (item: Item) => getItemPrice(item, planId, selectedOptions, selectedGrades, freeInputValues);
+    const getPrice = (item: Item) => getItemPrice(item, planId, selectedOptions, selectedGrades, freeInputValues, multiGradeValues);
 
     const activeOptions = items.filter(i => {
         if (!i.allowedPlans.includes(planId)) return false;
@@ -67,11 +68,8 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
     const reducedTaxAmount = Math.floor(reducedOptionsTotal * REDUCED_TAX_RATE);
     const finalTotal = taxableSubtotal + taxAmount + reducedOptionsTotal + reducedTaxAmount + nonTaxableTotal;
 
-    const getGradeLabel = (item: Item): string => {
-        const gradeId = selectedGrades.get(item.id);
-        if (gradeId && item.options) return item.options.find(o => o.id === gradeId)?.name || '';
-        return '';
-    };
+    const getGradeLabel = (item: Item): string =>
+        getItemDetailLabel(item, planId, selectedGrades, multiGradeValues);
 
     const includedItems = items.filter(i => i.allowedPlans.includes(planId) && i.includedInPlans.includes(planId));
 

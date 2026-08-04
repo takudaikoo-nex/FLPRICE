@@ -1,7 +1,7 @@
 import React from 'react';
-import { Plan, Item } from '../types';
+import { Plan, Item, MultiGradeSelection } from '../types';
 import { COMPANY_INFO } from '../constants';
-import { getItemPrice, TAX_RATE, REDUCED_TAX_RATE } from '../lib/pricing';
+import { getItemPrice, getItemDetailLabel, TAX_RATE, REDUCED_TAX_RATE } from '../lib/pricing';
 
 interface ReceiptDocumentProps {
     plan: Plan;
@@ -9,6 +9,7 @@ interface ReceiptDocumentProps {
     selectedOptions: Set<number>;
     selectedGrades: Map<number, string>;
     freeInputValues: Map<number, number>;
+    multiGradeValues?: Map<number, MultiGradeSelection>;
     totalCost: number;
     customerInfo?: any;
     estimateId?: number;
@@ -19,7 +20,7 @@ const TOTAL_ROWS = 15;
 const NAVY = '#1B3A5C';
 
 const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({
-    plan, items, selectedOptions, selectedGrades, freeInputValues,
+    plan, items, selectedOptions, selectedGrades, freeInputValues, multiGradeValues,
     customerInfo, logoType
 }) => {
     const info = COMPANY_INFO[logoType];
@@ -41,7 +42,7 @@ const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({
     const formattedFuneralDate = formatJapaneseEraDate(funeralDateStr);
 
     const planId = plan.id;
-    const getPrice = (item: Item) => getItemPrice(item, planId, selectedOptions, selectedGrades, freeInputValues);
+    const getPrice = (item: Item) => getItemPrice(item, planId, selectedOptions, selectedGrades, freeInputValues, multiGradeValues);
 
     const activeOptions = items.filter(i => {
         if (!i.allowedPlans.includes(planId)) return false;
@@ -63,11 +64,8 @@ const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({
     const reducedTaxAmount = Math.floor(reducedOptionsTotal * REDUCED_TAX_RATE);
     const finalTotal = taxableSubtotal + taxAmount + reducedOptionsTotal + reducedTaxAmount + nonTaxableTotal;
 
-    const getGradeLabel = (item: Item): string => {
-        const gradeId = selectedGrades.get(item.id);
-        if (gradeId && item.options) return item.options.find(o => o.id === gradeId)?.name || '';
-        return '';
-    };
+    const getGradeLabel = (item: Item): string =>
+        getItemDetailLabel(item, planId, selectedGrades, multiGradeValues);
 
     // Build display rows
     const dataRows: { name: string; quantity: string; unitPrice: number; amount: number }[] = [];
@@ -85,7 +83,8 @@ const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({
         if (gradeLabel) name += ` (${gradeLabel})`;
         if (item.reducedTax) name += ' ※';
         if (item.nonTaxable) name += ' (非課税)';
-        dataRows.push({ name, quantity: '1 回', unitPrice: price, amount: price });
+        // 数量入力型は複数グレードをまとめた1行なので、単価ではなく一式として出す
+        dataRows.push({ name, quantity: item.type === 'multi_grade' ? '一式' : '1 回', unitPrice: price, amount: price });
     });
 
     const emptyRowCount = Math.max(0, TOTAL_ROWS - dataRows.length);

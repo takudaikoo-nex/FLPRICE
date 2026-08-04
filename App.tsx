@@ -17,6 +17,8 @@ import LoginGate from './components/LoginGate';
 import OptionCatalogPage from './components/OptionCatalogPage';
 import { supabase } from './lib/supabase';
 import { MoneyInput } from './components/MoneyInput';
+import { MultiGradeInput } from './components/MultiGradeInput';
+import { getMultiGradeSubtotal } from './lib/pricing';
 const EMPTY_CUSTOMER_INFO: CustomerInfo = {
   deathDate: '', deceasedName: '', birthDate: '', age: '', address: '', honseki: '',
   applicantName: '', applicantRelation: '', applicantBirthDate: '',
@@ -35,11 +37,12 @@ const App: React.FC = () => {
   const system = useEstimateSystem();
   const {
     isPrintMode, category, selectedPlanId,
-    selectedOptions, selectedGrades, freeInputValues,
+    selectedOptions, selectedGrades, freeInputValues, multiGradeValues,
     modalItem, setModalItem, loadedCustomerInfo, setLoadedCustomerInfo,
     viewMode, setViewMode, isSaving, logoType,
     plans, items, loading,
     handleCategoryChange, handlePlanChange, toggleOption, setGrade, setFreeInputValue,
+    setGradeQuantity, setItemDiscount,
     currentPlan, totalCost, toggleLogo, handleSaveAndPrint, executeLoadEstimate
   } = system;
 
@@ -104,6 +107,7 @@ const App: React.FC = () => {
     system.setSelectedOptions(new Set());
     system.setSelectedGrades(new Map());
     system.setFreeInputValues(new Map());
+    system.setMultiGradeValues(new Map());
     system.setCategory('cremation');
     system.setSelectedPlanId(plans.find(p => p.category === 'cremation')?.id || 'plan_01');
     setLoadedCustomerInfo(null);
@@ -291,6 +295,7 @@ const App: React.FC = () => {
                       {optionItems.map(item => {
                         const isSelected = item.type === 'checkbox' ? selectedOptions.has(item.id)
                           : item.type === 'dropdown' ? selectedGrades.has(item.id)
+                          : item.type === 'multi_grade' ? getMultiGradeSubtotal(item, selectedPlanId, multiGradeValues.get(item.id)) > 0
                           : (freeInputValues.get(item.id) ?? 0) !== 0;
 
                         return (
@@ -337,6 +342,18 @@ const App: React.FC = () => {
                                     ))}
                                   </select>
                                   <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                                </div>
+                              )}
+
+                              {item.type === 'multi_grade' && item.options && (
+                                <div className="inline-block text-left">
+                                  <MultiGradeInput
+                                    item={item}
+                                    planId={selectedPlanId}
+                                    selection={multiGradeValues.get(item.id)}
+                                    onQuantityChange={(gradeId, qty) => setGradeQuantity(item.id, gradeId, qty)}
+                                    onDiscountChange={(type, value) => setItemDiscount(item.id, type, value)}
+                                  />
                                 </div>
                               )}
 

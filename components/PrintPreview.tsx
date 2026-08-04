@@ -3,7 +3,7 @@ import QuoteDocument from './QuoteDocument';
 import InvoiceDocument from './InvoiceDocument';
 import ReceiptDocument from './ReceiptDocument';
 import { deserializePrintData } from '../lib/serialization';
-import { Plan, Item } from '../types';
+import { Plan, Item, MultiGradeSelection } from '../types';
 
 const PrintPreview: React.FC = () => {
     const [data, setData] = useState<{
@@ -12,6 +12,7 @@ const PrintPreview: React.FC = () => {
         selectedOptions: Set<number>;
         selectedGrades: Map<number, string>;
         freeInputValues: Map<number, number>;
+        multiGradeValues: Map<number, MultiGradeSelection>;
         totalCost: number;
         customerInfo?: any;
         estimateId?: number;
@@ -38,7 +39,8 @@ const PrintPreview: React.FC = () => {
     const docProps = {
         plan: data.plan, items: data.items,
         selectedOptions: data.selectedOptions, selectedGrades: data.selectedGrades,
-        freeInputValues: data.freeInputValues, totalCost: data.totalCost,
+        freeInputValues: data.freeInputValues, multiGradeValues: data.multiGradeValues,
+        totalCost: data.totalCost,
         customerInfo: data.customerInfo, estimateId: data.estimateId,
         logoType: data.logoType || 'FL' as const,
     };

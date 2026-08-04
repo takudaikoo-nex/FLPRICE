@@ -1,6 +1,17 @@
 export type PlanId = string;
 export type PlanCategory = 'cremation' | 'funeral';
-export type ItemType = 'checkbox' | 'dropdown' | 'free_input';
+export type ItemType = 'checkbox' | 'dropdown' | 'free_input' | 'multi_grade';
+
+export type DiscountType = 'none' | 'amount' | 'percent';
+
+/** 数量入力型（供花など）の選択内容。グレードごとの個数と、小計に対する割引 */
+export interface MultiGradeSelection {
+  /** グレードID → 個数 */
+  quantities: Record<string, number>;
+  discountType: DiscountType;
+  /** discountType が amount なら円、percent なら％ */
+  discountValue: number;
+}
 
 export interface Plan {
   id: PlanId;

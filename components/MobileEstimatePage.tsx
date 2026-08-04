@@ -5,6 +5,8 @@ import MobileFooter from './MobileFooter';
 import { Info, Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { useEstimateSystem } from '../hooks/useEstimateSystem';
 import { MoneyInput } from './MoneyInput';
+import { MultiGradeInput } from './MultiGradeInput';
+import { getMultiGradeSubtotal } from '../lib/pricing';
 
 interface MobileEstimatePageProps {
     system: ReturnType<typeof useEstimateSystem>;
@@ -23,10 +25,11 @@ const THEME = {
 const MobileEstimatePage: React.FC<MobileEstimatePageProps> = ({ system, onOutputClick, onInvoiceClick, onReceiptClick, goToInputPage, onLoadClick }) => {
     const {
         category, selectedPlanId,
-        selectedOptions, selectedGrades, freeInputValues,
+        selectedOptions, selectedGrades, freeInputValues, multiGradeValues,
         modalItem, setModalItem,
         plans, items,
         handleCategoryChange, handlePlanChange, toggleOption, setGrade, setFreeInputValue,
+        setGradeQuantity, setItemDiscount,
         totalCost,
     } = system;
 
@@ -109,7 +112,10 @@ const MobileEstimatePage: React.FC<MobileEstimatePageProps> = ({ system, onOutpu
                     <h2 className={`font-bold mb-3 text-lg ${theme.text}`}>追加オプション</h2>
                     <div className="space-y-3">
                         {optionItems.map(item => {
-                            const isSelected = item.type === 'checkbox' ? selectedOptions.has(item.id) : item.type === 'dropdown' ? selectedGrades.has(item.id) : (freeInputValues.get(item.id) ?? 0) !== 0;
+                            const isSelected = item.type === 'checkbox' ? selectedOptions.has(item.id)
+                                : item.type === 'dropdown' ? selectedGrades.has(item.id)
+                                : item.type === 'multi_grade' ? getMultiGradeSubtotal(item, selectedPlanId, multiGradeValues.get(item.id)) > 0
+                                : (freeInputValues.get(item.id) ?? 0) !== 0;
                             return (
                                 <div key={item.id} className={`p-4 rounded-xl border transition-all ${isSelected ? 'bg-emerald-50 border-emerald-300' : 'bg-white border-gray-200'}`}>
                                     <div className="flex justify-between items-start mb-2">
@@ -135,6 +141,15 @@ const MobileEstimatePage: React.FC<MobileEstimatePageProps> = ({ system, onOutpu
                                                     <option key={opt.id} value={opt.id}>{opt.name} (¥{(opt.planPrices?.[selectedPlanId] ?? opt.price).toLocaleString()})</option>
                                                 ))}
                                             </select>
+                                        )}
+                                        {item.type === 'multi_grade' && item.options && (
+                                            <MultiGradeInput
+                                                item={item}
+                                                planId={selectedPlanId}
+                                                selection={multiGradeValues.get(item.id)}
+                                                onQuantityChange={(gradeId, qty) => setGradeQuantity(item.id, gradeId, qty)}
+                                                onDiscountChange={(type, value) => setItemDiscount(item.id, type, value)}
+                                            />
                                         )}
                                         {item.type === 'free_input' && (
                                             <div className="flex items-center justify-end gap-1">
