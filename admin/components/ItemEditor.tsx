@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Item, Plan, ItemType } from '../../types';
 import { ITEM_IMAGE_BUCKET, storageImageUrl, uploadImages, removeImages } from '../../lib/storage';
 import { ArrowLeft, Plus, Trash2, ImagePlus, X } from 'lucide-react';
+import { ITEM_TYPE_HINT, hasOptions } from './itemTypes';
 
 interface ItemEditorProps {
     item: Item;
@@ -192,19 +193,22 @@ const ItemEditor: React.FC<ItemEditorProps> = ({ item, isNew, onSave, onCancel, 
                                         ...editingItem,
                                         type: newType,
                                         // options array should be initialized if converting to dropdown
-                                        options: newType === 'dropdown' ? (editingItem.options || []) : editingItem.options
+                                        options: newType === 'dropdown' || newType === 'multi_grade' ? (editingItem.options || []) : editingItem.options
                                     });
                                 }}
                                 className="w-full md:w-64 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
                             >
                                 <option value="checkbox">チェックボックス (追加オプション)</option>
                                 <option value="dropdown">プルダウン (複数の選択肢から選ぶ)</option>
+                                <option value="multi_grade">数量入力 (グレードごとに個数を入力・割引あり)</option>
                                 <option value="free_input">手入力 (金額を自由に打ち込む)</option>
                             </select>
+                            <p className="text-xs text-gray-500 mt-2">{ITEM_TYPE_HINT[editingItem.type]}</p>
                         </div>
 
-                        {/* 税率フラグ */}
+                        {/* 税率フラグ。どちらも選ばなければ標準税率10% */}
                         <div className="flex flex-col gap-3">
+                            <p className="text-xs text-gray-500">※ どちらも選ばない場合は標準税率10%になります</p>
                             <label className="flex items-center gap-3 cursor-pointer w-fit">
                                 <input
                                     type="checkbox"
@@ -225,10 +229,12 @@ const ItemEditor: React.FC<ItemEditorProps> = ({ item, isNew, onSave, onCancel, 
                             </label>
                         </div>
 
-                        {editingItem.type === 'dropdown' && (
+                        {hasOptions(editingItem.type) && (
                             <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
                                 <div className="flex justify-between items-center mb-3">
-                                    <label className="block text-sm font-medium text-emerald-800">プルダウン選択肢</label>
+                                    <label className="block text-sm font-medium text-emerald-800">
+                                        {editingItem.type === 'multi_grade' ? 'グレード（個数を入力できる選択肢）' : 'プルダウン選択肢'}
+                                    </label>
                                     <button
                                         type="button"
                                         onClick={() => {
@@ -289,6 +295,38 @@ const ItemEditor: React.FC<ItemEditorProps> = ({ item, isNew, onSave, onCancel, 
                                                 >
                                                     <Trash2 size={16} />
                                                 </button>
+                                              </div>
+
+                                              {/* この選択肢を出すプラン。外したプランでは選べなくなる */}
+                                              <div className="flex flex-wrap items-center gap-1.5 mt-2 pl-1">
+                                                <span className="text-[10px] text-gray-400 mr-1 shrink-0">対象プラン</span>
+                                                {plans.map(plan => {
+                                                    const checked = (opt.allowedPlans || []).includes(plan.id);
+                                                    return (
+                                                        <button
+                                                            key={plan.id}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const newOptions = [...(editingItem.options || [])];
+                                                                const current = newOptions[idx].allowedPlans || [];
+                                                                newOptions[idx] = {
+                                                                    ...newOptions[idx],
+                                                                    allowedPlans: checked
+                                                                        ? current.filter(p => p !== plan.id)
+                                                                        : [...current, plan.id],
+                                                                };
+                                                                setEditingItem({ ...editingItem, options: newOptions });
+                                                            }}
+                                                            className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${
+                                                                checked
+                                                                    ? 'bg-emerald-600 border-emerald-600 text-white'
+                                                                    : 'bg-white border-gray-200 text-gray-400 hover:border-emerald-300'
+                                                            }`}
+                                                        >
+                                                            {plan.name}
+                                                        </button>
+                                                    );
+                                                })}
                                               </div>
 
                                               <div className="flex flex-wrap items-center gap-2 mt-2 pl-1">

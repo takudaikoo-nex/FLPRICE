@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Item, Plan } from '../../types';
+import { Item, ItemType, Plan } from '../../types';
 import { Edit, Trash2, Plus, Search, GripVertical } from 'lucide-react';
+import { ITEM_TYPE_LABEL } from './itemTypes';
 import ItemEditor from './ItemEditor';
 import { convertDbItem, convertItemToDb, convertDbPlan } from '../../lib/converter';
 import {
@@ -67,6 +68,19 @@ const SortableRow: React.FC<SortableRowProps> = ({ item, onEdit, onDelete, isFil
                 <div className="text-xs font-normal text-gray-400 mt-0.5 truncate max-w-xs">
                     {item.description}
                 </div>
+            </td>
+            <td className="p-4">
+                <span className={`text-xs px-2 py-0.5 rounded-full border whitespace-nowrap ${
+                    item.type === 'multi_grade'
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                        : 'bg-gray-100 border-gray-200 text-gray-600'
+                }`}>
+                    {ITEM_TYPE_LABEL[item.type as ItemType] || item.type}
+                </span>
+                {/* 選択肢を持つ種別は数がひと目で分かるようにする */}
+                {(item.options?.length ?? 0) > 0 && (
+                    <div className="text-[10px] text-gray-400 mt-1">{item.options!.length}件の選択肢</div>
+                )}
             </td>
             <td className="p-4 text-right font-mono text-sm">
                 {item.basePrice ? `¥${item.basePrice.toLocaleString()}` : '¥0'}
@@ -239,6 +253,8 @@ const ItemsManager: React.FC = () => {
             basePrice: 0,
             allowedPlans: [],
             includedInPlans: [],
+            nonTaxable: false,
+            reducedTax: false,
         });
         setIsNew(true);
     };
@@ -340,6 +356,7 @@ const ItemsManager: React.FC = () => {
                                     <th className="p-4 w-12 text-center">順序</th>
                                     <th className="p-4 w-16">ID</th>
                                     <th className="p-4">名前</th>
+                                    <th className="p-4 w-32">種別</th>
                                     <th className="p-4 w-32 text-right">初期額</th>
                                     <th className="p-4 w-48">対象プラン</th>
                                     <th className="p-4 w-48">含むプラン</th>

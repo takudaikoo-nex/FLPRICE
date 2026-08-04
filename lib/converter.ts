@@ -12,8 +12,8 @@ export const convertDbItem = (item: any): Item => ({
     includedInPlans: item.included_in_plans || [],
     options: item.options,
     imagePaths: item.image_paths || [],
-    nonTaxable: item.non_taxable,
-    reducedTax: item.reduced_tax,
+    nonTaxable: item.non_taxable ?? false,
+    reducedTax: item.reduced_tax ?? false,
 });
 
 /** アプリのItemをSupabase DB用のsnake_caseに変換 */
@@ -28,8 +28,9 @@ export const convertItemToDb = (item: Item): Record<string, any> => ({
     included_in_plans: item.includedInPlans,
     options: item.options,
     image_paths: item.imagePaths || [],
-    non_taxable: item.nonTaxable,
-    reduced_tax: item.reducedTax,
+    // どちらも選ばない場合は標準税率10%。未設定のまま送るとDB側で弾かれるので明示する
+    non_taxable: item.nonTaxable ?? false,
+    reduced_tax: item.reducedTax ?? false,
 });
 
 /** Supabase DBから取得したPlanを変換 */
