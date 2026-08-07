@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, PlusCircle, Search, Settings, LogOut, Link2, ClipboardList, Images } from 'lucide-react';
+import { Users, PlusCircle, Search, Settings, LogOut, Link2, ClipboardList, Images, ListChecks } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface TopScreenProps {
@@ -10,11 +10,12 @@ interface TopScreenProps {
     onSearch: () => void;
     onFlowerFunerals: () => void;
     onFlowerOrders: () => void;
+    onCaseTasks: () => void;
 }
 
 const TopScreen: React.FC<TopScreenProps> = ({
     logoType, onToggleLogo, onCustomerList, onCreateNew, onSearch,
-    onFlowerFunerals, onFlowerOrders,
+    onFlowerFunerals, onFlowerOrders, onCaseTasks,
 }) => {
     const handleSettings = () => {
         window.open('/admin/', '_blank');
@@ -73,6 +74,19 @@ const TopScreen: React.FC<TopScreenProps> = ({
                     </button>
                 </div>
             </main>
+
+            <section className="fl-subsection">
+                <h2 className="fl-subsection-title">進行管理</h2>
+                <div className="fl-subtiles">
+                    <button type="button" className="fl-subtile" onClick={onCaseTasks}>
+                        <span className="fl-subtile-icon"><ListChecks size={22} /></span>
+                        <span>
+                            <span className="fl-subtile-label">タスク進捗</span>
+                            <span className="fl-subtile-desc">案件ごとのやることと進み具合を確認する</span>
+                        </span>
+                    </button>
+                </div>
+            </section>
 
             <section className="fl-subsection">
                 <h2 className="fl-subsection-title">オプション</h2>

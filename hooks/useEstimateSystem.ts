@@ -6,6 +6,7 @@ import { getItemPrice, emptyMultiGrade } from '../lib/pricing';
 import { convertDbItem, convertDbPlan } from '../lib/converter';
 import { findOrCreateCustomerForEstimate } from '../lib/customers';
 import { statusAfterDocument, EstimateStatus } from '../lib/estimateStatus';
+import { completeTasksForDocument } from '../lib/caseTasks';
 import { PLANS, ITEMS } from '../constants';
 
 export const useEstimateSystem = () => {
@@ -25,7 +26,7 @@ export const useEstimateSystem = () => {
     const [loadedCustomerInfo, setLoadedCustomerInfo] = useState<CustomerInfo | null>(null);
     // 読み込み中の案件（見積）。ある場合は帳票を出しても新規採番せず、この案件を更新する
     const [loadedEstimateId, setLoadedEstimateId] = useState<number | null>(null);
-    const [viewMode, setViewMode] = useState<'top' | 'customers' | 'search' | 'flowerFunerals' | 'flowerOrders' | 'start' | 'home' | 'input'>('top');
+    const [viewMode, setViewMode] = useState<'top' | 'customers' | 'search' | 'caseTasks' | 'flowerFunerals' | 'flowerOrders' | 'start' | 'home' | 'input'>('top');
     const [isSaving, setIsSaving] = useState(false);
     const [logoType, setLogoType] = useState<'FL' | 'LS'>('FL');
 
@@ -248,6 +249,14 @@ export const useEstimateSystem = () => {
             }
 
             setLoadedCustomerInfo(customerInfo);
+
+            // 帳票の発行に連動してタスクを完了させる（請求書→請求書の送付／領収書→入金の確認）。
+            // タスクが未生成の案件でも何も起きないだけなので、失敗しても帳票の発行は続行する。
+            try {
+                await completeTasksForDocument(estimateId!, documentType);
+            } catch (taskError) {
+                console.error('Failed to complete tasks for document:', taskError);
+            }
 
             const serialized = serializePrintData(
                 currentPlan, items, selectedOptions, selectedGrades, freeInputValues, multiGradeValues,

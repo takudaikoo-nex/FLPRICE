@@ -13,6 +13,7 @@ import CustomerListPage from './components/CustomerListPage';
 import EstimateSearchPage from './components/EstimateSearchPage';
 import FlowerFuneralsPage from './components/flower/FlowerFuneralsPage';
 import FlowerOrdersPage from './components/flower/FlowerOrdersPage';
+import CaseTaskPage from './components/tasks/CaseTaskPage';
 import LoginGate from './components/LoginGate';
 import OptionCatalogPage from './components/OptionCatalogPage';
 import { supabase } from './lib/supabase';
@@ -144,8 +145,10 @@ const App: React.FC = () => {
       onSearch={() => setViewMode('search')}
       onFlowerFunerals={() => setViewMode('flowerFunerals')}
       onFlowerOrders={() => setViewMode('flowerOrders')}
+      onCaseTasks={() => setViewMode('caseTasks')}
     />
   );
+  if (viewMode === 'caseTasks') return <CaseTaskPage onBack={() => setViewMode('top')} onOpenEstimate={handleOpenEstimate} />;
   if (viewMode === 'flowerFunerals') return <FlowerFuneralsPage onBack={() => setViewMode('top')} />;
   if (viewMode === 'flowerOrders') return <FlowerOrdersPage onBack={() => setViewMode('top')} />;
   if (viewMode === 'customers') return <CustomerListPage onBack={() => setViewMode('top')} onOpenEstimate={handleOpenEstimate} />;

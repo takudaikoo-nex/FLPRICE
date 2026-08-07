@@ -1801,3 +1801,241 @@ select {
 .fl-lightbox-caption .fl-catalog-price {
   color: #6ee7b7;
 }
+
+/* ================================================
+   タスク進捗（案件一覧・案件詳細）
+   ================================================ */
+
+.fl-task-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+
+.fl-task-summary-main {
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.fl-task-summary-sub {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.fl-task-summary-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8rem;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.fl-task-bar {
+  width: 140px;
+  height: 8px;
+  border-radius: 999px;
+  background: #edeae4;
+  overflow: hidden;
+}
+
+.fl-task-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: #059669;
+}
+
+.fl-task-mini {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  font-size: 0.72rem;
+  color: #6b7280;
+}
+
+.fl-task-mini .fl-task-bar {
+  width: 110px;
+  height: 7px;
+}
+
+.fl-task-phase {
+  margin-bottom: 18px;
+}
+
+.fl-task-phase-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #047857;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
+.fl-task-row {
+  border-bottom: 1px solid #f3f4f6;
+  padding: 10px 14px;
+}
+
+.fl-task-row:last-child {
+  border-bottom: none;
+}
+
+.fl-task-row.is-late {
+  background: #fffbf4;
+}
+
+.fl-task-row.is-done .fl-task-title span:first-child {
+  color: #9ca3af;
+}
+
+.fl-task-row-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.fl-task-status {
+  flex-shrink: 0;
+  width: 92px;
+  padding: 5px 7px;
+  border: 1px solid #e5e7eb;
+  border-radius: 7px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.fl-task-title {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.fl-task-owner {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #047857;
+  background: #ecfdf5;
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.fl-task-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #6b7280;
+  background: #f3f4f6;
+  border-radius: 999px;
+  padding: 1px 8px;
+  margin-left: 6px;
+}
+
+.fl-task-flag.is-late {
+  color: #b91c1c;
+  background: #fdecec;
+}
+
+.fl-task-flag.is-confirm {
+  color: #1d4ed8;
+  background: #eaf0ff;
+}
+
+.fl-task-due,
+.fl-task-assignee {
+  flex-shrink: 0;
+  padding: 5px 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 0.78rem;
+  background: #fff;
+}
+
+.fl-task-due {
+  width: 140px;
+}
+
+.fl-task-assignee {
+  width: 110px;
+}
+
+.fl-task-detail {
+  margin: 10px 0 4px 102px;
+  padding: 12px 14px;
+  background: #fbfaf8;
+  border: 1px solid #f0eee9;
+  border-radius: 9px;
+}
+
+.fl-task-detail .fl-field {
+  margin-bottom: 10px;
+}
+
+.fl-task-detail .fl-field textarea {
+  font-size: 0.85rem;
+  padding: 7px 10px;
+}
+
+.fl-task-detail .fl-note {
+  margin-top: 0;
+}
+
+.fl-task-detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.fl-task-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: #374151;
+  cursor: pointer;
+}
+
+.fl-task-history {
+  padding: 12px 14px;
+  font-size: 0.78rem;
+  color: #6b7280;
+  line-height: 1.9;
+}
+
+.fl-task-history b {
+  color: #1f2937;
+  font-weight: 500;
+  margin: 0 6px;
+}
+
+@media (max-width: 720px) {
+  .fl-task-detail {
+    margin-left: 0;
+  }
+
+  .fl-task-due,
+  .fl-task-assignee {
+    width: 100%;
+  }
+}
