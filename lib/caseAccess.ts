@@ -67,8 +67,26 @@ export const issueCredential = async (
         p_issued_by: issuedBy,
     });
 
-    if (error) throw error;
+    if (error) throw new Error(describeRpcError(error));
     return { loginId, password };
+};
+
+/**
+ * 発行・停止の失敗理由を画面に出せる文面にする。
+ * いちばん多いのは 020 のマイグレーション未実行なので、そこだけは明示する。
+ */
+export const describeRpcError = (error: { code?: string; message?: string }): string => {
+    const raw = error?.message || '';
+
+    if (error?.code === 'PGRST202' || raw.includes('Could not find the function')) {
+        return 'DBの関数が見つかりません。migrations/020_case_credentials_functions.sql を実行してください。';
+    }
+    if (raw.includes('ESTIMATE_NOT_FOUND')) return 'この案件が見つかりませんでした。';
+    if (raw.includes('INVALID_CREDENTIAL')) return 'ID・パスワードの生成に失敗しました。';
+    if (raw.includes('permission denied')) {
+        return 'この操作の権限がありません。migrations/020 の GRANT が実行されているか確認してください。';
+    }
+    return raw || '原因不明のエラーです。';
 };
 
 export const setCredentialActive = async (estimateId: number, active: boolean): Promise<void> => {
@@ -76,7 +94,7 @@ export const setCredentialActive = async (estimateId: number, active: boolean): 
         p_estimate_id: estimateId,
         p_active: active,
     });
-    if (error) throw error;
+    if (error) throw new Error(describeRpcError(error));
 };
 
 /** 喪主サイトのベースURL（管理画面で設定） */

@@ -137,9 +137,11 @@ const CaseTaskPage: React.FC<Props> = ({ onBack, onOpenEstimate }) => {
             setIssued(result);
             setCopied(false);
             setCredential(await fetchCredential(estimateId));
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to issue credential:', error);
-            alert('ログイン情報の発行に失敗しました');
+            alert(`ログイン情報の発行に失敗しました
+
+${error?.message ?? error}`);
         } finally {
             setBusy(false);
         }
@@ -150,9 +152,11 @@ const CaseTaskPage: React.FC<Props> = ({ onBack, onOpenEstimate }) => {
         try {
             await setCredentialActive(estimateId, active);
             setCredential(await fetchCredential(estimateId));
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to update credential:', error);
-            alert('ログイン情報の更新に失敗しました');
+            alert(`ログイン情報の更新に失敗しました
+
+${error?.message ?? error}`);
         } finally {
             setBusy(false);
         }
