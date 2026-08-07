@@ -9,7 +9,10 @@
     "preview": "vite preview",
     "dev:flower": "vite --config vite.flower.config.ts",
     "build:flower": "vite build --config vite.flower.config.ts",
-    "preview:flower": "vite preview --config vite.flower.config.ts"
+    "preview:flower": "vite preview --config vite.flower.config.ts",
+    "dev:tasks": "vite --config vite.tasks.config.ts",
+    "build:tasks": "vite build --config vite.tasks.config.ts",
+    "preview:tasks": "vite preview --config vite.tasks.config.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

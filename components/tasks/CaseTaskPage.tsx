@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
     ChevronLeft, ChevronDown, ChevronUp, RefreshCw, ExternalLink, Images, AlertTriangle, Check,
+    KeyRound, Copy, Ban, RotateCcw,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import {
@@ -13,6 +14,10 @@ import {
     formatDateTime, formatDueDate, fromDateInput, generateCaseTasks, isOverdue, progressPercent,
     toDateInput, updateCaseTask,
 } from '../../lib/caseTasks';
+import {
+    CaseCredential, IssuedCredential, buildCredentialText, fetchCredential, fetchTaskSiteBaseUrl,
+    issueCredential, setCredentialActive,
+} from '../../lib/caseAccess';
 
 /** 進行中とみなす案件のステータス */
 const ACTIVE_STATUSES: EstimateStatus[] = ['ordered', 'completed', 'invoiced'];
@@ -37,6 +42,12 @@ const CaseTaskPage: React.FC<Props> = ({ onBack, onOpenEstimate }) => {
     const [detailLoading, setDetailLoading] = useState(false);
     const [busy, setBusy] = useState(false);
     const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
+
+    // 喪主用ログイン情報
+    const [credential, setCredential] = useState<CaseCredential | null>(null);
+    const [issued, setIssued] = useState<IssuedCredential | null>(null);
+    const [siteBaseUrl, setSiteBaseUrl] = useState('');
+    const [copied, setCopied] = useState(false);
 
     useEffect(() => {
         supabase.auth.getUser().then(({ data }) => {
@@ -63,12 +74,16 @@ const CaseTaskPage: React.FC<Props> = ({ onBack, onOpenEstimate }) => {
     const loadDetail = async (estimateId: number) => {
         setDetailLoading(true);
         try {
-            const [taskData, eventData] = await Promise.all([
+            const [taskData, eventData, credentialData, baseUrl] = await Promise.all([
                 fetchCaseTasks(estimateId),
                 fetchTaskEvents(estimateId),
+                fetchCredential(estimateId),
+                fetchTaskSiteBaseUrl(),
             ]);
             setTasks(taskData);
             setEvents(eventData);
+            setCredential(credentialData);
+            setSiteBaseUrl(baseUrl);
         } catch (error) {
             console.error('Failed to fetch case detail:', error);
             alert('案件の取得に失敗しました');
@@ -80,6 +95,8 @@ const CaseTaskPage: React.FC<Props> = ({ onBack, onOpenEstimate }) => {
     const openCase = async (estimateId: number) => {
         setOpenedId(estimateId);
         setExpandedTaskId(null);
+        setIssued(null);
+        setCopied(false);
         await loadDetail(estimateId);
     };
 
@@ -105,6 +122,53 @@ const CaseTaskPage: React.FC<Props> = ({ onBack, onOpenEstimate }) => {
             alert('タスクの生成に失敗しました');
         } finally {
             setBusy(false);
+        }
+    };
+
+    const handleIssue = async (estimateId: number) => {
+        if (credential && !confirm(
+            '再発行すると、いまお渡ししているパスワードは使えなくなります。\n'
+            + '喪主が開いている画面もログアウトされます。よろしいですか？',
+        )) return;
+
+        setBusy(true);
+        try {
+            const result = await issueCredential(estimateId, actorName);
+            setIssued(result);
+            setCopied(false);
+            setCredential(await fetchCredential(estimateId));
+        } catch (error) {
+            console.error('Failed to issue credential:', error);
+            alert('ログイン情報の発行に失敗しました');
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    const handleToggleCredential = async (estimateId: number, active: boolean) => {
+        setBusy(true);
+        try {
+            await setCredentialActive(estimateId, active);
+            setCredential(await fetchCredential(estimateId));
+        } catch (error) {
+            console.error('Failed to update credential:', error);
+            alert('ログイン情報の更新に失敗しました');
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    const handleCopy = async () => {
+        if (!issued) return;
+        try {
+            await navigator.clipboard.writeText(
+                buildCredentialText(siteBaseUrl, issued.loginId, issued.password),
+            );
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (error) {
+            console.error('Failed to copy:', error);
+            alert('コピーできませんでした。手で控えてください。');
         }
     };
 
@@ -195,6 +259,70 @@ const CaseTaskPage: React.FC<Props> = ({ onBack, onOpenEstimate }) => {
                             <ExternalLink size={14} />
                             案件を開く（請求書・領収書の発行）
                         </button>
+                    </div>
+
+                    <div className="fl-task-cred">
+                        <h3 className="fl-task-phase-title">
+                            <KeyRound size={14} /> 喪主用ログイン情報
+                        </h3>
+
+                        {issued ? (
+                            <>
+                                <pre className="fl-task-cred-box">
+{buildCredentialText(siteBaseUrl, issued.loginId, issued.password)}
+                                </pre>
+                                <p className="fl-note">
+                                    パスワードを表示できるのはこの1回だけです。コピーして喪主にお渡しください。
+                                </p>
+                            </>
+                        ) : credential ? (
+                            <div className="fl-task-cred-box">
+                                ID: {credential.login_id}　
+                                {credential.is_active ? '有効' : '停止中'}
+                                {credential.last_login_at
+                                    ? `　最終ログイン ${formatDateTime(credential.last_login_at)}`
+                                    : '　未ログイン'}
+                            </div>
+                        ) : (
+                            <p className="fl-note">まだ発行していません。</p>
+                        )}
+
+                        <div className="fl-toolbar" style={{ marginTop: 10, marginBottom: 0 }}>
+                            <button
+                                type="button"
+                                className="fl-btn fl-btn-primary"
+                                onClick={() => handleIssue(openedEstimate.id)}
+                                disabled={busy}
+                            >
+                                <KeyRound size={14} />
+                                {credential ? '再発行' : '発行'}
+                            </button>
+
+                            {issued && (
+                                <button type="button" className="fl-btn fl-btn-ghost" onClick={handleCopy}>
+                                    {copied ? <Check size={14} /> : <Copy size={14} />}
+                                    {copied ? 'コピーしました' : 'まとめてコピー'}
+                                </button>
+                            )}
+
+                            {credential && (
+                                <button
+                                    type="button"
+                                    className="fl-btn fl-btn-ghost"
+                                    onClick={() => handleToggleCredential(openedEstimate.id, !credential.is_active)}
+                                    disabled={busy}
+                                >
+                                    {credential.is_active ? <Ban size={14} /> : <RotateCcw size={14} />}
+                                    {credential.is_active ? '停止する' : '再開する'}
+                                </button>
+                            )}
+                        </div>
+
+                        {!siteBaseUrl && (
+                            <p className="fl-note">
+                                喪主サイトのURLが未設定です。管理画面の「タスクマスタ管理」で設定してください。
+                            </p>
+                        )}
                     </div>
 
                     {detailLoading && <div className="fl-empty">読み込み中...</div>}

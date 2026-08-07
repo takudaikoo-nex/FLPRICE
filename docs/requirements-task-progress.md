@@ -647,4 +647,46 @@ case_tasks の更新 ── notifyTaskChanged(task, actor)
 
 ---
 
+## 13. 実装状況（2026-08-07）
+
+| | 内容 | 実装 |
+|---|---|---|
+| T1 | タスクの自動生成（受注時＋手動） | `lib/caseTasks.ts` / `components/EstimateEditModal.tsx` |
+| T2 | スタッフ画面（案件一覧・案件詳細） | `components/tasks/CaseTaskPage.tsx` |
+| T3 | タスクマスタ管理 | `admin/components/CaseTaskTemplatesManager.tsx` |
+| T4 | 帳票との連動 | `hooks/useEstimateSystem.ts` → `completeTasksForDocument()` |
+| T5 | 喪主用アイパスの発行 | `lib/caseAccess.ts` ＋ 案件詳細のパネル |
+| T6 | Edge Function／喪主サイト | `supabase/functions/task-public/` / `tasks/` |
+
+### 適用手順
+
+```
+1. migrations/019_case_tasks.sql                 を実行（テーブル・マスタ）
+2. migrations/020_case_credentials_functions.sql を実行（アイパスの発行・照合）
+3. npx supabase functions deploy task-public
+4. npm run build:tasks  → dist-tasks/ を配信（Vercel の別プロジェクト）
+5. /admin →「タスクマスタ管理」で喪主サイトのURLを設定
+```
+
+3を飛ばすと喪主サイトが何も表示できない。2と3は続けて行うこと。
+
+### パスワードの扱い
+
+ハッシュ化と照合は DB の SECURITY DEFINER 関数で行う（`020`）。
+
+| 関数 | 実行できる役割 |
+|---|---|
+| `issue_case_credential` / `deactivate_case_credential` | `authenticated`（見積システム） |
+| `case_login` / `purge_expired_case_sessions` | `service_role`（Edge Function）のみ |
+
+平文のパスワードは保存されず、発行直後に画面へ1回だけ表示される。
+
+### v1で入れなかったもの
+
+- 喪主サイトからの期日・担当者・メモの編集（スタッフは状態の変更のみ。本体は見積システム側）
+- 案件ごとの追加タスク（マスタにない突発対応）
+- 外部連携（§9）・死亡診断書PDF・決済
+
+---
+
 *作成: 2026-08-07 | 参照: `FL_Obsidian/01_タスク管理/タスク_2026-08-06.md` `FL_Obsidian/02_MTG記録/FL定例/2026-08-06_FL定例まとめ.md` `docs/requirements-2026-07.md`*

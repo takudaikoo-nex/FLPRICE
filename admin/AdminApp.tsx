@@ -4,12 +4,13 @@ import LoginForm from './components/LoginForm';
 import PlansManager from './components/PlansManager';
 import ItemsManager from './components/ItemsManager';
 import AttendeesManager from './components/AttendeesManager';
-import { LogOut, LayoutDashboard, List, Users, DatabaseBackup, Flower2, Settings } from 'lucide-react';
+import { LogOut, LayoutDashboard, List, Users, DatabaseBackup, Flower2, Settings, ListChecks } from 'lucide-react';
 import BackupManager from './components/BackupManager';
 import FlowerProductsManager from './components/FlowerProductsManager';
 import FlowerSettingsManager from './components/FlowerSettingsManager';
+import CaseTaskTemplatesManager from './components/CaseTaskTemplatesManager';
 
-type AdminTab = 'plans' | 'items' | 'attendees' | 'backup' | 'flowerProducts' | 'flowerSettings';
+type AdminTab = 'plans' | 'items' | 'attendees' | 'backup' | 'taskTemplates' | 'flowerProducts' | 'flowerSettings';
 
 const AdminApp: React.FC = () => {
     const [session, setSession] = useState<any>(null);
@@ -104,6 +105,21 @@ const AdminApp: React.FC = () => {
                     </button>
 
                     <div className="pt-4 mt-2 border-t border-gray-100">
+                        <p className="px-4 mb-2 text-xs text-gray-400">進行管理</p>
+
+                        <button
+                            onClick={() => setActiveTab('taskTemplates')}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'taskTemplates'
+                                ? 'bg-emerald-50 text-emerald-700 font-bold'
+                                : 'text-gray-600 hover:bg-gray-50'
+                                }`}
+                        >
+                            <ListChecks size={20} />
+                            タスクマスタ管理
+                        </button>
+                    </div>
+
+                    <div className="pt-4 mt-2 border-t border-gray-100">
                         <p className="px-4 mb-2 text-xs text-gray-400">供花発注</p>
 
                         <button
@@ -158,6 +174,10 @@ const AdminApp: React.FC = () => {
 
                     {activeTab === 'backup' && (
                         <BackupManager />
+                    )}
+
+                    {activeTab === 'taskTemplates' && (
+                        <CaseTaskTemplatesManager />
                     )}
 
                     {activeTab === 'flowerProducts' && (

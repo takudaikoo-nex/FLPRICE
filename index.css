@@ -2039,3 +2039,30 @@ select {
     width: 100%;
   }
 }
+
+.fl-task-cred {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+}
+
+.fl-task-cred .fl-task-phase-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fl-task-cred-box {
+  background: #fbfaf8;
+  border: 1px dashed #e3dfd8;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+  line-height: 1.9;
+  color: #1f2937;
+  white-space: pre-wrap;
+  margin: 0;
+}
