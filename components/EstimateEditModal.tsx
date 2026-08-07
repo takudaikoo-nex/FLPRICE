@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Customer } from '../types';
 import { supabase } from '../lib/supabase';
+import { generateCaseTasks } from '../lib/caseTasks';
 import { linkEstimateToCustomer, updateEstimateCustomerInfo } from '../lib/customers';
 import {
     EstimateStatus, ESTIMATE_STATUS_LABEL, ESTIMATE_STATUS_ORDER,
@@ -31,6 +32,8 @@ const EstimateEditModal: React.FC<Props> = ({ estimateId, customers, onClose, on
     });
     const [customerId, setCustomerId] = useState<string>('');
     const [status, setStatus] = useState<EstimateStatus>('quoted');
+    // 受注に切り替わったときだけタスクを生成するため、読み込み時の値を覚えておく
+    const [initialStatus, setInitialStatus] = useState<EstimateStatus>('quoted');
     const [note, setNote] = useState('');
     const [issued, setIssued] = useState<{ quote: string | null; invoice: string | null; receipt: string | null }>(
         { quote: null, invoice: null, receipt: null },
@@ -62,6 +65,7 @@ const EstimateEditModal: React.FC<Props> = ({ estimateId, customers, onClose, on
                 });
                 setCustomerId(data.customer_id || '');
                 setStatus((data.status ?? 'quoted') as EstimateStatus);
+                setInitialStatus((data.status ?? 'quoted') as EstimateStatus);
                 setNote(data.note || '');
                 setIssued({
                     quote: data.quote_issued_at ?? null,
@@ -91,6 +95,18 @@ const EstimateEditModal: React.FC<Props> = ({ estimateId, customers, onClose, on
                 .update({ status, note })
                 .eq('id', estimateId);
             if (statusError) throw statusError;
+
+            // 受注になった時点で、見積の内容からタスクを生成する。
+            // 生成に失敗しても案件の保存は成立しているため、タスク画面から作り直せるようにしておく。
+            if (status === 'ordered' && initialStatus !== 'ordered') {
+                try {
+                    const result = await generateCaseTasks(estimateId);
+                    if (result.created > 0) alert(`受注に伴い、タスクを${result.created}件作成しました。`);
+                } catch (taskError) {
+                    console.error('Failed to generate case tasks:', taskError);
+                }
+            }
+
             onSaved();
         } catch (e: any) {
             console.error('Failed to save estimate:', e);
