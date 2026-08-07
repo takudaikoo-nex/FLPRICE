@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>タスク進捗共有ページ サイトイメージ｜ファーストリーフ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --primary:#2C4A3E; --primary-dark:#1F362D; --primary-soft:#EAF0ED;
+  --accent:#B8860B; --accent-soft:#FBF3DF;
+  --bg:#F7F5F2; --surface:#fff; --text:#1A1A1A; --muted:#6B7280;
+  --line:#E3DFD8; --danger:#B91C1C; --danger-soft:#FDECEC;
+  --info:#1D4ED8; --info-soft:#EAF0FF;
+  --ok:#0F7B4F; --ok-soft:#E7F4EE;
+  --radius:12px; --shadow:0 1px 3px rgb(0 0 0/.06),0 8px 24px rgb(0 0 0/.05);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Zen Maru Gothic',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;-webkit-font-smoothing:antialiased}
+
+/* ---------- モック用シェル ---------- */
+.mock-bar{position:sticky;top:0;z-index:20;background:var(--primary-dark);color:#fff;padding:10px 16px;display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.mock-bar h1{font-size:.9rem;font-weight:700;letter-spacing:.04em;margin-right:auto}
+.mock-bar h1 small{display:block;font-size:.65rem;font-weight:400;opacity:.65;letter-spacing:0}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tab{background:rgba(255,255,255,.1);color:#fff;border:0;font-family:inherit;font-size:.75rem;padding:7px 12px;border-radius:99px;cursor:pointer;transition:.15s}
+.tab:hover{background:rgba(255,255,255,.22)}
+.tab.on{background:#fff;color:var(--primary-dark);font-weight:700}
+.stage{max-width:1180px;margin:0 auto;padding:28px 16px 90px}
+.view{display:none}
+.view.on{display:block}
+.note{background:var(--accent-soft);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:10px 14px;font-size:.78rem;color:#6b5310;margin-bottom:22px}
+.note b{color:#5a4409}
+.caption{font-size:.72rem;color:var(--muted);margin:6px 0 18px}
+
+/* ---------- スマホ枠 ---------- */
+.phone{max-width:392px;margin:0 auto;background:var(--surface);border-radius:22px;box-shadow:0 4px 12px rgb(0 0 0/.08),0 24px 48px rgb(0 0 0/.10);overflow:hidden;border:1px solid var(--line)}
+.phone-head{background:var(--primary);color:#fff;padding:16px 18px}
+.phone-head .brand{font-size:.62rem;opacity:.7;letter-spacing:.12em}
+.phone-head h2{font-size:1rem;font-weight:700;margin-top:2px}
+.phone-head p{font-size:.75rem;opacity:.85;margin-top:4px}
+.phone-body{padding:18px}
+
+/* ---------- 共通パーツ ---------- */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.sec{margin-top:22px}
+.sec-title{font-size:.78rem;font-weight:700;color:var(--primary);letter-spacing:.06em;display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.sec-title::after{content:"";flex:1;height:1px;background:var(--line)}
+.badge{display:inline-block;font-size:.66rem;font-weight:700;padding:2px 8px;border-radius:99px;line-height:1.6;white-space:nowrap}
+.b-done{background:var(--ok-soft);color:var(--ok)}
+.b-conf{background:var(--info-soft);color:var(--info)}
+.b-late{background:var(--danger-soft);color:var(--danger)}
+.b-fl{background:var(--primary-soft);color:var(--primary)}
+.b-mo{background:var(--accent-soft);color:#8a6508}
+.b-gray{background:#F1F0EC;color:var(--muted)}
+
+/* ---------- 進捗 ---------- */
+.progress-card{background:var(--primary);color:#fff;border-radius:var(--radius);padding:16px 18px}
+.progress-top{display:flex;align-items:baseline;justify-content:space-between}
+.progress-top span{font-size:.72rem;opacity:.8;letter-spacing:.08em}
+.progress-top strong{font-size:1.5rem;font-weight:700}
+.progress-top strong small{font-size:.8rem;font-weight:400;opacity:.75}
+.bar{height:8px;border-radius:99px;background:rgba(255,255,255,.22);margin-top:10px;overflow:hidden}
+.bar i{display:block;height:100%;background:#fff;border-radius:99px}
+.next{margin-top:12px;background:rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;font-size:.8rem}
+.next span{display:block;font-size:.65rem;opacity:.75;letter-spacing:.08em}
+
+/* ---------- タスク（喪主） ---------- */
+.task{display:flex;gap:11px;padding:12px 0;border-bottom:1px dashed var(--line)}
+.task:last-child{border-bottom:0}
+.check{flex:none;width:22px;height:22px;border-radius:6px;border:2px solid #CFCAC0;background:#fff;margin-top:3px;display:grid;place-items:center;font-size:.75rem;color:#fff;cursor:pointer;transition:.15s}
+.check.done{background:var(--ok);border-color:var(--ok)}
+.check.conf{background:var(--info);border-color:var(--info)}
+.check.lock{border-style:dashed;cursor:default;background:#F5F4F1}
+.t-main{flex:1;min-width:0}
+.t-title{font-size:.88rem;font-weight:500;line-height:1.5}
+.task.is-done .t-title{color:var(--muted)}
+.t-meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px}
+.t-note{font-size:.72rem;color:var(--muted);margin-top:5px}
+.due{font-size:.68rem;color:var(--muted)}
+.due.late{color:var(--danger);font-weight:700}
+
+/* 展開したタスク詳細 */
+.t-detail{margin-top:9px;background:#FBFAF8;border:1px solid var(--line);border-radius:9px;padding:11px 12px;font-size:.75rem}
+.t-detail dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px}
+.t-detail dt{color:var(--muted)}
+.t-detail dd{text-align:right;font-weight:500}
+.t-detail .bank{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);color:#333;line-height:1.6}
+.t-detail .amount{font-size:1.05rem;color:var(--primary);font-weight:700}
+.acc-btn{width:100%;margin-top:9px;font-family:inherit;font-size:.74rem;font-weight:700;color:var(--primary);background:#fff;border:1px solid var(--line);border-radius:7px;padding:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.acc-btn .chev{transition:.2s;display:inline-block}
+.acc-btn.open .chev{transform:rotate(180deg)}
+.acc-body{display:none;margin-top:8px}
+.acc-body.open{display:block}
+table.bill{width:100%;border-collapse:collapse;font-size:.73rem}
+table.bill td{padding:5px 0;border-bottom:1px dotted var(--line)}
+table.bill td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+table.bill tr.sum td{border-bottom:0;border-top:1px solid var(--line);font-weight:700;color:var(--primary);padding-top:7px}
+.catalog-link{display:inline-flex;align-items:center;gap:4px;margin-top:6px;font-size:.72rem;font-weight:700;color:var(--primary);background:var(--primary-soft);border-radius:6px;padding:4px 9px;text-decoration:none}
+
+/* 入金後（葬儀後サポート） */
+.done-hero{background:var(--ok-soft);border:1px solid #C7E5D6;border-radius:var(--radius);padding:16px 18px;text-align:center}
+.done-hero .mark{font-size:1.5rem;color:var(--ok)}
+.done-hero h3{font-size:.95rem;font-weight:700;color:var(--ok);margin-top:2px}
+.done-hero p{font-size:.75rem;color:var(--muted);margin-top:4px}
+.after-item{display:flex;gap:10px;padding:11px 0;border-bottom:1px dashed var(--line)}
+.after-item:last-child{border-bottom:0}
+.after-item .no{flex:none;width:22px;height:22px;border-radius:99px;background:var(--primary-soft);color:var(--primary);font-size:.68rem;font-weight:700;display:grid;place-items:center;margin-top:2px}
+.after-item .ti{font-size:.85rem;font-weight:500}
+.after-item .li{font-size:.71rem;color:var(--muted);margin-top:2px}
+.deadline{font-size:.68rem;font-weight:700;color:var(--danger);background:var(--danger-soft);border-radius:5px;padding:1px 6px;margin-left:6px}
+.cta{margin-top:20px;background:var(--primary);color:#fff;border-radius:var(--radius);padding:16px 18px;text-align:center}
+.cta h3{font-size:.9rem;font-weight:700}
+.cta p{font-size:.74rem;opacity:.85;margin-top:5px;line-height:1.7}
+.cta a{display:block;margin-top:12px;background:#fff;color:var(--primary);font-weight:700;font-size:.85rem;padding:10px;border-radius:9px;text-decoration:none}
+
+/* ---------- ログイン ---------- */
+.login-body{padding:26px 22px 30px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:.72rem;color:var(--muted);margin-bottom:5px}
+.field input{width:100%;font-family:inherit;font-size:.9rem;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:#FCFBF9}
+.btn{width:100%;font-family:inherit;font-size:.88rem;font-weight:700;padding:11px;border:0;border-radius:9px;background:var(--primary);color:#fff;cursor:pointer}
+.btn.sub{background:#fff;color:var(--primary);border:1px solid var(--primary)}
+.hint{font-size:.7rem;color:var(--muted);text-align:center;margin-top:14px;line-height:1.7}
+
+/* ---------- スタッフ ---------- */
+.staff-head{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px}
+.staff-head h2{font-size:1.05rem;font-weight:700;color:var(--primary)}
+.staff-head .sub{font-size:.75rem;color:var(--muted)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap}
+.sbtn{font-family:inherit;font-size:.75rem;padding:7px 13px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--text);cursor:pointer;white-space:nowrap}
+.sbtn.pri{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:700}
+.sbtn.acc{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+table{width:100%;border-collapse:collapse;background:#fff;font-size:.78rem}
+.tablewrap{border:1px solid var(--line);border-radius:var(--radius);overflow:auto}
+th{background:#F4F2EE;color:var(--muted);font-size:.7rem;font-weight:700;text-align:left;padding:9px 12px;white-space:nowrap;border-bottom:1px solid var(--line)}
+td{padding:10px 12px;border-bottom:1px solid #F0EEE9;vertical-align:middle}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#FCFBF9}
+.case-name{font-weight:700}
+.case-sub{font-size:.7rem;color:var(--muted)}
+.minibar{width:110px;height:7px;border-radius:99px;background:#EDEAE4;overflow:hidden;display:inline-block;vertical-align:middle}
+.minibar i{display:block;height:100%;background:var(--primary);border-radius:99px}
+.link{color:var(--primary);font-weight:700;text-decoration:underline;cursor:pointer}
+.grid2{display:grid;grid-template-columns:1fr 320px;gap:18px;align-items:start}
+@media(max-width:860px){.grid2{grid-template-columns:1fr}}
+.panel{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:15px}
+.panel h3{font-size:.8rem;font-weight:700;color:var(--primary);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:5px 10px;font-size:.75rem}
+.kv dt{color:var(--muted);white-space:nowrap}
+.kv dd{text-align:right;font-weight:500;word-break:break-all}
+.cred{background:#FBFAF8;border:1px dashed var(--line);border-radius:8px;padding:10px;font-size:.72rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.9;margin-bottom:10px}
+.hist{font-size:.72rem;color:var(--muted);line-height:1.8}
+.hist b{color:var(--text);font-weight:500}
+.sel{font-family:inherit;font-size:.72rem;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:#fff}
+.inp{font-family:inherit;font-size:.72rem;padding:4px 7px;border:1px solid var(--line);border-radius:6px;background:#fff;width:100%;min-width:78px}
+.rowflag{width:4px;border-radius:2px;height:26px;display:inline-block;vertical-align:middle}
+tr.attn td{background:#FFFBF4}
+tr.attn:hover td{background:#FFF7EA}
+.phasehead td{background:#F4F2EE!important;font-size:.7rem;font-weight:700;color:var(--primary);letter-spacing:.06em;padding:7px 12px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.7rem;color:var(--muted);margin-top:10px}
+.legend span{display:flex;align-items:center;gap:5px}
+.dot{width:9px;height:9px;border-radius:3px;display:inline-block}
+</style>
+</head>
+<body>
+
+<div class="mock-bar">
+  <h1>タスク進捗共有ページ サイトイメージ
+    <small>ダミーデータの静止モック／2026-08-07・要件: docs/requirements-task-progress.md</small></h1>
+  <div class="tabs">
+    <button class="tab on" data-v="login">ログイン</button>
+    <button class="tab" data-v="mourner">喪主画面</button>
+    <button class="tab" data-v="after">喪主画面（入金後）</button>
+    <button class="tab" data-v="list">スタッフ・案件一覧</button>
+    <button class="tab" data-v="detail">スタッフ・案件詳細</button>
+  </div>
+</div>
+
+<div class="stage">
+
+<!-- ============ ログイン ============ -->
+<section class="view on" id="v-login">
+  <div class="note">
+    <b>入力欄は1組だけ。</b>入力されたIDに <code>@</code> が含まれていればスタッフ（既存のSupabase認証）、
+    含まれていなければ喪主（案件ごとに発行したID）として処理し、<b>同じURLで画面を出し分ける</b>。
+    検証はすべてサーバー側（Edge Function）で行い、この画面にDBの鍵は持たせない。
+  </div>
+  <div class="phone">
+    <div class="phone-head" style="text-align:center;padding:24px 18px">
+      <div class="brand">FIRST LEAF</div>
+      <h2 style="margin-top:6px">ご葬儀の進捗確認</h2>
+      <p>ご案内した ID とパスワードでお入りください</p>
+    </div>
+    <div class="login-body">
+      <div class="field">
+        <label>ID</label>
+        <input type="text" value="FL-128-4K7Q" readonly>
+      </div>
+      <div class="field">
+        <label>パスワード</label>
+        <input type="password" value="dummypass" readonly>
+      </div>
+      <button class="btn">ログイン</button>
+      <p class="hint">
+        ご不明な場合は担当者までお問い合わせください<br>
+        0467-38-5617（9:00〜18:00）
+      </p>
+    </div>
+  </div>
+  <p class="caption">※ スタッフは同じ画面にメールアドレスを入力すると、スタッフ用の表示に切り替わる。</p>
+</section>
+
+<!-- ============ 喪主画面 ============ -->
+<section class="view" id="v-mourner">
+  <div class="note">
+    <b>喪主が触れるのはご自身の案件1件のみ。</b>チェックは「確認しました」の意思表示（＝<b>確認済み</b>）で、
+    完了の確定はスタッフが行う。FL担当のタスクはチェックできず状態表示だけ。
+    社内メモ・非公開タスク（坊さん連絡FAX等）はそもそもデータが返らない。
+  </div>
+
+  <div class="phone">
+    <div class="phone-head">
+      <div class="brand">FIRST LEAF</div>
+      <h2>故 山田 太郎 様</h2>
+      <p>2026年8月10日（月）11:00 告別式<br>ファーストリーフホール鎌倉</p>
+    </div>
+    <div class="phone-body">
+
+      <div class="progress-card">
+        <div class="progress-top">
+          <span>ご準備の進捗</span>
+          <strong>5<small> / 16</small></strong>
+        </div>
+        <div class="bar"><i style="width:31%"></i></div>
+        <div class="next">
+          <span>次にお願いしたいこと</span>
+          祭壇のご確認（8月8日まで）
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-title">お打ち合わせ</div>
+        <div class="task is-done">
+          <div class="check done">✓</div>
+          <div class="t-main">
+            <div class="t-title">ご搬送</div>
+            <div class="t-meta"><span class="badge b-fl">FL</span><span class="badge b-done">完了</span></div>
+          </div>
+        </div>
+        <div class="task is-done">
+          <div class="check done">✓</div>
+          <div class="t-main">
+            <div class="t-title">ご安置</div>
+            <div class="t-meta"><span class="badge b-fl">FL</span><span class="badge b-done">完了</span></div>
+          </div>
+        </div>
+        <div class="task is-done">
+          <div class="check done">✓</div>
+          <div class="t-main">
+            <div class="t-title">菩提寺（お寺）のご確認</div>
+            <div class="t-meta"><span class="badge b-mo">ご家族</span><span class="badge b-done">完了</span></div>
+          </div>
+        </div>
+        <div class="task is-done">
+          <div class="check done">✓</div>
+          <div class="t-main">
+            <div class="t-title">通夜・告別式の日程決定</div>
+            <div class="t-meta"><span class="badge b-fl">FL</span><span class="badge b-mo">ご家族</span><span class="badge b-done">完了</span></div>
+          </div>
+        </div>
+        <div class="task is-done">
+          <div class="check done">✓</div>
+          <div class="t-main">
+            <div class="t-title">斎場・火葬場のご予約</div>
+            <div class="t-meta"><span class="badge b-fl">FL</span><span class="badge b-done">完了</span></div>
+            <div class="t-note">8月10日 11:00 ファーストリーフホール鎌倉／火葬 13:20</div>
+          </div>
+        </div>
+        <div class="task">
+          <div class="check conf">✓</div>
+          <div class="t-main">
+            <div class="t-title">プランのご決定</div>
+            <div class="t-meta">
+              <span class="badge b-fl">FL</span><span class="badge b-mo">ご家族</span>
+              <span class="badge b-conf">確認済み・FL確認中</span>
+            </div>
+            <div class="t-note">家族葬プラン／祭壇グレードアップ（黄）</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-title">ご準備</div>
+        <div class="task">
+          <div class="check"></div>
+          <div class="t-main">
+            <div class="t-title">祭壇のご確認</div>
+            <div class="t-meta"><span class="badge b-fl">FL</span><span class="badge b-mo">ご家族</span><span class="due">〜8/8</span></div>
+            <div class="t-note">写真をご覧のうえ、ご希望をお知らせください。</div>
+            <a class="catalog-link" href="#">🖼 祭壇の写真を見る</a>
+          </div>
+        </div>
+        <div class="task">
+          <div class="check"></div>
+          <div class="t-main">
+            <div class="t-title">お棺の決定</div>
+            <div class="t-meta"><span class="badge b-fl">FL</span><span class="badge b-mo">ご家族</span><span class="due">〜8/8</span></div>
+            <a class="catalog-link" href="#">🖼 お棺の写真を見る</a>
+          </div>
+        </div>
+        <div class="task">
+          <div class="check"></div>
+          <div class="t-main">
+            <div class="t-title">遺影写真のお預かり</div>
+            <div class="t-meta"><span class="badge b-fl">FL</span><span class="badge b-mo">ご家族</span><span class="due late">〜8/7（本日）</span></div>
+            <div class="t-note">スマートフォンのお写真でも承ります。</div>
+          </div>
+        </div>
+        <div class="task">
+          <div class="check"></div>
+          <div class="t-main">
+            <div class="t-title">供花の取りまとめ</div>
+            <div class="t-meta"><span class="badge b-fl">FL</span><span class="badge b-mo">ご家族</span><span class="due">〜8/9</span></div>
+            <div class="t-note">現在3件のお申し込みをいただいています。</div>
+          </div>
+        </div>
+        <div class="task">
+          <div class="check lock"></div>
+          <div class="t-main">
+            <div class="t-title">死亡届の提出（診断書のコピー保管）</div>
+            <div class="t-meta"><span class="badge b-fl">FL</span><span class="badge b-gray">FL対応中</span><span class="due">〜8/7</span></div>
+            <div class="t-note">診断書のコピーはこちらで保管し、お渡しいたします。</div>
+          </div>
+        </div>
+        <div class="task">
+          <div class="check"></div>
+          <div class="t-main">
+            <div class="t-title">ご案内状の送付／当日タイムスケジュール</div>
+            <div class="t-meta"><span class="badge b-fl">FL</span><span class="badge b-mo">ご家族（送信）</span><span class="due">〜8/7</span></div>
+          </div>
+        </div>
+        <div class="task">
+          <div class="check"></div>
+          <div class="t-main">
+            <div class="t-title">御挨拶状／当日返礼品</div>
+            <div class="t-meta"><span class="badge b-fl">FL</span><span class="badge b-mo">ご家族</span><span class="due">〜8/8</span></div>
+          </div>
+        </div>
+        <div class="task">
+          <div class="check"></div>
+          <div class="t-main">
+            <div class="t-title">お料理／会葬御礼品</div>
+            <div class="t-meta"><span class="badge b-fl">FL</span><span class="badge b-mo">ご家族</span><span class="due">〜8/8</span></div>
+            <div class="t-note">カタログの品番をお知らせください。</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-title">当日</div>
+        <div class="task">
+          <div class="check lock"></div>
+          <div class="t-main">
+            <div class="t-title">当日エンドロール</div>
+            <div class="t-meta"><span class="badge b-fl">FL</span><span class="badge b-gray">FL対応中</span><span class="due">8/10</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-title">お支払い</div>
+        <div class="task">
+          <div class="check lock"></div>
+          <div class="t-main">
+            <div class="t-title">請求書の送付</div>
+            <div class="t-meta"><span class="badge b-fl">FL</span><span class="badge b-gray">未</span><span class="due">〜8/13</span></div>
+          </div>
+        </div>
+        <div class="task">
+          <div class="check"></div>
+          <div class="t-main">
+            <div class="t-title">お支払い（入金の確認）</div>
+            <div class="t-meta"><span class="badge b-fl">FL</span><span class="badge b-mo">ご家族</span><span class="due">〜8/31</span></div>
+            <div class="t-detail">
+              <dl>
+                <dt>ご請求額</dt><dd class="amount">¥ 748,000</dd>
+                <dt>お支払期限</dt><dd>2026年8月31日</dd>
+                <dt>請求書</dt><dd>発行後にこちらに表示されます</dd>
+              </dl>
+              <button class="acc-btn" data-acc="bill">内訳を見る <span class="chev">▾</span></button>
+              <div class="acc-body" id="acc-bill">
+                <table class="bill">
+                  <tr><td>家族葬プラン</td><td>350,000</td></tr>
+                  <tr><td>祭壇 FO-33（W3,000 大型）</td><td>200,000</td></tr>
+                  <tr><td>お棺 月見桜</td><td>59,500</td></tr>
+                  <tr><td>遺影写真アップグレード</td><td>2,000</td></tr>
+                  <tr><td>火葬料金（藤沢聖苑・市内）</td><td>10,000</td></tr>
+                  <tr><td>斎場料金</td><td>60,000</td></tr>
+                  <tr><td>料理・会葬御礼品</td><td>98,500</td></tr>
+                  <tr class="sum"><td>合計（税込）</td><td>748,000</td></tr>
+                </table>
+              </div>
+              <div class="bank">
+                <b>お振込先</b><br>
+                ○○銀行 ○○支店 普通 1234567<br>
+                カ）ファーストリーフ
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <p class="caption">
+    ※ 進捗は「完了」の件数で数える（確認済み・FL未確定はカウントしない）。入金の確認が終わると100%。<br>
+    ※ 表示されるタスクは見積の内容で変わる。この案件は「家族葬＋祭壇UP＋料理＋返礼品＋供花受付あり」の想定。
+  </p>
+</section>
+
+<!-- ============ 喪主画面（入金後） ============ -->
+<section class="view" id="v-after">
+  <div class="note">
+    <b>葬儀後の表示期限は設けない。</b>入金の確認が完了したら画面を「これからのお手続き」に切り替え、
+    <b>葬儀後サポート事業（手続き代行）への入口</b>として残す。開いてもらうこと自体がナーチャリングになるため、
+    アイパスも自動では止めない。v1は静的なチェックリストと相談導線まで、v2で <code>phase = 'after'</code> の
+    タスクとして同じ仕組みに載せる。
+  </div>
+
+  <div class="phone">
+    <div class="phone-head">
+      <div class="brand">FIRST LEAF</div>
+      <h2>故 山田 太郎 様</h2>
+      <p>ご葬儀 2026年8月10日</p>
+    </div>
+    <div class="phone-body">
+
+      <div class="done-hero">
+        <div class="mark">✓</div>
+        <h3>ご葬儀のお手続きは完了しました</h3>
+        <p>この度は誠にありがとうございました</p>
+      </div>
+      <button class="acc-btn" data-acc="past" style="margin-top:12px">ご葬儀の記録を見る（16件） <span class="chev">▾</span></button>
+      <div class="acc-body" id="acc-past">
+        <div class="t-detail" style="margin-top:0">
+          完了したタスクの一覧・お支払いの記録・請求書／領収書をこちらから確認できます。
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-title">四十九日までに</div>
+        <div class="after-item">
+          <div class="no">1</div>
+          <div>
+            <div class="ti">年金の受給停止<span class="deadline">10日以内</span></div>
+            <div class="li">厚生年金は10日以内、国民年金は14日以内</div>
+          </div>
+        </div>
+        <div class="after-item">
+          <div class="no">2</div>
+          <div>
+            <div class="ti">健康保険・介護保険の資格喪失<span class="deadline">14日以内</span></div>
+            <div class="li">市区町村の窓口へ</div>
+          </div>
+        </div>
+        <div class="after-item">
+          <div class="no">3</div>
+          <div>
+            <div class="ti">世帯主の変更</div>
+            <div class="li">故人が世帯主だった場合</div>
+          </div>
+        </div>
+        <div class="after-item">
+          <div class="no">4</div>
+          <div>
+            <div class="ti">葬祭費・埋葬料の申請<span class="deadline">2年以内</span></div>
+            <div class="li">加入していた健康保険から支給されます</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-title">1年以内に</div>
+        <div class="after-item">
+          <div class="no">5</div>
+          <div>
+            <div class="ti">生命保険の請求<span class="deadline">3年以内</span></div>
+            <div class="li">証券が見つからない場合もお調べできます</div>
+          </div>
+        </div>
+        <div class="after-item">
+          <div class="no">6</div>
+          <div>
+            <div class="ti">遺族年金の請求<span class="deadline">5年以内</span></div>
+            <div class="li">要件の確認からお手伝いします</div>
+          </div>
+        </div>
+        <div class="after-item">
+          <div class="no">7</div>
+          <div>
+            <div class="ti">預貯金・不動産の名義変更</div>
+            <div class="li">相続の手続きが必要です</div>
+          </div>
+        </div>
+        <div class="after-item">
+          <div class="no">8</div>
+          <div>
+            <div class="ti">相続税の申告<span class="deadline">10か月以内</span></div>
+            <div class="li">対象となる場合のみ</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cta">
+        <h3>お手続きの代行も承っています</h3>
+        <p>書類の準備・窓口への提出まで、<br>ファーストリーフがお引き受けします。</p>
+        <a href="#">まずは相談する（無料）</a>
+        <p style="margin-top:10px">お電話でも承ります 0467-38-5617</p>
+      </div>
+
+    </div>
+  </div>
+  <p class="caption">
+    ※ 項目は仮置き。横浜市の冊子をAIで整理した結果（C-1）を反映して確定する。<br>
+    ※ v2では同じ <code>case_tasks</code> に <code>phase = 'after'</code> として載せ、代行の受注まで同じ仕組みで管理する。
+  </p>
+</section>
+
+<!-- ============ スタッフ 案件一覧 ============ -->
+<section class="view" id="v-list">
+  <div class="note">
+    見積システムのTOP画面に「タスク進捗」を追加し、そこから開く。既定は<b>進行中の案件のみ</b>
+    （受注・施行済・請求済）。<b>要対応</b>＝期日超過の未完了 ＋ 喪主が確認済みでFL未確定のもの。
+  </div>
+
+  <div class="staff-head">
+    <div>
+      <h2>タスク進捗</h2>
+      <div class="sub">進行中 4件／要対応 5件</div>
+    </div>
+    <div class="toolbar">
+      <button class="sbtn">進行中のみ ▾</button>
+      <button class="sbtn">案件番号・顧客名・故人名・電話番号で検索</button>
+    </div>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr>
+          <th>案件</th><th>ご葬家・故人</th><th>告別式</th><th>進捗</th><th>要対応</th><th>次のFL作業</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="attn">
+          <td><span class="rowflag" style="background:var(--danger)"></span> <b>#128</b><br><span class="case-sub">受注</span></td>
+          <td><div class="case-name">山田 花子 様</div><div class="case-sub">故 山田 太郎 様</div></td>
+          <td>8/10 11:00<br><span class="case-sub">ホール鎌倉</span></td>
+          <td><span class="minibar"><i style="width:31%"></i></span><br><span class="case-sub">5 / 17</span></td>
+          <td><span class="badge b-late">遅延 1</span> <span class="badge b-conf">確認 1</span></td>
+          <td>死亡届の提出<br><span class="case-sub">〜8/7 小尾</span></td>
+          <td><span class="link" data-go="detail">開く</span></td>
+        </tr>
+        <tr>
+          <td><span class="rowflag" style="background:var(--primary)"></span> <b>#127</b><br><span class="case-sub">施行済</span></td>
+          <td><div class="case-name">佐藤 一郎 様</div><div class="case-sub">故 佐藤 とみ 様</div></td>
+          <td>8/5 13:00<br><span class="case-sub">藤沢聖苑</span></td>
+          <td><span class="minibar"><i style="width:82%"></i></span><br><span class="case-sub">9 / 11</span></td>
+          <td><span class="badge b-gray">なし</span></td>
+          <td>請求書の送付<br><span class="case-sub">〜8/8 木原</span></td>
+          <td><span class="link">開く</span></td>
+        </tr>
+        <tr class="attn">
+          <td><span class="rowflag" style="background:var(--accent)"></span> <b>#126</b><br><span class="case-sub">請求済</span></td>
+          <td><div class="case-name">鈴木 みどり 様</div><div class="case-sub">故 鈴木 健一 様</div></td>
+          <td>7/29 10:00<br><span class="case-sub">ホール藤沢</span></td>
+          <td><span class="minibar"><i style="width:92%"></i></span><br><span class="case-sub">11 / 12</span></td>
+          <td><span class="badge b-late">遅延 1</span></td>
+          <td>入金の確認<br><span class="case-sub">〜8/19 小尾</span></td>
+          <td><span class="link">開く</span></td>
+        </tr>
+        <tr class="attn">
+          <td><span class="rowflag" style="background:var(--danger)"></span> <b>#125</b><br><span class="case-sub">受注</span></td>
+          <td><div class="case-name">高橋 誠 様</div><div class="case-sub">故 高橋 まさ 様</div></td>
+          <td>8/12 14:00<br><span class="case-sub">大和斎場</span></td>
+          <td><span class="minibar"><i style="width:22%"></i></span><br><span class="case-sub">2 / 9</span></td>
+          <td><span class="badge b-late">遅延 2</span> <span class="badge b-conf">確認 1</span></td>
+          <td>斎場・火葬場の予約<br><span class="case-sub">〜8/8 未割当</span></td>
+          <td><span class="link">開く</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="legend">
+    <span><i class="dot" style="background:var(--danger)"></i>遅延あり</span>
+    <span><i class="dot" style="background:var(--accent)"></i>支払い待ち</span>
+    <span><i class="dot" style="background:var(--primary)"></i>順調</span>
+    <span>※ 進捗は社内タスクを含むため喪主画面の分母と異なる（#128 は喪主表示16／社内17）</span>
+  </div>
+</section>
+
+<!-- ============ スタッフ 案件詳細 ============ -->
+<section class="view" id="v-detail">
+  <div class="note">
+    <b>この画面が社内の正本。</b>状態・期日・担当者・メモをその場で書き換えられる。
+    喪主が確認済みにしたものは色付きの行で上がってくるので、FLが内容を見て「完了」に確定する。
+    お支払いフェーズからは<b>そのまま請求書を発行</b>でき、発行するとタスクと案件ステータスが自動で進む。
+    見積でオプションが選ばれている場合は「FO-33 選択済み」のように<b>完了の目安として表示するだけ</b>で、
+    自動では完了させない（決めることがタスクの中身のため）。
+  </div>
+
+  <div class="staff-head">
+    <div>
+      <h2>案件 #128 ／ 山田 花子 様</h2>
+      <div class="sub">故 山田 太郎 様・告別式 2026/08/10 11:00・ファーストリーフホール鎌倉／家族葬プラン</div>
+    </div>
+    <div class="toolbar">
+      <button class="sbtn">タスクを再判定</button>
+      <button class="sbtn">＋ タスクを追加</button>
+      <button class="sbtn acc">請求書を発行</button>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>状態</th><th>項目</th><th>担当</th><th>期日</th><th>担当者</th><th>喪主</th><th>最終更新</th></tr>
+        </thead>
+        <tbody>
+          <tr class="phasehead"><td colspan="7">打ち合わせ</td></tr>
+          <tr>
+            <td><select class="sel"><option>完了</option><option>未着手</option><option>対応中</option><option>対象外</option></select></td>
+            <td>ご搬送</td><td><span class="badge b-fl">FL</span></td><td>—</td>
+            <td><input class="inp" value="小尾"></td><td>—</td><td>8/5 小尾</td>
+          </tr>
+          <tr>
+            <td><select class="sel"><option>完了</option><option>未着手</option></select></td>
+            <td>ご安置</td><td><span class="badge b-fl">FL</span></td><td>—</td>
+            <td><input class="inp" value="小尾"></td><td>—</td><td>8/5 小尾</td>
+          </tr>
+          <tr>
+            <td><select class="sel"><option>完了</option><option>未着手</option></select></td>
+            <td>菩提寺（お坊さん）の確認</td><td><span class="badge b-mo">喪主</span></td><td>8/5</td>
+            <td><input class="inp" value=""></td><td><span class="badge b-done">確認済</span></td><td>8/5 喪主</td>
+          </tr>
+          <tr>
+            <td><select class="sel"><option>完了</option><option>未着手</option></select></td>
+            <td>通夜・告別式の日程決定</td><td><span class="badge b-fl">FL</span><span class="badge b-mo">喪主</span></td><td>8/5</td>
+            <td><input class="inp" value="小尾"></td><td><span class="badge b-done">確認済</span></td><td>8/5 小尾</td>
+          </tr>
+          <tr>
+            <td><select class="sel"><option>完了</option><option>未着手</option></select></td>
+            <td>斎場・火葬場の予約</td><td><span class="badge b-fl">FL</span></td><td>8/6</td>
+            <td><input class="inp" value="小尾"></td><td>—</td><td>8/6 小尾</td>
+          </tr>
+          <tr class="attn">
+            <td><select class="sel"><option>未着手</option><option>対応中</option><option selected>完了にする</option></select></td>
+            <td>プランの決定<div class="case-sub">社内メモ: 祭壇は黄で確定。値引き20%で調整済み</div></td>
+            <td><span class="badge b-fl">FL</span><span class="badge b-mo">喪主</span></td><td>8/6</td>
+            <td><input class="inp" value="小尾"></td>
+            <td><span class="badge b-conf">確認済み</span></td><td>8/6 喪主</td>
+          </tr>
+
+          <tr class="phasehead"><td colspan="7">準備</td></tr>
+          <tr>
+            <td><select class="sel"><option>未着手</option><option>対応中</option><option>完了</option></select></td>
+            <td>祭壇の決定
+              <div class="case-sub">見積: <b>FO-33 選択済み</b> ／ <span class="link">画像カタログ #31</span></div></td>
+            <td><span class="badge b-fl">FL</span><span class="badge b-mo">喪主</span></td><td>8/8</td>
+            <td><input class="inp" value="木原"></td><td>—</td><td>—</td>
+          </tr>
+          <tr>
+            <td><select class="sel"><option>未着手</option><option>対応中</option><option>完了</option></select></td>
+            <td>お棺の決定
+              <div class="case-sub">見積: <b>月見桜 選択済み</b> ／ <span class="link">画像カタログ #30</span></div></td>
+            <td><span class="badge b-fl">FL</span><span class="badge b-mo">喪主</span></td><td>8/8</td>
+            <td><input class="inp" value="木原"></td><td>—</td><td>—</td>
+          </tr>
+          <tr class="attn">
+            <td><select class="sel"><option>未着手</option><option>対応中</option><option>完了</option></select></td>
+            <td>遺影写真のお預かり</td><td><span class="badge b-fl">FL</span><span class="badge b-mo">喪主</span></td>
+            <td><span class="badge b-late">8/7 遅延</span></td>
+            <td><input class="inp" value=""></td><td>—</td><td>—</td>
+          </tr>
+          <tr>
+            <td><select class="sel"><option>未着手</option><option>対応中</option><option>完了</option></select></td>
+            <td>供花の取りまとめ<div class="case-sub">供花の受付 3件 → 発注書へ</div></td>
+            <td><span class="badge b-fl">FL</span><span class="badge b-mo">喪主</span></td><td>8/9</td>
+            <td><input class="inp" value="小尾"></td><td>—</td><td>—</td>
+          </tr>
+          <tr>
+            <td><select class="sel"><option>未着手</option><option selected>対応中</option><option>完了</option></select></td>
+            <td>死亡届（＋診断書コピー）</td><td><span class="badge b-fl">FL</span></td><td>8/7</td>
+            <td><input class="inp" value="小尾"></td><td>—</td><td>8/6 小尾</td>
+          </tr>
+          <tr>
+            <td><select class="sel"><option>未着手</option><option>対応中</option><option>完了</option></select></td>
+            <td>儀式案内状／当日タイムスケジュール</td><td><span class="badge b-fl">FL</span><span class="badge b-mo">喪主</span></td><td>8/7</td>
+            <td><input class="inp" value="木原"></td><td>—</td><td>—</td>
+          </tr>
+          <tr>
+            <td><select class="sel"><option>未着手</option><option>対応中</option><option>完了</option></select></td>
+            <td>御挨拶状／当日返礼品</td><td><span class="badge b-fl">FL</span><span class="badge b-mo">喪主</span></td><td>8/8</td>
+            <td><input class="inp" value=""></td><td>—</td><td>—</td>
+          </tr>
+          <tr>
+            <td><select class="sel"><option>未着手</option><option>対応中</option><option>完了</option></select></td>
+            <td>料理／会葬御礼品</td><td><span class="badge b-fl">FL</span><span class="badge b-mo">喪主</span></td><td>8/8</td>
+            <td><input class="inp" value=""></td><td>—</td><td>—</td>
+          </tr>
+          <tr>
+            <td><select class="sel"><option>未着手</option><option>対応中</option><option>完了</option></select></td>
+            <td>坊さん連絡FAX <span class="badge b-gray">社内のみ</span></td><td><span class="badge b-fl">FL</span></td><td>8/8</td>
+            <td><input class="inp" value="小尾"></td><td>非表示</td><td>—</td>
+          </tr>
+
+          <tr class="phasehead"><td colspan="7">当日</td></tr>
+          <tr>
+            <td><select class="sel"><option>未着手</option><option>対応中</option><option>完了</option></select></td>
+            <td>当日エンドロール</td><td><span class="badge b-fl">FL</span></td><td>8/10</td>
+            <td><input class="inp" value="木原"></td><td>—</td><td>—</td>
+          </tr>
+
+          <tr class="phasehead"><td colspan="7">お支払い</td></tr>
+          <tr>
+            <td><select class="sel"><option>未着手</option><option>完了</option></select></td>
+            <td>請求書の送付 <span class="badge b-gray">請求書の発行で自動完了</span></td>
+            <td><span class="badge b-fl">FL</span></td><td>8/13</td>
+            <td><input class="inp" value=""></td><td>—</td><td>—</td>
+          </tr>
+          <tr>
+            <td><select class="sel"><option>未着手</option><option>完了</option></select></td>
+            <td>入金の確認（ゴール） <span class="badge b-gray">領収書の発行で自動完了</span></td>
+            <td><span class="badge b-fl">FL</span><span class="badge b-mo">喪主</span></td><td>8/31</td>
+            <td><input class="inp" value=""></td><td>—</td><td>—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div>
+      <div class="panel" style="margin-bottom:14px">
+        <h3>喪主用ログイン情報</h3>
+        <div class="cred">
+          URL : tasks.first-leaf.jp<br>
+          ID&nbsp;&nbsp;: FL-128-4K7Q<br>
+          PW&nbsp;&nbsp;: ••••••••（発行時のみ表示）
+        </div>
+        <div class="toolbar">
+          <button class="sbtn pri">まとめてコピー</button>
+          <button class="sbtn">再発行</button>
+          <button class="sbtn">停止</button>
+        </div>
+        <dl class="kv" style="margin-top:12px">
+          <dt>発行</dt><dd>8/5 小尾</dd>
+          <dt>最終ログイン</dt><dd>8/6 21:04</dd>
+          <dt>状態</dt><dd><span class="badge b-done">有効</span></dd>
+        </dl>
+      </div>
+
+      <div class="panel" style="margin-bottom:14px">
+        <h3>お支払い</h3>
+        <dl class="kv">
+          <dt>ご請求額</dt><dd>¥ 748,000</dd>
+          <dt>案件ステータス</dt><dd>受注</dd>
+          <dt>請求書</dt><dd>未発行</dd>
+          <dt>領収書</dt><dd>未発行</dd>
+        </dl>
+        <div class="toolbar" style="margin-top:12px">
+          <button class="sbtn acc">請求書を発行</button>
+          <button class="sbtn">領収書を発行</button>
+        </div>
+        <p class="caption" style="margin:8px 0 0">既存の帳票発行フローをそのまま開く（帳票は新規実装しない）。</p>
+      </div>
+
+      <div class="panel">
+        <h3>更新履歴</h3>
+        <div class="hist">
+          8/6 21:04 <b>喪主</b> プランの決定 → 確認済み<br>
+          8/6 18:30 <b>小尾</b> 死亡届 → 対応中<br>
+          8/6 14:12 <b>小尾</b> 斎場・火葬場の予約 → 完了<br>
+          8/5 17:40 <b>喪主</b> 菩提寺の確認 → 確認済み<br>
+          8/5 17:02 <b>小尾</b> 喪主用ログイン情報を発行<br>
+          8/5 16:58 <b>システム</b> 受注に伴いタスク17件を生成
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<script>
+const tabs = document.querySelectorAll('.tab');
+const show = name => {
+  tabs.forEach(t => t.classList.toggle('on', t.dataset.v === name));
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id === 'v-' + name));
+  window.scrollTo(0, 0);
+};
+tabs.forEach(t => t.addEventListener('click', () => show(t.dataset.v)));
+document.querySelectorAll('[data-go]').forEach(el =>
+  el.addEventListener('click', () => show(el.dataset.go)));
+
+// アコーディオン（請求の内訳・ご葬儀の記録）
+document.querySelectorAll('.acc-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    btn.classList.toggle('open');
+    document.getElementById('acc-' + btn.dataset.acc).classList.toggle('open');
+  });
+});
+
+// 喪主画面のチェックは「確認済み」のトグル（モック挙動）
+document.querySelectorAll('#v-mourner .check:not(.lock):not(.done)').forEach(box => {
+  box.addEventListener('click', () => {
+    box.classList.toggle('conf');
+    box.textContent = box.classList.contains('conf') ? '✓' : '';
+  });
+});
+</script>
+</body>
+</html>
