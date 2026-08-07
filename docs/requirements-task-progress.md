@@ -663,10 +663,13 @@ case_tasks の更新 ── notifyTaskChanged(task, actor)
 ```
 1. migrations/019_case_tasks.sql                 を実行（テーブル・マスタ）
 2. migrations/020_case_credentials_functions.sql を実行（アイパスの発行・照合）
-3. npx supabase functions deploy task-public
-4. npm run build:tasks  → dist-tasks/ を配信（Vercel の別プロジェクト）
-5. /admin →「タスクマスタ管理」で喪主サイトのURLを設定
+3. migrations/021_fix_credential_functions.sql   を実行（020の修正・必須）
+4. npx supabase functions deploy task-public
+5. npm run build:tasks  → dist-tasks/ を配信（Vercel の別プロジェクト）
+6. /admin →「タスクマスタ管理」で喪主サイトのURLを設定
 ```
+
+> **021 は必須です。** 020 だけでは発行が必ず失敗し、さらに anon から関数を呼べる状態のままになります（下記）。
 
 3を飛ばすと喪主サイトが何も表示できない。2と3は続けて行うこと。
 
@@ -680,6 +683,18 @@ case_tasks の更新 ── notifyTaskChanged(task, actor)
 | `case_login` / `purge_expired_case_sessions` | `service_role`（Edge Function）のみ |
 
 平文のパスワードは保存されず、発行直後に画面へ1回だけ表示される。
+
+**020で踏んだ落とし穴（021で修正）**
+
+| 症状 | 原因 |
+|---|---|
+| 発行すると必ず失敗する | Supabase の pgcrypto は `public` ではなく **`extensions` スキーマ**に入る。`search_path` を `public, pg_temp` に固定したため `crypt()` を解決できなかった |
+| anon からも関数を呼べる | Supabase は新しい関数に `anon` / `authenticated` への EXECUTE を**自動で付ける**。`REVOKE ... FROM public` ではこの直接の GRANT は外れない |
+
+2つ目は実害があった。anon キーはブラウザのバンドルに含まれるため、
+`issue_case_credential` を anon から呼べる状態では、鍵を取り出せる人が
+任意の案件のログイン情報を発行し、喪主として案件を閲覧できてしまう。
+**SECURITY DEFINER の関数を足すときは、必ず `anon` から明示的に REVOKE すること。**
 
 ### v1で入れなかったもの
 
