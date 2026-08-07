@@ -109,7 +109,7 @@
 ### 3.2 採用案（B）の仕組み
 
 ```
-喪主   : ログインID（例 FL-128-4K7Q） + パスワード（8桁・発行時に自動生成）
+喪主   : ログインID（例 128-4k7q） + パスワード（8桁・発行時に自動生成）
 スタッフ: 既存の Supabase Auth のメールアドレス + パスワード
 ```
 
@@ -148,6 +148,10 @@
 
 - 「喪主用ログイン情報を発行」ボタン → ID・パスワードを生成して表示（**パスワードの平文はこの1回だけ表示**）
 - 「コピー」ボタンで `URL / ID / パスワード` の3行をまとめてクリップボードへ（**v1はここまで**）
+- ID・パスワードとも **小文字の英数字のみ**。スマホで入力しやすいよう、
+  シフトを押させず、見間違えやすい `l`（エル）`o`（オー）`0` `1` を使わない
+  （`abcdefghijkmnpqrstuvwxyz23456789` の32文字）
+- IDの照合は**大文字小文字を区別しない**（スマホの自動大文字化で弾かれないため）
 - 再発行すると旧パスワードは無効になり、既存セッションも切れる
 - 「停止」で `is_active = false`
 
@@ -289,7 +293,7 @@ CREATE TABLE case_task_events (
 CREATE TABLE case_credentials (
     id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     estimate_id   bigint UNIQUE NOT NULL REFERENCES estimates(id) ON DELETE CASCADE,
-    login_id      text UNIQUE NOT NULL,      -- 'FL-128-4K7Q'
+    login_id      text UNIQUE NOT NULL,      -- '128-4k7q'（案件番号 + ランダム4文字）
     password_hash text NOT NULL,             -- crypt(pw, gen_salt('bf'))
     is_active     boolean NOT NULL DEFAULT true,
     expires_at    timestamptz,               -- NULL = 無期限
@@ -616,7 +620,7 @@ case_tasks の更新 ── notifyTaskChanged(task, actor)
 
 | # | 論点 | 確認先 |
 |---|---|---|
-| 1 | 喪主のログインIDの形式（案件番号ベース `FL-128-4K7Q` でよいか） | 大石 |
+| 1 | ~~喪主のログインIDの形式~~ → **`128-4k7q`（案件番号 + ランダム4文字）に決定**（2026-08-07） | 済 |
 | 2 | アイパスの渡し方（v1はコピーのみ。運用しながら紙／SMSを決める） | 大石 |
 | 3 | 期日の初期値（§7の「告別式 -◯日」が実務に合っているか） | 大石 |
 | 4 | 明細アコーディオンに出す粒度（見積の全品目か、プラン・アップセルの大分類だけか） | 大石 |
@@ -664,9 +668,10 @@ case_tasks の更新 ── notifyTaskChanged(task, actor)
 1. migrations/019_case_tasks.sql                 を実行（テーブル・マスタ）
 2. migrations/020_case_credentials_functions.sql を実行（アイパスの発行・照合）
 3. migrations/021_fix_credential_functions.sql   を実行（020の修正・必須）
-4. npx supabase functions deploy task-public
-5. npm run build:tasks  → dist-tasks/ を配信（Vercel の別プロジェクト）
-6. /admin →「タスクマスタ管理」で喪主サイトのURLを設定
+4. migrations/022_case_login_case_insensitive.sql を実行（IDの大小を区別しない）
+5. npx supabase functions deploy task-public
+6. npm run build:tasks  → dist-tasks/ を配信（Vercel の別プロジェクト）
+7. /admin →「タスクマスタ管理」で喪主サイトのURLを設定
 ```
 
 > **021 は必須です。** 020 だけでは発行が必ず失敗し、さらに anon から関数を呼べる状態のままになります（下記）。

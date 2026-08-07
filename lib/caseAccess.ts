@@ -22,8 +22,12 @@ export interface IssuedCredential {
     password: string;
 }
 
-/** 見間違えやすい文字（0/O・1/I/l）を除いた英数字 */
-const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+/**
+ * ID・パスワードに使う文字。
+ * スマホで入力しやすいよう小文字だけにし、
+ * 見間違えやすい l（エル）・o（オー）と 0・1 を除いてある。
+ */
+const ALPHABET = 'abcdefghijkmnpqrstuvwxyz23456789';
 
 const randomString = (length: number): string => {
     const bytes = new Uint8Array(length);
@@ -35,7 +39,8 @@ const randomString = (length: number): string => {
     return Array.from(bytes, b => ALPHABET[b % ALPHABET.length]).join('');
 };
 
-export const buildLoginId = (estimateId: number): string => `FL-${estimateId}-${randomString(4)}`;
+/** 案件番号 + ランダム4文字（例: 462-4k7q）。照合は大文字小文字を区別しない */
+export const buildLoginId = (estimateId: number): string => `${estimateId}-${randomString(4)}`;
 
 export const buildPassword = (): string => randomString(8);
 
