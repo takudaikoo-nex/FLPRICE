@@ -27,6 +27,7 @@ const emptyTemplate = (sortOrder: number): CaseTaskTemplate => ({
     target_plan_ids: [],
     related_item_id: null,
     require_flower: false,
+    require_temple: false,
     due_offset_days: null,
     auto_complete_on: null,
     initial_status: 'todo',
@@ -49,6 +50,7 @@ const describeConditions = (template: CaseTaskTemplate, items: Item[]): string =
         parts.push(`関連: ${item ? item.name : `#${template.related_item_id}`}`);
     }
     if (template.require_flower) parts.push('供花の受付あり');
+    if (template.require_temple) parts.push('お坊さんあり');
 
     return parts.length > 0 ? parts.join(' / ') : '常に生成';
 };
@@ -117,6 +119,7 @@ const CaseTaskTemplatesManager: React.FC = () => {
             target_plan_ids: editing.target_plan_ids,
             related_item_id: editing.related_item_id,
             require_flower: editing.require_flower,
+            require_temple: editing.require_temple,
             due_offset_days: editing.due_offset_days,
             auto_complete_on: editing.auto_complete_on,
             initial_status: editing.initial_status,
@@ -467,15 +470,30 @@ const CaseTaskTemplatesManager: React.FC = () => {
                                     </p>
                                 </div>
 
-                                <label className="inline-flex items-center gap-2 text-sm cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={editing.require_flower}
-                                        onChange={e => setEditing({ ...editing, require_flower: e.target.checked })}
-                                        className="w-4 h-4 cursor-pointer"
-                                    />
-                                    供花の発注受付が作られている案件だけに作る
-                                </label>
+                                <div className="flex flex-col items-start gap-2">
+                                    <label className="inline-flex items-center gap-2 text-sm cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={editing.require_flower}
+                                            onChange={e => setEditing({ ...editing, require_flower: e.target.checked })}
+                                            className="w-4 h-4 cursor-pointer"
+                                        />
+                                        供花の発注受付が作られている案件だけに作る
+                                    </label>
+                                    <label className="inline-flex items-center gap-2 text-sm cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={editing.require_temple}
+                                            onChange={e => setEditing({ ...editing, require_temple: e.target.checked })}
+                                            className="w-4 h-4 cursor-pointer"
+                                        />
+                                        お坊さんを呼ぶ案件だけに作る（位牌の回収など）
+                                    </label>
+                                </div>
+                                <p className="text-xs text-gray-400 mt-1">
+                                    菩提寺の名称・電話・FAXのどれか、またはお布施・戒名料の入力がある案件を
+                                    「お坊さんあり」とみなします。
+                                </p>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">

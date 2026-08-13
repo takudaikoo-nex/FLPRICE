@@ -56,6 +56,7 @@ export interface CaseTaskTemplate {
     target_plan_ids: string[];
     related_item_id: number | null;
     require_flower: boolean;
+    require_temple: boolean;
     due_offset_days: number | null;
     auto_complete_on: DocumentType | null;
     initial_status: 'todo' | 'done';
@@ -212,6 +213,24 @@ const dueFromCeremony = (ceremonyIso: string | null, offsetDays: number | null):
     return new Date(base + offsetDays * DAY_MS).toISOString();
 };
 
+/** お布施・戒名料（constants.ts / items のID）。お坊さんの有無を推し量る手がかり */
+const TEMPLE_FEE_ITEM_ID = 53;
+
+/**
+ * お坊さんを呼ぶ案件か。
+ * 商談画面に「お坊さん（菩提寺）の有無」のフラグがないため（要件 A-6 待ち）、
+ * 菩提寺の連絡先か、お布施・戒名料の入力があるかで推し量る。
+ * フラグが入ったら、この関数の中身だけを差し替える。
+ */
+const hasTempleSupport = (customerInfo: any, content: any): boolean => {
+    const filled = (value: unknown) => typeof value === 'string' && value.trim() !== '';
+    if (filled(customerInfo?.templeName) || filled(customerInfo?.templePhone)
+        || filled(customerInfo?.templeFax)) return true;
+
+    const freeInputs = (content?.freeInputValues ?? []) as [number, number][];
+    return freeInputs.some(([itemId, value]) => itemId === TEMPLE_FEE_ITEM_ID && Number(value) > 0);
+};
+
 /**
  * そのテンプレートを、この案件で生成するか。
  *
@@ -220,13 +239,16 @@ const dueFromCeremony = (ceremonyIso: string | null, offsetDays: number | null):
  */
 const shouldGenerate = (
     template: CaseTaskTemplate,
-    context: { category: string; planId: string; items: Item[]; hasFlower: boolean },
+    context: {
+        category: string; planId: string; items: Item[]; hasFlower: boolean; hasTemple: boolean;
+    },
 ): boolean => {
-    const { category, planId, items, hasFlower } = context;
+    const { category, planId, items, hasFlower, hasTemple } = context;
 
     if (template.target_categories.length > 0 && !template.target_categories.includes(category)) return false;
     if (template.target_plan_ids.length > 0 && !template.target_plan_ids.includes(planId)) return false;
     if (template.require_flower && !hasFlower) return false;
+    if (template.require_temple && !hasTemple) return false;
 
     if (template.related_item_id !== null && planId) {
         const item = items.find(i => i.id === template.related_item_id);
@@ -263,6 +285,7 @@ export const generateCaseTasks = async (estimateId: number): Promise<GenerateRes
         planId: content.plan?.id ?? '',
         items: (content.items ?? []) as Item[],
         hasFlower: (flowerResult.data || []).length > 0,
+        hasTemple: hasTempleSupport(customerInfo, content),
     };
 
     const ceremonyIso = funeralDateToCeremonyIso(customerInfo.funeralDate || '');

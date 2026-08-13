@@ -182,6 +182,7 @@ CREATE TABLE case_task_templates (
     target_plan_ids    text[]  NOT NULL DEFAULT '{}',  -- plans.id
     related_item_id    integer REFERENCES items(id),   -- 関連オプション（1つだけ・任意）
     require_flower     boolean NOT NULL DEFAULT false, -- 供花の受付が作られていたら生成
+    require_temple     boolean NOT NULL DEFAULT false, -- お坊さんを呼ぶ案件だけ生成（025で追加）
 
     -- ---- 期日・自動完了 ----
     due_offset_days    integer,                     -- 告別式日からの相対日数（負=前）
@@ -204,7 +205,12 @@ CREATE TABLE case_task_templates (
   ∧ target_plan_ids   が空 or 案件のプランIDを含む
   ∧ related_item_id   が空 or そのアイテムが案件のプランで選択できる（items.allowed_plans に含まれる）
   ∧ （require_flower = false or その案件の funerals が存在する）
+  ∧ （require_temple = false or その案件がお坊さんあり）
 ```
+
+`require_temple` の「お坊さんあり」は、商談画面にフラグが無いあいだ（A-6 待ち）
+**菩提寺の名称・電話・FAX のいずれか、またはお布施・戒名料（53）の入力**で推し量る
+（`lib/caseTasks.ts` の `hasTempleSupport`）。
 
 `/admin` の「タスクマスタ管理」でこれらの条件を編集できるようにする（§5.5）。
 
@@ -525,6 +531,7 @@ CREATE POLICY "case_tasks staff all" ON case_tasks
 | 11 | `endroll` | 当日エンドロール | 当日 | FL | ○ | **既定で無効**（アイテム未登録） | — | 告別式 当日 |
 | 12a | `invoice_sent` | 請求書の送付 | 支払い | FL | ○ | 常に（請求書発行で自動完了） | — | 告別式 +3日 |
 | 12b | `payment_received` | **入金の確認（ゴール）** | 支払い | 両方 | ○ | 常に（領収書発行で自動完了） | — | 告別式 +21日 |
+| — | `ihai_return` | 位牌の回収 | 葬儀後 | 喪主 | ○ | **お坊さんあり**＋**既定で無効**（運用が未確定） | **9 白木位牌** | — |
 
 - `owner`: FLのみ = `fl` / 喪主のみ = `mourner` / 両方 = `both`
 - 搬送・安置は商談時点で完了済みのため `initial_status = 'done'` で生成する
@@ -546,8 +553,12 @@ CREATE POLICY "case_tasks staff all" ON case_tasks
 - **思い出ムービー・当日エンドロールは、まだアイテムマスタに存在しない**
   （8/6定例 A-7 で「オプション商品として見積に組み込む」＝中期課題）。
   マスタの行は作っておき `is_active = false` にしておく。アイテムを追加したら有効化する
-- 菩提寺の有無は現状 `53 お布施・戒名料` の入力で推し量るしかない。
-  A-6 で商談画面に**「お坊さん（菩提寺）の有無」フラグ**が入ったら、そちらを条件に切り替える
+- 菩提寺の有無は現状、菩提寺の連絡先か `53 お布施・戒名料` の入力で推し量るしかない
+  （`migrations/025_task_temple_condition.sql` で `require_temple` として条件化）。
+  A-6 で商談画面に**「お坊さん（菩提寺）の有無」フラグ**が入ったら、
+  `lib/caseTasks.ts` の `hasTempleSupport` をそちらに差し替える
+- **位牌の回収は「あり／なし」が未確定**のため `is_active = false` で登録してある。
+  出すと決まったら `/admin` の「タスクマスタ管理」で有効にする（文言・期日・担当も同画面で調整）
 
 ---
 
@@ -640,7 +651,7 @@ case_tasks の更新 ── notifyTaskChanged(task, actor)
 
 | 依存 | 内容 |
 |---|---|
-| A-6（商談フロー） | 「お坊さん（菩提寺）の有無」フラグが入ったら、坊さん連絡FAXの条件をそちらに切り替える |
+| A-6（商談フロー） | 「お坊さん（菩提寺）の有無」フラグが入ったら、`require_temple` の判定をそちらに切り替える（坊さん連絡FAXの条件も同時に見直す） |
 | A-7（追加オプション） | 思い出ムービー・当日エンドロールがアイテム化されたら、該当タスクを有効にする |
 | C-1（葬儀後サポート） | 「これからのお手続き」の項目が固まったら `phase = 'after'` のタスクとして載せる |
 
