@@ -1802,6 +1802,47 @@ select {
   color: #6ee7b7;
 }
 
+.fl-lightbox-description {
+  max-width: 640px;
+  margin-top: 6px;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: #d1d5db;
+  white-space: pre-wrap;
+  text-align: center;
+}
+
+/* 商品分類での絞り込み */
+.fl-catalog-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.fl-catalog-tabs button {
+  padding: 6px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  background: #fff;
+  color: #6b7280;
+  font-family: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.fl-catalog-tabs button:hover {
+  border-color: #6ee7b7;
+  color: #047857;
+}
+
+.fl-catalog-tabs button.is-active {
+  background: #047857;
+  border-color: #047857;
+  color: #fff;
+}
+
 /* ================================================
    タスク進捗（案件一覧・案件詳細）
    ================================================ */

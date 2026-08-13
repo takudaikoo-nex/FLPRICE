@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { PlanCategory, PlanId, Item, Plan, CustomerInfo, MultiGradeSelection, DiscountType } from '../types';
+import { PlanCategory, PlanId, Item, Plan, CustomerInfo, MultiGradeSelection, DiscountType, CatalogProduct } from '../types';
+import { fetchCatalogProducts } from '../lib/catalogProducts';
 import { serializePrintData } from '../lib/serialization';
 import { getItemPrice, emptyMultiGrade } from '../lib/pricing';
 import { convertDbItem, convertDbPlan } from '../lib/converter';
@@ -33,6 +34,8 @@ export const useEstimateSystem = () => {
     // Supabase data (fallback to constants)
     const [plans, setPlans] = useState<Plan[]>(PLANS);
     const [items, setItems] = useState<Item[]>(ITEMS);
+    /** オプション商品マスタ。取れなくても選択肢側の名前・画像で動く */
+    const [catalogProducts, setCatalogProducts] = useState<CatalogProduct[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -66,6 +69,13 @@ export const useEstimateSystem = () => {
                 setItems(ITEMS);
             } finally {
                 setLoading(false);
+            }
+
+            // 商品マスタは別立てで読む。未導入の環境でも見積自体は動かしたい
+            try {
+                setCatalogProducts(await fetchCatalogProducts());
+            } catch (error) {
+                console.error('Failed to fetch catalog products:', error);
             }
         };
 
@@ -336,7 +346,7 @@ export const useEstimateSystem = () => {
         loadedEstimateId, setLoadedEstimateId,
         viewMode, setViewMode,
         isSaving, logoType,
-        plans, items, loading,
+        plans, items, catalogProducts, loading,
         handleCategoryChange, handlePlanChange, toggleOption, setGrade, setFreeInputValue,
         setGradeQuantity, setItemDiscount,
         currentPlan, totalCost, toggleLogo, handleSaveAndPrint, executeLoadEstimate

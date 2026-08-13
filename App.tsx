@@ -43,7 +43,7 @@ const App: React.FC = () => {
     modalItem, setModalItem, multiGradeModalItem, setMultiGradeModalItem,
     loadedCustomerInfo, setLoadedCustomerInfo,
     viewMode, setViewMode, isSaving, logoType,
-    plans, items, loading,
+    plans, items, catalogProducts, loading,
     handleCategoryChange, handlePlanChange, toggleOption, setGrade, setFreeInputValue,
     setGradeQuantity, setItemDiscount,
     currentPlan, totalCost, toggleLogo, handleSaveAndPrint, executeLoadEstimate
@@ -382,7 +382,15 @@ const App: React.FC = () => {
         </main>
 
         <Footer total={totalCost} onInputClick={goToInputPage} onOutputClick={handleOutputClick} onInvoiceClick={handleInvoiceClick} onReceiptClick={handleReceiptClick} />
-        {modalItem && <DetailModal item={modalItem} onClose={() => setModalItem(null)} />}
+        {modalItem && (
+          <DetailModal
+            item={modalItem}
+            selectedGrade={selectedGrades.get(modalItem.id)}
+            planId={selectedPlanId}
+            products={catalogProducts}
+            onClose={() => setModalItem(null)}
+          />
+        )}
         {multiGradeModalItem && (
           <MultiGradeModal
             item={multiGradeModalItem}

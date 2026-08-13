@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Item, ItemType, Plan } from '../../types';
+import { CatalogProduct, Item, ItemType, Plan } from '../../types';
 import { Edit, Trash2, Plus, Search, GripVertical, Copy } from 'lucide-react';
 import { ITEM_TYPE_LABEL } from './itemTypes';
 import ItemEditor from './ItemEditor';
 import { convertDbItem, convertItemToDb, convertDbPlan } from '../../lib/converter';
+import { fetchCatalogProducts } from '../../lib/catalogProducts';
 import {
     DndContext,
     closestCenter,
@@ -136,6 +137,7 @@ const SortableRow: React.FC<SortableRowProps> = ({ item, onEdit, onCopy, onDelet
 const ItemsManager: React.FC = () => {
     const [items, setItems] = useState<Item[]>([]);
     const [plans, setPlans] = useState<Plan[]>([]);
+    const [products, setProducts] = useState<CatalogProduct[]>([]);
     const [loading, setLoading] = useState(true);
     const [editingItem, setEditingItem] = useState<Item | null>(null);
     const [isNew, setIsNew] = useState(false);
@@ -153,9 +155,10 @@ const ItemsManager: React.FC = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [itemsResult, plansResult] = await Promise.all([
+            const [itemsResult, plansResult, loadedProducts] = await Promise.all([
                 supabase.from('items').select('*').order('display_order', { ascending: true }),
                 supabase.from('plans').select('*').order('id'),
+                fetchCatalogProducts(),
             ]);
 
             if (itemsResult.error) throw itemsResult.error;
@@ -163,6 +166,7 @@ const ItemsManager: React.FC = () => {
 
             setItems((itemsResult.data || []).map(convertDbItem));
             setPlans((plansResult.data || []).map(convertDbPlan));
+            setProducts(loadedProducts);
         } catch (error) {
             console.error('Error fetching data:', error);
             alert('データの取得に失敗しました');
@@ -354,6 +358,7 @@ const ItemsManager: React.FC = () => {
                 onSave={handleSave}
                 onCancel={() => setEditingItem(null)}
                 plans={plans}
+                products={products}
             />
         );
     }

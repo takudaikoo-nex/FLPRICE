@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Item, Plan, ItemType, DropdownOption } from '../../types';
+import { Item, Plan, ItemType, DropdownOption, CatalogProduct } from '../../types';
 import { ITEM_IMAGE_BUCKET, storageImageUrl, uploadImages, removeImages } from '../../lib/storage';
 import { ArrowLeft, Plus, Trash2, ImagePlus, X, Copy } from 'lucide-react';
 import { ITEM_TYPE_HINT, hasOptions } from './itemTypes';
+import { PRODUCT_CATEGORIES, toProductMap } from '../../lib/catalogProducts';
 
 interface ItemEditorProps {
     item: Item;
@@ -10,11 +11,13 @@ interface ItemEditorProps {
     onSave: (item: Item) => Promise<void>;
     onCancel: () => void;
     plans: Plan[];
+    products: CatalogProduct[];
 }
 
-const ItemEditor: React.FC<ItemEditorProps> = ({ item, isNew, onSave, onCancel, plans }) => {
+const ItemEditor: React.FC<ItemEditorProps> = ({ item, isNew, onSave, onCancel, plans, products }) => {
     const [editingItem, setEditingItem] = useState<Item>(JSON.parse(JSON.stringify(item)));
     const [uploading, setUploading] = useState(false);
+    const productMap = toProductMap(products);
 
     const handleSave = async () => {
         await onSave(editingItem);
@@ -83,7 +86,22 @@ const ItemEditor: React.FC<ItemEditorProps> = ({ item, isNew, onSave, onCancel, 
         if (!isPathStillUsed(next, path)) await removeImages(ITEM_IMAGE_BUCKET, [path]);
     };
 
-    const optionLabel = (opt: DropdownOption) => opt.name || '名称未設定の選択肢';
+    const optionLabel = (opt: DropdownOption) => {
+        const linked = opt.productCode ? productMap.get(opt.productCode) : undefined;
+        return linked?.name || opt.name || '名称未設定の選択肢';
+    };
+
+    /** 選択肢を商品マスタに紐付ける／外す */
+    const handleChangeProduct = (index: number, code: string) => {
+        const options = [...(editingItem.options || [])];
+        if (code) {
+            options[index] = { ...options[index], productCode: code };
+        } else {
+            const { productCode, ...rest } = options[index];
+            options[index] = rest;
+        }
+        setEditingItem({ ...editingItem, options });
+    };
 
     /** 選択肢を複製して、コピー元のすぐ下に置く */
     const handleCopyOption = (index: number) => {
@@ -289,20 +307,30 @@ const ItemEditor: React.FC<ItemEditorProps> = ({ item, isNew, onSave, onCancel, 
                                     {(editingItem.options || []).length === 0 ? (
                                         <p className="text-xs text-emerald-600">※ 選択肢がありません。追加ボタンを押して追加してください。</p>
                                     ) : (
-                                        (editingItem.options || []).map((opt, idx) => (
+                                        (editingItem.options || []).map((opt, idx) => {
+                                          // 商品マスタに紐付いていれば、名前と画像はマスタのものを表示する
+                                          const linked = opt.productCode ? productMap.get(opt.productCode) : undefined;
+                                          return (
                                             <div key={opt.id || idx} className="bg-white p-2 rounded border border-emerald-100 shadow-sm">
                                               <div className="flex gap-2 items-center">
-                                                <input
-                                                    type="text"
-                                                    value={opt.name}
-                                                    onChange={e => {
-                                                        const newOptions = [...(editingItem.options || [])];
-                                                        newOptions[idx].name = e.target.value;
-                                                        setEditingItem({ ...editingItem, options: newOptions });
-                                                    }}
-                                                    placeholder="選択肢名 (例: 椿グレード)"
-                                                    className="flex-1 p-2 border border-gray-200 rounded text-sm focus:ring-1 focus:ring-emerald-500 outline-none"
-                                                />
+                                                {linked ? (
+                                                    <div className="flex-1 min-w-0 flex items-center gap-2 p-2 bg-emerald-50 border border-emerald-200 rounded text-sm">
+                                                        <span className="font-mono text-xs text-emerald-700 shrink-0">{linked.code}</span>
+                                                        <span className="font-bold text-gray-800 truncate">{linked.name || '（商品名未設定）'}</span>
+                                                    </div>
+                                                ) : (
+                                                    <input
+                                                        type="text"
+                                                        value={opt.name}
+                                                        onChange={e => {
+                                                            const newOptions = [...(editingItem.options || [])];
+                                                            newOptions[idx].name = e.target.value;
+                                                            setEditingItem({ ...editingItem, options: newOptions });
+                                                        }}
+                                                        placeholder="選択肢名 (例: 椿グレード)"
+                                                        className="flex-1 p-2 border border-gray-200 rounded text-sm focus:ring-1 focus:ring-emerald-500 outline-none"
+                                                    />
+                                                )}
                                                 <div className="flex items-center gap-1 w-32 shrink-0">
                                                     <span className="text-gray-500 text-sm">¥</span>
                                                     <input
@@ -333,6 +361,41 @@ const ItemEditor: React.FC<ItemEditorProps> = ({ item, isNew, onSave, onCancel, 
                                                     <Trash2 size={16} />
                                                 </button>
                                               </div>
+
+                                              {/* 商品マスタとの紐付け。画像と説明はマスタ側で管理する */}
+                                              <div className="flex flex-wrap items-center gap-2 mt-2 pl-1">
+                                                <span className="text-[10px] text-gray-400 shrink-0">商品</span>
+                                                <select
+                                                    value={opt.productCode || ''}
+                                                    onChange={e => handleChangeProduct(idx, e.target.value)}
+                                                    className="flex-1 min-w-[16rem] p-1.5 border border-gray-200 rounded text-xs bg-white focus:ring-1 focus:ring-emerald-500 outline-none"
+                                                >
+                                                    <option value="">紐付けなし（この画面で名前と画像を持つ）</option>
+                                                    {PRODUCT_CATEGORIES.map(category => {
+                                                        const inCategory = products.filter(p => p.category === category.code);
+                                                        if (inCategory.length === 0) return null;
+                                                        return (
+                                                            <optgroup key={category.code} label={category.label}>
+                                                                {inCategory.map(product => (
+                                                                    <option key={product.code} value={product.code}>
+                                                                        {product.code}　{product.name}
+                                                                    </option>
+                                                                ))}
+                                                            </optgroup>
+                                                        );
+                                                    })}
+                                                </select>
+                                                {opt.productCode && !linked && (
+                                                    <span className="text-[10px] text-red-500">
+                                                        商品 {opt.productCode} が見つかりません
+                                                    </span>
+                                                )}
+                                              </div>
+                                              {linked?.description && (
+                                                <p className="text-[10px] text-gray-400 mt-1 pl-1 whitespace-pre-wrap">
+                                                    {linked.description}
+                                                </p>
+                                              )}
 
                                               {/* この選択肢を出すプラン。外したプランでは選べなくなる */}
                                               <div className="flex flex-wrap items-center gap-1.5 mt-2 pl-1">
@@ -366,38 +429,58 @@ const ItemEditor: React.FC<ItemEditorProps> = ({ item, isNew, onSave, onCancel, 
                                                 })}
                                               </div>
 
-                                              <div className="flex flex-wrap items-center gap-2 mt-2 pl-1">
-                                                {(opt.imagePaths || []).map(path => (
-                                                    <div key={path} className="relative">
+                                              {linked ? (
+                                                <div className="flex flex-wrap items-center gap-2 mt-2 pl-1">
+                                                    {linked.imagePaths.map(path => (
                                                         <img
+                                                            key={path}
                                                             src={storageImageUrl(ITEM_IMAGE_BUCKET, path)}
                                                             alt=""
-                                                            className="w-20 h-20 object-cover rounded border border-gray-200"
+                                                            className="w-20 h-20 object-cover rounded border border-emerald-200"
                                                         />
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleRemoveOptionImage(idx, path)}
-                                                            className="absolute top-0 right-0 p-1 bg-white rounded-full border border-gray-200 text-gray-500 hover:text-red-600"
-                                                        >
-                                                            <X size={12} />
-                                                        </button>
-                                                    </div>
-                                                ))}
-                                                <label className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded cursor-pointer hover:bg-gray-200 text-xs text-gray-600">
-                                                    <ImagePlus size={14} />
-                                                    画像
-                                                    <input
-                                                        type="file"
-                                                        accept="image/*"
-                                                        multiple
-                                                        disabled={uploading}
-                                                        onChange={e => handleUploadOptionImages(idx, e.target.files)}
-                                                        className="hidden"
-                                                    />
-                                                </label>
-                                              </div>
+                                                    ))}
+                                                    <span className="text-[10px] text-gray-400">
+                                                        {linked.imagePaths.length === 0
+                                                            ? '商品マスタに画像がありません。'
+                                                            : ''}
+                                                        画像と説明は管理画面の「商品マスタ」で編集します
+                                                    </span>
+                                                </div>
+                                              ) : (
+                                                <div className="flex flex-wrap items-center gap-2 mt-2 pl-1">
+                                                    {(opt.imagePaths || []).map(path => (
+                                                        <div key={path} className="relative">
+                                                            <img
+                                                                src={storageImageUrl(ITEM_IMAGE_BUCKET, path)}
+                                                                alt=""
+                                                                className="w-20 h-20 object-cover rounded border border-gray-200"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleRemoveOptionImage(idx, path)}
+                                                                className="absolute top-0 right-0 p-1 bg-white rounded-full border border-gray-200 text-gray-500 hover:text-red-600"
+                                                            >
+                                                                <X size={12} />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                    <label className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded cursor-pointer hover:bg-gray-200 text-xs text-gray-600">
+                                                        <ImagePlus size={14} />
+                                                        画像
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            multiple
+                                                            disabled={uploading}
+                                                            onChange={e => handleUploadOptionImages(idx, e.target.files)}
+                                                            className="hidden"
+                                                        />
+                                                    </label>
+                                                </div>
+                                              )}
                                             </div>
-                                        ))
+                                          );
+                                        })
                                     )}
                                 </div>
                             </div>

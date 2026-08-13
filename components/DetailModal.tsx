@@ -1,31 +1,41 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Item } from '../types';
+import { CatalogProduct, Item } from '../types';
 import { ITEM_IMAGE_BUCKET, storageImageUrl } from '../lib/storage';
+import { resolveOption, toProductMap } from '../lib/catalogProducts';
 import { X, ChevronLeft, ChevronRight, Images } from 'lucide-react';
 
 interface DetailModalProps {
   item: Item | null;
   selectedGrade?: string;
+  /** カタログに引き継ぐプラン。プランごとに金額が変わるため必ず渡す */
+  planId?: string;
+  /** オプション商品マスタ。紐付いている選択肢は画像と説明をここから引く */
+  products?: CatalogProduct[];
   onClose: () => void;
 }
 
-const DetailModal: React.FC<DetailModalProps> = ({ item, selectedGrade, onClose }) => {
+const DetailModal: React.FC<DetailModalProps> = ({ item, selectedGrade, planId, products = [], onClose }) => {
   const [candidateIndex, setCandidateIndex] = useState(0);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+
+  const productMap = useMemo(() => toProductMap(products), [products]);
+
+  /** 選択中のグレード（商品マスタに紐付いていればそちらを正とする） */
+  const grade = useMemo(() => {
+    if (!item || !selectedGrade) return undefined;
+    const option = (item.options || []).find(o => o.id === selectedGrade);
+    return option ? resolveOption(option, productMap) : undefined;
+  }, [item, selectedGrade, productMap]);
 
   /** 管理画面から登録された画像（グレードのものを優先） */
   const catalogImages = useMemo(() => {
     if (!item) return [];
-    const grade = selectedGrade
-      ? (item.options || []).find(option => option.id === selectedGrade)
-      : undefined;
-
     return [
       ...(grade?.imagePaths || []),
       ...(item.imagePaths || []),
     ].map(path => storageImageUrl(ITEM_IMAGE_BUCKET, path));
-  }, [item, selectedGrade]);
+  }, [item, grade]);
 
   /**
    * 表示を試す画像の候補。
@@ -55,7 +65,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ item, selectedGrade, onClose 
   /** カタログに載せられる画像があるか */
   const hasCatalogImages = !!item && (
     (item.imagePaths || []).length > 0
-    || (item.options || []).some(option => (option.imagePaths || []).length > 0)
+    || (item.options || []).some(option => resolveOption(option, productMap).imagePaths.length > 0)
   );
 
   if (!item) return null;
@@ -66,9 +76,10 @@ const DetailModal: React.FC<DetailModalProps> = ({ item, selectedGrade, onClose 
   const slides = [
     {
       type: 'main',
-      title: item.name,
+      // グレードを選んでいれば、その商品名と説明を優先して見せる
+      title: grade?.name ? `${item.name}（${grade.name}）` : item.name,
       image: currentSrc,
-      description: item.description,
+      description: grade?.description || item.description,
       isMain: true
     },
     ...((item as any).details || []).map((detail: any) => ({
@@ -196,7 +207,10 @@ const DetailModal: React.FC<DetailModalProps> = ({ item, selectedGrade, onClose 
               {currentSlide.isMain && hasCatalogImages && (
                 <button
                   type="button"
-                  onClick={() => window.open(`/?catalog=true&item=${item.id}`, '_blank')}
+                  onClick={() => window.open(
+                    `/?catalog=true&item=${item.id}${planId ? `&plan=${encodeURIComponent(planId)}` : ''}`,
+                    '_blank',
+                  )}
                   className="mt-4 inline-flex items-center gap-2 px-4 py-3 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 text-sm font-bold"
                 >
                   <Images size={16} />

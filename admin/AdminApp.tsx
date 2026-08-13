@@ -4,13 +4,14 @@ import LoginForm from './components/LoginForm';
 import PlansManager from './components/PlansManager';
 import ItemsManager from './components/ItemsManager';
 import AttendeesManager from './components/AttendeesManager';
-import { LogOut, LayoutDashboard, List, Users, DatabaseBackup, Flower2, Settings, ListChecks } from 'lucide-react';
+import { LogOut, LayoutDashboard, List, Users, DatabaseBackup, Flower2, Settings, ListChecks, Images } from 'lucide-react';
 import BackupManager from './components/BackupManager';
+import CatalogProductsManager from './components/CatalogProductsManager';
 import FlowerProductsManager from './components/FlowerProductsManager';
 import FlowerSettingsManager from './components/FlowerSettingsManager';
 import CaseTaskTemplatesManager from './components/CaseTaskTemplatesManager';
 
-type AdminTab = 'plans' | 'items' | 'attendees' | 'backup' | 'taskTemplates' | 'flowerProducts' | 'flowerSettings';
+type AdminTab = 'plans' | 'items' | 'catalogProducts' | 'attendees' | 'backup' | 'taskTemplates' | 'flowerProducts' | 'flowerSettings';
 
 const AdminApp: React.FC = () => {
     const [session, setSession] = useState<any>(null);
@@ -81,6 +82,17 @@ const AdminApp: React.FC = () => {
                     >
                         <List size={20} />
                         アイテム管理
+                    </button>
+
+                    <button
+                        onClick={() => setActiveTab('catalogProducts')}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'catalogProducts'
+                            ? 'bg-emerald-50 text-emerald-700 font-bold'
+                            : 'text-gray-600 hover:bg-gray-50'
+                            }`}
+                    >
+                        <Images size={20} />
+                        商品マスタ
                     </button>
 
                     <button
@@ -166,6 +178,10 @@ const AdminApp: React.FC = () => {
 
                     {activeTab === 'items' && (
                         <ItemsManager />
+                    )}
+
+                    {activeTab === 'catalogProducts' && (
+                        <CatalogProductsManager />
                     )}
 
                     {activeTab === 'attendees' && (

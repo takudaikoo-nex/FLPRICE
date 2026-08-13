@@ -28,7 +28,7 @@ const MobileEstimatePage: React.FC<MobileEstimatePageProps> = ({ system, onOutpu
         category, selectedPlanId,
         selectedOptions, selectedGrades, freeInputValues, multiGradeValues,
         modalItem, setModalItem, multiGradeModalItem, setMultiGradeModalItem,
-        plans, items,
+        plans, items, catalogProducts,
         handleCategoryChange, handlePlanChange, toggleOption, setGrade, setFreeInputValue,
         setGradeQuantity, setItemDiscount,
         totalCost,
@@ -169,7 +169,15 @@ const MobileEstimatePage: React.FC<MobileEstimatePageProps> = ({ system, onOutpu
             </main>
 
             <MobileFooter total={totalCost} onInputClick={goToInputPage} onOutputClick={onOutputClick} onInvoiceClick={onInvoiceClick} onReceiptClick={onReceiptClick} />
-            {modalItem && <DetailModal item={modalItem} onClose={() => setModalItem(null)} />}
+            {modalItem && (
+                <DetailModal
+                    item={modalItem}
+                    selectedGrade={selectedGrades.get(modalItem.id)}
+                    planId={selectedPlanId}
+                    products={catalogProducts}
+                    onClose={() => setModalItem(null)}
+                />
+            )}
             {multiGradeModalItem && (
                 <MultiGradeModal
                     item={multiGradeModalItem}

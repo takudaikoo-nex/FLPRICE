@@ -23,12 +23,40 @@ export interface Plan {
 
 export interface DropdownOption {
   id: string;
+  /** 商品マスタ（catalog_products.code）への紐付け。空なら従来どおり名前・画像を選択肢側で持つ */
+  productCode?: string;
   name: string;
   price: number; // デフォルト価格
   planPrices?: Record<string, number>; // プランごとに異なる場合
   allowedPlans: PlanId[];
-  /** グレードの画像（Storage の item-images 内のパス） */
+  /** グレードの画像（Storage の item-images 内のパス）。マスタ紐付け後はマスタ側を使う */
   imagePaths?: string[];
+}
+
+/** 商品マスタの分類 */
+export type ProductCategory =
+  | 'ALTAR'      // 祭壇
+  | 'AFTER'      // 後飾り祭壇
+  | 'URN'        // 骨壺・骨箱
+  | 'URNCOVER'   // 骨壺覆い
+  | 'FLOWER'     // 供花
+  | 'PHOTO'      // 遺影の額
+  | 'COFFIN'     // お棺・仏衣
+  | 'OTHER';     // その他
+
+/**
+ * オプション商品のマスタ。
+ * 画像・説明・商品名はここが唯一の置き場所で、価格は選択肢側が持つ。
+ */
+export interface CatalogProduct {
+  /** BC-21 / YW-1 / UR-01 など。既存コードはそのまま使う */
+  code: string;
+  category: ProductCategory;
+  name: string;
+  description: string;
+  imagePaths: string[];
+  displayOrder: number;
+  isActive: boolean;
 }
 
 export interface Item {
