@@ -97,11 +97,11 @@ const MournerView: React.FC<Props> = ({
                     <div className="t-meta">
                         {isDone && <span className="badge b-done">完了</span>}
                         {!isDone && confirmed && (
-                            <span className="badge b-conf">確認済み・FL確認中</span>
+                            <span className="badge b-conf">確認済み</span>
                         )}
                         {!isDone && task.due_at && (
                             <span className={`due${late ? ' late' : ''}`}>
-                                〜{formatDue(task.due_at)}
+                                {formatDue(task.due_at)}まで
                             </span>
                         )}
                     </div>
@@ -171,7 +171,6 @@ const MournerView: React.FC<Props> = ({
     return (
         <div className="app">
             <header className="site-header">
-                <p className="brand">FIRST LEAF</p>
                 <h1>{caseSummary?.deceased_name ? `故 ${caseSummary.deceased_name} 様` : 'ご葬儀の進捗'}</h1>
                 {caseSummary?.funeral_date && (
                     <p>{formatDate(caseSummary.funeral_date)} 告別式</p>
@@ -193,7 +192,7 @@ const MournerView: React.FC<Props> = ({
                 ) : (
                     <div className="progress-card">
                         <div className="progress-top">
-                            <span>ご家族にお願いすること</span>
+                            <span>ご準備の状況</span>
                             <strong>{done}<small> / {counted.length}</small></strong>
                         </div>
                         <div className="bar"><i style={{ width: `${percent}%` }} /></div>
@@ -214,14 +213,14 @@ const MournerView: React.FC<Props> = ({
                             className={tab === 'now' ? 'on' : ''}
                             onClick={() => setTab('now')}
                         >
-                            いまお願いしたいこと（{pending.length}）
+                            お願いしたいこと {pending.length}
                         </button>
                         <button
                             type="button"
                             className={tab === 'all' ? 'on' : ''}
                             onClick={() => setTab('all')}
                         >
-                            すべて見る（{counted.length}）
+                            すべて {counted.length}
                         </button>
                     </div>
                 )}
@@ -236,10 +235,7 @@ const MournerView: React.FC<Props> = ({
                             <div className="empty-hero">
                                 <div className="mark">✓</div>
                                 <h2>いまお願いすることはありません</h2>
-                                <p>
-                                    ご家族にお願いする{counted.length}件はすべて確認済みです。<br />
-                                    次にお願いすることが出てきましたら、こちらに表示されます。
-                                </p>
+                                <p>新しくお願いすることが出てきましたら、こちらに表示されます。</p>
                             </div>
                         )
                     )
@@ -255,10 +251,7 @@ const MournerView: React.FC<Props> = ({
                 {paymentDone && (
                     <div className="cta">
                         <h2>葬儀後のお手続きもお手伝いします</h2>
-                        <p>
-                            年金の停止、保険の請求、各種名義変更など、<br />
-                            期限のあるお手続きが続きます。
-                        </p>
+                        <p>年金の停止や保険の請求など、期限のあるお手続きが続きます。</p>
                         <a href="tel:0467385617">お電話で相談する 0467-38-5617</a>
                     </div>
                 )}
@@ -272,7 +265,7 @@ const MournerView: React.FC<Props> = ({
 
             <footer className="site-footer">
                 <button type="button" className="link" onClick={onLogout}>ログアウト</button>
-                <p>ファーストリーフ／お問い合わせ <a href="tel:0467385617">0467-38-5617</a></p>
+                <p>お問い合わせ <a href="tel:0467385617">0467-38-5617</a></p>
             </footer>
         </div>
     );

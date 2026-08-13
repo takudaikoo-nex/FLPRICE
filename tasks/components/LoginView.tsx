@@ -28,9 +28,9 @@ const LoginView: React.FC<Props> = ({ onLoggedIn }) => {
     return (
         <div className="login-shell">
             <form className="login-card" onSubmit={handleSubmit}>
-                <p className="brand">FIRST LEAF</p>
+                <p className="brand">ファーストリーフ</p>
                 <h1>ご葬儀の進捗確認</h1>
-                <p className="lead">ご案内した ID とパスワードでお入りください</p>
+                <p className="lead">ID とパスワードをご入力ください</p>
 
                 <div className="field">
                     <label htmlFor="login-id">ID</label>
@@ -66,8 +66,8 @@ const LoginView: React.FC<Props> = ({ onLoggedIn }) => {
                 </button>
 
                 <p className="hint">
-                    ご不明な場合は担当者までお問い合わせください<br />
-                    <a href="tel:0467385617">0467-38-5617</a>（9:00〜18:00）
+                    ご不明な点はお電話ください<br />
+                    <a href="tel:0467385617">0467-38-5617</a>
                 </p>
             </form>
         </div>

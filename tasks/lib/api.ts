@@ -170,11 +170,12 @@ export const toUserMessage = (error: unknown): string => {
 
 export const formatYen = (value: number): string => `¥${(value ?? 0).toLocaleString()}`;
 
+/** 期日の表示。「8/7」より「8月7日」の方が読み違えにくい */
 export const formatDue = (iso: string | null): string => {
     if (!iso) return '';
     const d = new Date(iso);
     if (isNaN(d.getTime())) return '';
-    return `${d.getMonth() + 1}/${d.getDate()}`;
+    return `${d.getMonth() + 1}月${d.getDate()}日`;
 };
 
 export const formatDate = (value: string | null): string => {

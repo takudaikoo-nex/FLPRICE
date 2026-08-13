@@ -124,7 +124,7 @@ const StaffView: React.FC<Props> = ({
                                         {isOverdue(task) && <span className="badge b-late">遅延</span>}
                                     </div>
                                     <div className="t-meta">
-                                        {task.due_at && <span className="due">〜{formatDue(task.due_at)}</span>}
+                                        {task.due_at && <span className="due">{formatDue(task.due_at)}まで</span>}
                                         {task.assignee_name && <span className="due">{task.assignee_name}</span>}
                                     </div>
                                     {task.staff_note && <p className="t-note">{task.staff_note}</p>}

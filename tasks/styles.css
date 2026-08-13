@@ -1,6 +1,11 @@
 /* ================================================
    タスク進捗（喪主）サイト スタイル
-   供花サイト（flower/styles.css）と同じ配色でそろえている
+
+   ご高齢の方がスマートフォンで見ることを前提にしている。
+   ・本文は17px を基準にし、読ませたい文字は 1.1〜1.35rem
+   ・補助的な文字も 0.9rem を下回らせない
+   ・押す場所は指で確実に届く大きさ（44px 以上）にする
+   配色は供花サイト（flower/styles.css）と揃えている。
    ================================================ */
 
 :root {
@@ -12,9 +17,9 @@
     --bg: #F7F5F2;
     --surface: #FFFFFF;
     --text: #1A1A1A;
-    --muted: #6B7280;
+    --muted: #5C6470;
     --line: #E3DFD8;
-    --danger: #B91C1C;
+    --danger: #B3261E;
     --danger-soft: #FDECEC;
     --info: #1D4ED8;
     --info-soft: #EAF0FF;
@@ -31,15 +36,19 @@
 
 body {
     font-family: 'Zen Maru Gothic', sans-serif;
+    font-size: 17px;
     background: var(--bg);
     color: var(--text);
-    line-height: 1.7;
+    line-height: 1.8;
     -webkit-font-smoothing: antialiased;
+    /* 端末の文字サイズ設定を尊重する */
+    -webkit-text-size-adjust: 100%;
 }
 
 .boot {
     padding: 80px 20px;
     text-align: center;
+    font-size: 1.05rem;
     color: var(--muted);
 }
 
@@ -54,7 +63,7 @@ body {
 .site-header {
     background: var(--primary);
     color: #fff;
-    padding: 18px 20px;
+    padding: 22px 20px;
 }
 
 .site-header.is-staff {
@@ -62,21 +71,28 @@ body {
 }
 
 .site-header .brand {
-    font-size: 0.62rem;
-    opacity: 0.7;
-    letter-spacing: 0.12em;
+    font-size: 0.95rem;
+    opacity: 0.85;
+    margin-bottom: 2px;
+}
+
+.login-card .brand {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--muted);
+    margin-bottom: 4px;
 }
 
 .site-header h1 {
-    font-size: 1.05rem;
+    font-size: 1.35rem;
     font-weight: 700;
-    margin-top: 2px;
+    line-height: 1.5;
 }
 
 .site-header p {
-    font-size: 0.78rem;
-    opacity: 0.85;
-    margin-top: 3px;
+    font-size: 1rem;
+    opacity: 0.92;
+    margin-top: 6px;
 }
 
 .site-header .back {
@@ -84,28 +100,28 @@ body {
     border: 0;
     color: #fff;
     font-family: inherit;
-    font-size: 0.75rem;
-    opacity: 0.85;
-    padding: 0 0 6px;
+    font-size: 1rem;
+    opacity: 0.9;
+    padding: 4px 0 10px;
     cursor: pointer;
 }
 
 .page {
-    padding: 18px 20px 40px;
+    padding: 20px 20px 48px;
 }
 
 .lead {
-    font-size: 0.82rem;
+    font-size: 1.05rem;
     color: var(--muted);
 }
 
 .error {
     background: var(--danger-soft);
     color: var(--danger);
-    border-radius: 8px;
-    padding: 9px 12px;
-    font-size: 0.8rem;
-    margin-bottom: 14px;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 1rem;
+    margin-bottom: 16px;
 }
 
 /* ---------- ログイン ---------- */
@@ -121,59 +137,60 @@ body {
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 16px;
-    padding: 28px 22px;
+    padding: 32px 24px;
     width: 100%;
-    max-width: 380px;
+    max-width: 400px;
     text-align: center;
 }
 
-.login-card .brand {
-    font-size: 0.62rem;
-    letter-spacing: 0.12em;
-    color: var(--muted);
-}
-
 .login-card h1 {
-    font-size: 1.1rem;
+    font-size: 1.4rem;
     font-weight: 700;
     color: var(--primary);
-    margin-top: 4px;
 }
 
 .login-card .lead {
-    margin-bottom: 20px;
+    margin: 8px 0 24px;
+    font-size: 1rem;
 }
 
 .field {
     text-align: left;
-    margin-bottom: 14px;
+    margin-bottom: 18px;
 }
 
 .field label {
     display: block;
-    font-size: 0.72rem;
-    color: var(--muted);
-    margin-bottom: 5px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 7px;
 }
 
 .field input {
     width: 100%;
     font-family: inherit;
-    font-size: 1rem;
-    padding: 11px 12px;
-    border: 1px solid var(--line);
-    border-radius: 9px;
+    /* iOS で自動ズームさせないため 16px 以上を保つ */
+    font-size: 1.2rem;
+    padding: 14px;
+    border: 2px solid var(--line);
+    border-radius: 10px;
     background: #FCFBF9;
+}
+
+.field input:focus {
+    outline: none;
+    border-color: var(--primary);
 }
 
 .btn {
     width: 100%;
     font-family: inherit;
-    font-size: 0.9rem;
+    font-size: 1.15rem;
     font-weight: 700;
-    padding: 12px;
+    padding: 16px;
     border: 0;
-    border-radius: 9px;
+    border-radius: 10px;
     background: var(--primary);
     color: #fff;
     cursor: pointer;
@@ -185,10 +202,10 @@ body {
 }
 
 .hint {
-    font-size: 0.72rem;
+    font-size: 1rem;
     color: var(--muted);
-    margin-top: 16px;
-    line-height: 1.8;
+    margin-top: 20px;
+    line-height: 1.9;
 }
 
 .hint a,
@@ -202,37 +219,38 @@ body {
     background: var(--primary);
     color: #fff;
     border-radius: var(--radius);
-    padding: 16px 18px;
+    padding: 18px 20px;
 }
 
 .progress-top {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
+    gap: 12px;
 }
 
 .progress-top span {
-    font-size: 0.72rem;
-    opacity: 0.8;
-    letter-spacing: 0.08em;
+    font-size: 1rem;
+    opacity: 0.92;
 }
 
 .progress-top strong {
-    font-size: 1.5rem;
+    font-size: 2rem;
     font-weight: 700;
+    white-space: nowrap;
 }
 
 .progress-top strong small {
-    font-size: 0.8rem;
+    font-size: 1.1rem;
     font-weight: 400;
-    opacity: 0.75;
+    opacity: 0.8;
 }
 
 .bar {
-    height: 8px;
+    height: 12px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.22);
-    margin-top: 10px;
+    background: rgba(255, 255, 255, 0.25);
+    margin-top: 12px;
     overflow: hidden;
 }
 
@@ -244,43 +262,73 @@ body {
 }
 
 .next {
-    margin-top: 12px;
-    background: rgba(255, 255, 255, 0.12);
-    border-radius: 8px;
-    padding: 9px 12px;
-    font-size: 0.82rem;
+    margin-top: 16px;
+    background: rgba(255, 255, 255, 0.14);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 1.15rem;
+    font-weight: 500;
 }
 
 .next span {
     display: block;
-    font-size: 0.65rem;
-    opacity: 0.75;
-    letter-spacing: 0.08em;
+    font-size: 0.95rem;
+    font-weight: 400;
+    opacity: 0.85;
+    margin-bottom: 2px;
 }
 
 .done-hero {
     background: var(--ok-soft);
     border: 1px solid #C7E5D6;
     border-radius: var(--radius);
-    padding: 18px;
+    padding: 24px 20px;
     text-align: center;
 }
 
 .done-hero .mark {
-    font-size: 1.6rem;
+    font-size: 2rem;
     color: var(--ok);
+    line-height: 1.2;
 }
 
 .done-hero h2 {
-    font-size: 0.98rem;
+    font-size: 1.2rem;
     font-weight: 700;
     color: var(--ok);
+    margin-top: 6px;
 }
 
 .done-hero p {
-    font-size: 0.78rem;
+    font-size: 1rem;
     color: var(--muted);
-    margin-top: 4px;
+    margin-top: 8px;
+}
+
+/* ---------- 表示の切り替え ---------- */
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.tabs button {
+    flex: 1;
+    font-family: inherit;
+    font-size: 1.05rem;
+    font-weight: 700;
+    padding: 14px 8px;
+    border: 2px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--muted);
+    cursor: pointer;
+}
+
+.tabs button.on {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
 }
 
 /* ---------- セクション ---------- */
@@ -289,21 +337,20 @@ body {
 }
 
 .section-title {
-    font-size: 0.8rem;
+    font-size: 1.05rem;
     font-weight: 700;
     color: var(--primary);
-    letter-spacing: 0.06em;
-    padding-bottom: 7px;
+    padding-bottom: 8px;
     border-bottom: 2px solid var(--line);
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 /* ---------- タスク ---------- */
 .task {
     display: flex;
-    gap: 11px;
-    padding: 13px 0;
-    border-bottom: 1px dashed var(--line);
+    gap: 14px;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--line);
 }
 
 .task:last-child {
@@ -312,13 +359,13 @@ body {
 
 .check {
     flex: none;
-    width: 24px;
-    height: 24px;
-    border-radius: 7px;
-    border: 2px solid #CFCAC0;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    border: 2px solid #B9B3A8;
     background: #fff;
     margin-top: 2px;
-    font-size: 0.8rem;
+    font-size: 1.2rem;
     color: #fff;
     cursor: pointer;
     line-height: 1;
@@ -358,20 +405,20 @@ body {
     background: none;
     border: 0;
     font-family: inherit;
-    font-size: 0.9rem;
+    font-size: 1.2rem;
     font-weight: 500;
     color: var(--text);
-    padding: 0;
+    padding: 2px 0;
     cursor: pointer;
-    line-height: 1.5;
+    line-height: 1.6;
 }
 
 .t-title-plain {
-    font-size: 0.9rem;
+    font-size: 1.1rem;
     font-weight: 500;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     flex-wrap: wrap;
 }
 
@@ -382,22 +429,22 @@ body {
 .t-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
     align-items: center;
-    margin-top: 5px;
+    margin-top: 6px;
 }
 
 .t-note {
-    font-size: 0.74rem;
+    font-size: 1rem;
     color: var(--muted);
-    margin-top: 5px;
+    margin-top: 8px;
 }
 
 .badge {
     display: inline-block;
-    font-size: 0.66rem;
+    font-size: 0.95rem;
     font-weight: 700;
-    padding: 2px 8px;
+    padding: 3px 12px;
     border-radius: 999px;
     line-height: 1.6;
     white-space: nowrap;
@@ -407,11 +454,11 @@ body {
 .b-conf { background: var(--info-soft); color: var(--info); }
 .b-late { background: var(--danger-soft); color: var(--danger); }
 .b-fl { background: var(--primary-soft); color: var(--primary); }
-.b-mo { background: var(--accent-soft); color: #8a6508; }
+.b-mo { background: var(--accent-soft); color: #7A5A07; }
 .b-gray { background: #F1F0EC; color: var(--muted); }
 
 .due {
-    font-size: 0.7rem;
+    font-size: 1rem;
     color: var(--muted);
 }
 
@@ -422,18 +469,18 @@ body {
 
 /* ---------- タスクの詳細 ---------- */
 .t-detail {
-    margin-top: 9px;
+    margin-top: 12px;
     background: #FBFAF8;
     border: 1px solid var(--line);
-    border-radius: 9px;
-    padding: 11px 12px;
-    font-size: 0.76rem;
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 1rem;
 }
 
 .t-detail dl {
     display: grid;
     grid-template-columns: auto 1fr;
-    gap: 4px 12px;
+    gap: 6px 12px;
 }
 
 .t-detail dt {
@@ -446,30 +493,30 @@ body {
 }
 
 .t-detail .amount {
-    font-size: 1.05rem;
+    font-size: 1.5rem;
     color: var(--primary);
     font-weight: 700;
 }
 
 .t-detail .bank {
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px dashed var(--line);
-    line-height: 1.6;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+    line-height: 1.8;
     white-space: pre-wrap;
 }
 
 .acc-btn {
     width: 100%;
-    margin-top: 9px;
+    margin-top: 12px;
     font-family: inherit;
-    font-size: 0.75rem;
+    font-size: 1.05rem;
     font-weight: 700;
     color: var(--primary);
     background: #fff;
-    border: 1px solid var(--line);
-    border-radius: 7px;
-    padding: 7px;
+    border: 2px solid var(--line);
+    border-radius: 10px;
+    padding: 12px;
     cursor: pointer;
 }
 
@@ -485,59 +532,89 @@ body {
 table.bill {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.74rem;
-    margin-top: 8px;
+    font-size: 1rem;
+    margin-top: 12px;
 }
 
 table.bill td {
-    padding: 5px 0;
-    border-bottom: 1px dotted var(--line);
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line);
 }
 
 table.bill td:last-child {
     text-align: right;
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    padding-left: 12px;
 }
 
 table.bill tr.sum td {
     border-bottom: 0;
-    border-top: 1px solid var(--line);
+    border-top: 2px solid var(--line);
     font-weight: 700;
     color: var(--primary);
-    padding-top: 7px;
+    padding-top: 10px;
+}
+
+/* ---------- お願いすることが無いとき ---------- */
+.empty-hero {
+    margin-top: 20px;
+    background: var(--ok-soft);
+    border: 1px solid #C7E5D6;
+    border-radius: var(--radius);
+    padding: 28px 20px;
+    text-align: center;
+}
+
+.empty-hero .mark {
+    font-size: 2rem;
+    color: var(--ok);
+    line-height: 1.2;
+}
+
+.empty-hero h2 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--ok);
+    margin-top: 6px;
+}
+
+.empty-hero p {
+    font-size: 1rem;
+    color: var(--muted);
+    margin-top: 10px;
 }
 
 /* ---------- 葬儀後のご案内 ---------- */
 .cta {
-    margin-top: 26px;
+    margin-top: 28px;
     background: var(--primary);
     color: #fff;
     border-radius: var(--radius);
-    padding: 18px;
+    padding: 22px 20px;
     text-align: center;
 }
 
 .cta h2 {
-    font-size: 0.92rem;
+    font-size: 1.2rem;
     font-weight: 700;
 }
 
 .cta p {
-    font-size: 0.76rem;
-    opacity: 0.85;
-    margin-top: 6px;
-    line-height: 1.8;
+    font-size: 1rem;
+    opacity: 0.92;
+    margin-top: 8px;
 }
 
 .cta a {
     display: block;
-    margin-top: 12px;
+    margin-top: 16px;
     background: #fff;
     color: var(--primary);
     font-weight: 700;
-    font-size: 0.86rem;
-    padding: 11px;
-    border-radius: 9px;
+    font-size: 1.15rem;
+    padding: 16px;
+    border-radius: 10px;
     text-decoration: none;
 }
 
@@ -549,30 +626,30 @@ table.bill tr.sum td {
     background: #fff;
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    padding: 13px 15px;
-    margin-bottom: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
     font-family: inherit;
     cursor: pointer;
 }
 
 .case-title {
     display: block;
-    font-size: 0.9rem;
+    font-size: 1.1rem;
     font-weight: 700;
 }
 
 .case-sub {
     display: block;
-    font-size: 0.73rem;
+    font-size: 0.95rem;
     color: var(--muted);
 }
 
 .staff-task {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px 0;
-    border-bottom: 1px dashed var(--line);
+    gap: 14px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--line);
 }
 
 .staff-task:last-child {
@@ -581,23 +658,27 @@ table.bill tr.sum td {
 
 .status-select {
     flex: none;
-    width: 96px;
-    padding: 7px 8px;
-    border: 1px solid var(--line);
-    border-radius: 8px;
+    width: 116px;
+    padding: 12px 10px;
+    border: 2px solid var(--line);
+    border-radius: 10px;
     background: #fff;
     font-family: inherit;
-    font-size: 0.8rem;
+    font-size: 1rem;
     cursor: pointer;
 }
 
 /* ---------- フッター ---------- */
 .site-footer {
     border-top: 1px solid var(--line);
-    padding: 18px 20px 32px;
+    padding: 24px 20px 40px;
     text-align: center;
-    font-size: 0.74rem;
+    font-size: 1rem;
     color: var(--muted);
+}
+
+.site-footer p {
+    margin-top: 14px;
 }
 
 .site-footer .link {
@@ -605,63 +686,8 @@ table.bill tr.sum td {
     border: 0;
     color: var(--muted);
     font-family: inherit;
-    font-size: 0.74rem;
+    font-size: 1rem;
     text-decoration: underline;
     cursor: pointer;
-    margin-bottom: 8px;
-}
-
-/* ---------- 表示の切り替え ---------- */
-.tabs {
-    display: flex;
-    gap: 6px;
-    margin-top: 18px;
-}
-
-.tabs button {
-    flex: 1;
-    font-family: inherit;
-    font-size: 0.78rem;
-    font-weight: 700;
-    padding: 9px 6px;
-    border: 1px solid var(--line);
-    border-radius: 9px;
-    background: #fff;
-    color: var(--muted);
-    cursor: pointer;
-}
-
-.tabs button.on {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: #fff;
-}
-
-/* ---------- お願いすることが無いとき ---------- */
-.empty-hero {
-    margin-top: 18px;
-    background: var(--ok-soft);
-    border: 1px solid #C7E5D6;
-    border-radius: var(--radius);
-    padding: 22px 18px;
-    text-align: center;
-}
-
-.empty-hero .mark {
-    font-size: 1.6rem;
-    color: var(--ok);
-}
-
-.empty-hero h2 {
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: var(--ok);
-    margin-top: 2px;
-}
-
-.empty-hero p {
-    font-size: 0.76rem;
-    color: var(--muted);
-    margin-top: 8px;
-    line-height: 1.8;
+    padding: 8px 12px;
 }
