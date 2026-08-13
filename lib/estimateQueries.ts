@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { EstimateStatus } from './estimateStatus';
+import { stripHonorific } from './format';
 
 export interface EstimateSummary {
     id: number;
@@ -33,9 +34,10 @@ const UNKNOWN_CUSTOMER = '（顧客情報なし）';
  * 顧客レコードに紐付いていない見積の表示に使う。
  */
 const deriveCustomerName = (info: any): string => {
-    const candidates = [info?.applicantName, info?.chiefMournerName, info?.deceasedName];
-    const found = candidates.find(name => typeof name === 'string' && name.trim().length > 0);
-    return found ? found.trim() : UNKNOWN_CUSTOMER;
+    const found = [info?.applicantName, info?.chiefMournerName, info?.deceasedName]
+        .map(name => (typeof name === 'string' ? stripHonorific(name) : ''))
+        .find(name => name.length > 0);
+    return found || UNKNOWN_CUSTOMER;
 };
 
 export const fetchEstimateSummaries = async (limit = 500): Promise<EstimateSummary[]> => {

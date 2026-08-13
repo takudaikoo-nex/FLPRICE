@@ -63,3 +63,22 @@ export const downloadCsv = (filename: string, rows: (string | number)[][]) => {
     a.click();
     URL.revokeObjectURL(url);
 };
+
+/**
+ * 氏名の末尾に付いた敬称を落とす。
+ * 「様」を含んだまま登録すると、表示側でも「様」を付けるため二重になり、
+ * 同じご葬家が別の顧客として重複してしまう。
+ *
+ *   「山田 太郎 様」→「山田 太郎」
+ *   「山田 太郎 様 様」→「山田 太郎」
+ */
+export const stripHonorific = (name: string): string => {
+    let result = (name ?? '').trim();
+
+    // 間の空白ごと、末尾から繰り返し落とす
+    const honorific = /[\s　]*(様|さま|サマ|ｻﾏ)$/;
+    while (honorific.test(result)) {
+        result = result.replace(honorific, '').trimEnd();
+    }
+    return result;
+};

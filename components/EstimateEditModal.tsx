@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Customer } from '../types';
 import { supabase } from '../lib/supabase';
+import { stripHonorific } from '../lib/format';
 import { generateCaseTasks } from '../lib/caseTasks';
 import { linkEstimateToCustomer, updateEstimateCustomerInfo } from '../lib/customers';
 import {
@@ -172,6 +173,7 @@ const EstimateEditModal: React.FC<Props> = ({ estimateId, customers, onClose, on
                                     type="text"
                                     value={info.deceasedName}
                                     onChange={e => update({ deceasedName: e.target.value })}
+                                    onBlur={e => update({ deceasedName: stripHonorific(e.target.value) })}
                                 />
                             </div>
                             <div className="fl-field">
@@ -193,6 +195,7 @@ const EstimateEditModal: React.FC<Props> = ({ estimateId, customers, onClose, on
                                     type="text"
                                     value={info.applicantName}
                                     onChange={e => update({ applicantName: e.target.value })}
+                                    onBlur={e => update({ applicantName: stripHonorific(e.target.value) })}
                                 />
                             </div>
                             <div className="fl-field">
@@ -202,6 +205,7 @@ const EstimateEditModal: React.FC<Props> = ({ estimateId, customers, onClose, on
                                     type="text"
                                     value={info.chiefMournerName}
                                     onChange={e => update({ chiefMournerName: e.target.value })}
+                                    onBlur={e => update({ chiefMournerName: stripHonorific(e.target.value) })}
                                 />
                             </div>
                         </div>

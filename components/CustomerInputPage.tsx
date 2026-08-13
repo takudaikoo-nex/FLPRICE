@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { stripHonorific } from '../lib/format';
 import { CustomerInfo } from '../types';
 import { DateInput, DateMode } from './DateInput';
 import { ArrowLeft, Printer, Save } from 'lucide-react';
@@ -139,6 +140,16 @@ const CustomerInputPage: React.FC<CustomerInputPageProps> = ({ onBack, onSaveAnd
         }
     }, [initialData]);
 
+    /**
+     * 氏名欄から離れたときに末尾の「様」を落とす。
+     * 表示側で「様」を付けるため、含めたままだと二重になり顧客も重複する。
+     */
+    const handleNameBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        const cleaned = stripHonorific(value);
+        if (cleaned !== value) setFormData(prev => ({ ...prev, [name]: cleaned }));
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData(prev => {
@@ -250,6 +261,7 @@ const CustomerInputPage: React.FC<CustomerInputPageProps> = ({ onBack, onSaveAnd
                                     name="deceasedName"
                                     value={formData.deceasedName}
                                     onChange={handleChange}
+                                    onBlur={handleNameBlur}
                                     placeholder="例: 佐藤 太郎"
                                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all"
                                 />
@@ -325,6 +337,7 @@ const CustomerInputPage: React.FC<CustomerInputPageProps> = ({ onBack, onSaveAnd
                                     name="applicantName"
                                     value={formData.applicantName}
                                     onChange={handleChange}
+                                    onBlur={handleNameBlur}
                                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all"
                                 />
                             </div>
@@ -402,6 +415,7 @@ const CustomerInputPage: React.FC<CustomerInputPageProps> = ({ onBack, onSaveAnd
                                     name="chiefMournerName"
                                     value={formData.chiefMournerName}
                                     onChange={handleChange}
+                                    onBlur={handleNameBlur}
                                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all"
                                 />
                             </div>

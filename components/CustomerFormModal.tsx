@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { stripHonorific } from '../lib/format';
 import { Download } from 'lucide-react';
 import { Customer } from '../types';
 import { CustomerInput, emptyCustomerInput, createCustomer, updateCustomer } from '../lib/customers';
@@ -36,7 +37,7 @@ const CustomerFormModal: React.FC<Props> = ({ customer, sourceEstimate, onClose,
         if (!sourceEstimate) return;
         setForm({
             ...form,
-            name: form.name.trim() || sourceEstimate.customerName,
+            name: stripHonorific(form.name) || sourceEstimate.customerName,
             phone: sourceEstimate.phone || form.phone,
             postal_code: sourceEstimate.postalCode || form.postal_code,
             address: sourceEstimate.address || form.address,
@@ -91,6 +92,7 @@ const CustomerFormModal: React.FC<Props> = ({ customer, sourceEstimate, onClose,
                             type="text"
                             value={form.name}
                             onChange={e => update({ name: e.target.value })}
+                            onBlur={e => update({ name: stripHonorific(e.target.value) })}
                             autoFocus
                         />
                     </div>

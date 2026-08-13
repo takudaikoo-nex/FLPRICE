@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { stripHonorific } from './format';
 import { Customer } from '../types';
 
 export type CustomerInput = Omit<Customer, 'id' | 'customer_no' | 'created_at'>;
@@ -28,7 +29,7 @@ export const fetchCustomers = async (): Promise<Customer[]> => {
 export const createCustomer = async (input: CustomerInput): Promise<Customer> => {
     const { data, error } = await supabase
         .from('customers')
-        .insert([{ ...input, name: input.name.trim() }])
+        .insert([{ ...input, name: stripHonorific(input.name) }])
         .select()
         .single();
 
@@ -39,7 +40,7 @@ export const createCustomer = async (input: CustomerInput): Promise<Customer> =>
 export const updateCustomer = async (id: string, input: CustomerInput): Promise<void> => {
     const { error } = await supabase
         .from('customers')
-        .update({ ...input, name: input.name.trim() })
+        .update({ ...input, name: stripHonorific(input.name) })
         .eq('id', id);
 
     if (error) throw error;
@@ -80,8 +81,9 @@ export const linkEstimateToCustomer = async (
  */
 export const deriveCustomerNameFromInfo = (info: any): string | null => {
     const found = [info?.applicantName, info?.chiefMournerName, info?.deceasedName]
-        .find(name => typeof name === 'string' && name.trim().length > 0);
-    return found ? found.trim() : null;
+        .map(name => (typeof name === 'string' ? stripHonorific(name) : ''))
+        .find(name => name.length > 0);
+    return found || null;
 };
 
 /**
