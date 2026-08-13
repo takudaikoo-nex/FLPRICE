@@ -2066,3 +2066,16 @@ select {
   white-space: pre-wrap;
   margin: 0;
 }
+
+.fl-amount-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.fl-amount-note {
+  font-size: 0.68rem;
+  color: #9ca3af;
+  white-space: nowrap;
+}

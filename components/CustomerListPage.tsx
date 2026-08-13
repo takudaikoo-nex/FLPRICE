@@ -14,6 +14,23 @@ interface Props {
     onOpenEstimate: (id: number) => void;
 }
 
+/**
+ * その案件で最後に発行した帳票の名前。
+ * 顧客一覧の金額が「いつ時点のいくらか」を示すために使う。
+ */
+const lastDocumentLabel = (estimate: EstimateSummary): string => {
+    const issued = [
+        { label: '領収書', at: estimate.receiptIssuedAt },
+        { label: '請求書', at: estimate.invoiceIssuedAt },
+        { label: '見積書', at: estimate.quoteIssuedAt },
+    ].filter((d): d is { label: string; at: string } => !!d.at);
+
+    if (issued.length === 0) return '';
+
+    issued.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+    return issued[0].label;
+};
+
 const CustomerListPage: React.FC<Props> = ({ onBack, onOpenEstimate }) => {
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [estimates, setEstimates] = useState<EstimateSummary[]>([]);
@@ -308,7 +325,8 @@ const CustomerListPage: React.FC<Props> = ({ onBack, onOpenEstimate }) => {
                 <div className="fl-card">
                     {visibleCustomers.map(customer => {
                         const list = estimatesByCustomer.get(customer.id) || [];
-                        const total = list.reduce((sum, e) => sum + e.totalPrice, 0);
+                        // 見積は新しい順に並んでいるため、先頭が最新の案件
+                        const latest = list[0];
 
                         return (
                             <div key={customer.id} className="fl-row">
@@ -328,7 +346,17 @@ const CustomerListPage: React.FC<Props> = ({ onBack, onOpenEstimate }) => {
                                     </span>
                                 </button>
                                 <div className="fl-row-actions">
-                                    <span className="fl-amount">¥{total.toLocaleString()}</span>
+                                    <span className="fl-amount-cell">
+                                        <span className="fl-amount">
+                                            ¥{(latest?.totalPrice ?? 0).toLocaleString()}
+                                        </span>
+                                        {latest && (
+                                            <span className="fl-amount-note">
+                                                最新 #{latest.id}
+                                                {lastDocumentLabel(latest) && ` / ${lastDocumentLabel(latest)}`}
+                                            </span>
+                                        )}
+                                    </span>
                                     <button
                                         type="button"
                                         className="fl-icon-btn"
