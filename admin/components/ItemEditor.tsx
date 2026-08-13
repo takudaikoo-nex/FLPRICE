@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Item, Plan, ItemType } from '../../types';
+import { Item, Plan, ItemType, DropdownOption } from '../../types';
 import { ITEM_IMAGE_BUCKET, storageImageUrl, uploadImages, removeImages } from '../../lib/storage';
-import { ArrowLeft, Plus, Trash2, ImagePlus, X } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, ImagePlus, X, Copy } from 'lucide-react';
 import { ITEM_TYPE_HINT, hasOptions } from './itemTypes';
 
 interface ItemEditorProps {
@@ -38,12 +38,18 @@ const ItemEditor: React.FC<ItemEditorProps> = ({ item, isNew, onSave, onCancel, 
         }
     };
 
+    /** コピーで同じ画像を共有している場合があるので、どこかで使われていればファイルは残す */
+    const isPathStillUsed = (state: Item, path: string) =>
+        (state.imagePaths || []).includes(path) ||
+        (state.options || []).some(o => (o.imagePaths || []).includes(path));
+
     const handleRemoveItemImage = async (path: string) => {
-        setEditingItem({
+        const next = {
             ...editingItem,
             imagePaths: (editingItem.imagePaths || []).filter(p => p !== path),
-        });
-        await removeImages(ITEM_IMAGE_BUCKET, [path]);
+        };
+        setEditingItem(next);
+        if (!isPathStillUsed(next, path)) await removeImages(ITEM_IMAGE_BUCKET, [path]);
     };
 
     /** グレード（選択肢）ごとの画像を追加する */
@@ -72,8 +78,33 @@ const ItemEditor: React.FC<ItemEditorProps> = ({ item, isNew, onSave, onCancel, 
             ...newOptions[index],
             imagePaths: (newOptions[index].imagePaths || []).filter(p => p !== path),
         };
+        const next = { ...editingItem, options: newOptions };
+        setEditingItem(next);
+        if (!isPathStillUsed(next, path)) await removeImages(ITEM_IMAGE_BUCKET, [path]);
+    };
+
+    const optionLabel = (opt: DropdownOption) => opt.name || '名称未設定の選択肢';
+
+    /** 選択肢を複製して、コピー元のすぐ下に置く */
+    const handleCopyOption = (index: number) => {
+        const options = editingItem.options || [];
+        const source = options[index];
+        if (!confirm(`「${optionLabel(source)}」をコピーしますか？\nコピーはすぐ下に追加されます。`)) return;
+
+        const copied: DropdownOption = {
+            ...JSON.parse(JSON.stringify(source)),
+            id: `opt_${Date.now().toString(36)}`,
+            name: source.name ? `${source.name}のコピー` : '',
+        };
+        const newOptions = [...options];
+        newOptions.splice(index + 1, 0, copied);
         setEditingItem({ ...editingItem, options: newOptions });
-        await removeImages(ITEM_IMAGE_BUCKET, [path]);
+    };
+
+    const handleDeleteOption = (index: number) => {
+        const options = editingItem.options || [];
+        if (!confirm(`「${optionLabel(options[index])}」を削除しますか？`)) return;
+        setEditingItem({ ...editingItem, options: options.filter((_, i) => i !== index) });
     };
 
     return (
@@ -259,7 +290,7 @@ const ItemEditor: React.FC<ItemEditorProps> = ({ item, isNew, onSave, onCancel, 
                                         <p className="text-xs text-emerald-600">※ 選択肢がありません。追加ボタンを押して追加してください。</p>
                                     ) : (
                                         (editingItem.options || []).map((opt, idx) => (
-                                            <div key={idx} className="bg-white p-2 rounded border border-emerald-100 shadow-sm">
+                                            <div key={opt.id || idx} className="bg-white p-2 rounded border border-emerald-100 shadow-sm">
                                               <div className="flex gap-2 items-center">
                                                 <input
                                                     type="text"
@@ -287,10 +318,16 @@ const ItemEditor: React.FC<ItemEditorProps> = ({ item, isNew, onSave, onCancel, 
                                                 </div>
                                                 <button
                                                     type="button"
-                                                    onClick={() => {
-                                                        const newOptions = (editingItem.options || []).filter((_, i) => i !== idx);
-                                                        setEditingItem({ ...editingItem, options: newOptions });
-                                                    }}
+                                                    onClick={() => handleCopyOption(idx)}
+                                                    title="コピー（すぐ下に追加されます）"
+                                                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                                >
+                                                    <Copy size={16} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDeleteOption(idx)}
+                                                    title="削除"
                                                     className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                                                 >
                                                     <Trash2 size={16} />

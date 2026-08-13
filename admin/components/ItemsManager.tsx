@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Item, ItemType, Plan } from '../../types';
-import { Edit, Trash2, Plus, Search, GripVertical } from 'lucide-react';
+import { Edit, Trash2, Plus, Search, GripVertical, Copy } from 'lucide-react';
 import { ITEM_TYPE_LABEL } from './itemTypes';
 import ItemEditor from './ItemEditor';
 import { convertDbItem, convertItemToDb, convertDbPlan } from '../../lib/converter';
@@ -26,11 +26,12 @@ import { CSS } from '@dnd-kit/utilities';
 interface SortableRowProps {
     item: Item;
     onEdit: (item: Item) => void;
-    onDelete: (id: number) => void;
+    onCopy: (item: Item) => void;
+    onDelete: (item: Item) => void;
     isFiltered: boolean;
 }
 
-const SortableRow: React.FC<SortableRowProps> = ({ item, onEdit, onDelete, isFiltered }) => {
+const SortableRow: React.FC<SortableRowProps> = ({ item, onEdit, onCopy, onDelete, isFiltered }) => {
     const {
         attributes,
         listeners,
@@ -107,12 +108,21 @@ const SortableRow: React.FC<SortableRowProps> = ({ item, onEdit, onDelete, isFil
                 <div className="flex justify-center gap-2">
                     <button
                         onClick={() => onEdit(item)}
+                        title="編集"
                         className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
                     >
                         <Edit size={18} />
                     </button>
                     <button
-                        onClick={() => onDelete(item.id)}
+                        onClick={() => onCopy(item)}
+                        title="コピー（すぐ下に追加されます）"
+                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    >
+                        <Copy size={18} />
+                    </button>
+                    <button
+                        onClick={() => onDelete(item)}
+                        title="削除"
                         className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                     >
                         <Trash2 size={18} />
@@ -187,6 +197,17 @@ const ItemsManager: React.FC = () => {
         }
     };
 
+    /** 並んでいる順に display_order を 1 から振り直す */
+    const persistOrder = async (ordered: Item[]) => {
+        for (const [idx, item] of ordered.entries()) {
+            const { error } = await supabase
+                .from('items')
+                .update({ display_order: idx + 1 })
+                .eq('id', item.id);
+            if (error) throw error;
+        }
+    };
+
     const handleDragEnd = async (event: DragEndEvent) => {
         const { active, over } = event;
         if (!over || active.id === over.id) return;
@@ -199,18 +220,7 @@ const ItemsManager: React.FC = () => {
         setItems(reordered);
 
         try {
-            const updates = reordered.map((item, idx) => ({
-                id: item.id,
-                display_order: idx + 1,
-            }));
-
-            for (const u of updates) {
-                const { error } = await supabase
-                    .from('items')
-                    .update({ display_order: u.display_order })
-                    .eq('id', u.id);
-                if (error) throw error;
-            }
+            await persistOrder(reordered);
         } catch (error) {
             console.error('Error reordering items:', error);
             alert('並び替えに失敗しました');
@@ -218,14 +228,53 @@ const ItemsManager: React.FC = () => {
         }
     };
 
-    const handleDelete = async (id: number) => {
-        if (!confirm('本当に削除しますか？この操作は取り消せません。')) return;
+    /** アイテムを複製して、コピー元のすぐ下に置く */
+    const handleCopy = async (item: Item) => {
+        if (!confirm(`「${item.name}」をコピーしますか？\nコピーはすぐ下の順序に追加されます。`)) return;
+
+        const index = items.findIndex(i => i.id === item.id);
+        if (index === -1) return;
+
+        const maxId = items.reduce((max, i) => Math.max(max, i.id), 0);
+        const copied: Item = {
+            ...JSON.parse(JSON.stringify(item)),
+            id: maxId + 1,
+            name: `${item.name}のコピー`,
+            displayOrder: index + 2,
+            // 選択肢のIDはアイテムごとに一意にしておく
+            options: item.options?.map((opt, i) => ({
+                ...opt,
+                id: `opt_${Date.now().toString(36)}_${i}`,
+            })),
+        };
+
+        try {
+            setLoading(true);
+            const { error } = await supabase.from('items').insert([convertItemToDb(copied)]);
+            if (error) throw error;
+
+            const reordered = [...items];
+            reordered.splice(index + 1, 0, copied);
+            await persistOrder(reordered);
+
+            await fetchData();
+        } catch (error: any) {
+            console.error('Error copying item:', error);
+            alert(`コピーに失敗しました: ${error.message}`);
+            await fetchData();
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDelete = async (item: Item) => {
+        if (!confirm(`「${item.name}」を削除しますか？この操作は取り消せません。`)) return;
 
         try {
             const { error } = await supabase
                 .from('items')
                 .delete()
-                .eq('id', id);
+                .eq('id', item.id);
 
             if (error) throw error;
             await fetchData();
@@ -360,7 +409,7 @@ const ItemsManager: React.FC = () => {
                                     <th className="p-4 w-32 text-right">初期額</th>
                                     <th className="p-4 w-48">対象プラン</th>
                                     <th className="p-4 w-48">含むプラン</th>
-                                    <th className="p-4 w-24 text-center">操作</th>
+                                    <th className="p-4 w-32 text-center">操作</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -369,6 +418,7 @@ const ItemsManager: React.FC = () => {
                                         key={item.id}
                                         item={item}
                                         onEdit={startEdit}
+                                        onCopy={handleCopy}
                                         onDelete={handleDelete}
                                         isFiltered={isFiltered}
                                     />
