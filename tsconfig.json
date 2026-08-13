@@ -34,6 +34,8 @@
     "supabase/functions/send-order-mail",
     "supabase/functions/task-public",
     "supabase/functions/flower-public",
-    "supabase/functions/_shared/smtp.ts"
+    "supabase/functions/stripe-webhook",
+    "supabase/functions/_shared/smtp.ts",
+    "supabase/functions/_shared/orderMails.ts"
   ]
 }

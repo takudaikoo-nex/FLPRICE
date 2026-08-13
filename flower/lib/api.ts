@@ -61,6 +61,10 @@ export interface OrderResult {
     discount: number;
     tax: number;
     total: number;
+    /** カード払いのときだけ返る。ブラウザでのカード入力に使う */
+    client_secret?: string;
+    /** カード払いのときだけ返る Stripe の公開可能キー */
+    publishable_key?: string;
 }
 
 export interface CompanyInfo {
@@ -156,6 +160,7 @@ const ERROR_MESSAGES: Record<string, string> = {
     ORDER_CLOSED: '申し訳ありません。この葬儀の供花受付は終了しました。',
     DEADLINE_PASSED: '申し訳ありません。受付締切を過ぎたため、お申し込みいただけません。',
     CARD_DISABLED: '現在クレジットカード決済はご利用いただけません。請求書でのお支払いをお選びください。',
+    payment_setup_failed: '決済の準備に失敗しました。恐れ入りますが、請求書でのお支払いをお選びいただくか、下記までご連絡ください。',
     INVALID_PAYMENT_METHOD: 'お支払い方法をお選びください。',
     INVALID_ORDERER: 'お名前・電話番号・メールアドレスをご入力ください。',
     EMPTY_ITEMS: 'お供物が選択されていません。',

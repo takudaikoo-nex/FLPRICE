@@ -14,8 +14,9 @@ import CompleteView from './components/CompleteView';
 import Notice from './components/Notice';
 import SiteFooter from './components/SiteFooter';
 import LegalPage from './components/LegalPage';
+import PaymentView from './components/PaymentView';
 
-type Step = 'catalog' | 'form' | 'confirm' | 'complete';
+type Step = 'catalog' | 'form' | 'confirm' | 'payment' | 'complete';
 
 const emptyOrderer: OrdererInput = {
     name: '', kana: '', company: '', phone: '', email: '',
@@ -113,9 +114,11 @@ const App: React.FC = () => {
                     DEMO_FUNERAL.tax_rate,
                 )
                 : await submitOrder(token!, orderer, lines, paymentMethod);
-            // クレジットカードの場合はP3でStripeの決済画面へ遷移させる
+
             setResult(orderResult);
-            setStep('complete');
+            // カード払いは注文を作ったうえで決済へ進む。
+            // 入金の確定・メール送信は決済後に Stripe の Webhook 側で行う。
+            setStep(orderResult.client_secret ? 'payment' : 'complete');
         } catch (error) {
             console.error('Failed to submit order:', error);
             setSubmitError(toUserMessage(error));
@@ -242,6 +245,16 @@ const App: React.FC = () => {
                         error={submitError}
                         onBack={() => setStep('form')}
                         onSubmit={handleSubmit}
+                    />
+                )}
+
+                {step === 'payment' && result?.client_secret && result?.publishable_key && (
+                    <PaymentView
+                        clientSecret={result.client_secret}
+                        publishableKey={result.publishable_key}
+                        total={result.total}
+                        orderNumber={result.order_number}
+                        onPaid={() => setStep('complete')}
                     />
                 )}
 

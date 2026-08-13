@@ -11,6 +11,11 @@ verify_jwt = false
 # 参照できるのは「トークンを知っている葬儀の情報」と「公開中の商品」のみ。
 verify_jwt = false
 
+[functions.stripe-webhook]
+# Stripe から直接呼ばれるため Authorization ヘッダが付かない。
+# 代わりに Stripe-Signature を関数の中で必ず検証している。
+verify_jwt = false
+
 [functions.task-public]
 # タスク進捗（喪主）サイトから認証情報なしで呼び出す。
 # ログインの検証・セッションの発行はこの関数の中だけで行う。

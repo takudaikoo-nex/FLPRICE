@@ -9,11 +9,15 @@
 //   POST { action: 'products' }
 //   POST { action: 'create_order', token, orderer, items, payment_method }
 //   POST { action: 'company' }      … 特商法・プライバシーポリシー用の事業者情報
+//
+//   カード払いの場合は注文の作成に続けて Stripe の PaymentIntent を用意し、
+//   ブラウザでカード入力に使う client_secret を返す。
+//   入金の確定とメール送信は stripe-webhook 側で行う。
 // ================================================
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { sendMail } from '../_shared/smtp.ts';
-import { buildInternalNoticeMail, buildInvoiceMail } from '../_shared/mailTemplates.ts';
+import Stripe from 'https://esm.sh/stripe@18.5.0?target=denonext';
+import { sendOrderMails } from '../_shared/orderMails.ts';
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -40,74 +44,48 @@ const IMAGE_BASE = `${env('SUPABASE_URL')}/storage/v1/object/public/flower-image
 const imageUrl = (path: string): string =>
     /^(https?:|data:|\/)/.test(path) ? path : IMAGE_BASE + path;
 
+const stripeSecretKey = env('STRIPE_SECRET_KEY');
+const stripe = stripeSecretKey ? new Stripe(stripeSecretKey, { apiVersion: '2025-08-27.basil' }) : null;
+
 /**
- * 注文受付後のメール送信。
- *   ・自社への受注通知
- *   ・請求書払いのお客様への請求書
- * どちらも失敗しても注文自体は成立しているため、ログに残して続行する。
+ * カード決済の準備。
+ *
+ * 金額はブラウザから受け取らず、DBに保存済みの合計（税込）だけを使う。
+ * 作成した PaymentIntent は注文に紐づけ、入金の確定は Webhook 側で行う。
  */
-const sendOrderMails = async (orderId: number) => {
-    try {
-        const { data: order } = await admin
-            .from('flower_orders')
-            .select('*, flower_order_items(*), funerals(deceased_name, venue_name, venue_address, ceremony_at)')
-            .eq('id', orderId)
-            .single();
+const prepareCardPayment = async (orderId: number, orderNumber: string) => {
+    if (!stripe) throw new Error('STRIPE_SECRET_KEY is not configured');
 
-        const { data: settings } = await admin
-            .from('flower_settings').select('*').eq('id', 1).single();
+    const { data: order, error } = await admin
+        .from('flower_orders')
+        .select('total, orderer_name, orderer_email, funeral_id')
+        .eq('id', orderId)
+        .single();
 
-        if (!order) {
-            console.error('order mails skipped: order not found', orderId);
-            return;
-        }
-        if (!settings?.mail_from) {
-            console.error('order mails skipped: mail_from is not configured in flower_settings');
-            return;
-        }
+    if (error || !order) throw new Error('order not found');
+    if (!order.total || order.total < 50) throw new Error('invalid amount');
 
-        const items = order.flower_order_items ?? [];
+    const intent = await stripe.paymentIntents.create({
+        amount: order.total, // 円は最小単位がそのまま円
+        currency: 'jpy',
+        // カードだけに絞る。コンビニ等の遷移が必要な決済手段が混ざると
+        // 画面遷移の後始末が要るうえ、供花の締切に間に合わないため。
+        payment_method_types: ['card'],
+        description: `供花 ${orderNumber}`,
+        receipt_email: order.orderer_email,
+        metadata: {
+            order_id: String(orderId),
+            order_number: orderNumber,
+            funeral_id: order.funeral_id ?? '',
+        },
+    });
 
-        // ---- 自社への受注通知 ----
-        const recipients: string[] = settings.notify_emails ?? [];
-        if (recipients.length === 0) {
-            console.error('internal notice skipped: notify_emails is empty in flower_settings');
-        } else {
-            try {
-                const notice = buildInternalNoticeMail(order, order.funerals, items);
-                await sendMail(recipients, notice.subject, notice.text, settings.mail_from, settings.mail_from_name);
-                await admin
-                    .from('flower_orders')
-                    .update({ notified_at: new Date().toISOString() })
-                    .eq('id', orderId);
-            } catch (error) {
-                console.error('internal notice failed:', error);
-            }
-        }
+    await admin
+        .from('flower_orders')
+        .update({ stripe_payment_intent_id: intent.id })
+        .eq('id', orderId);
 
-        // ---- お客様への請求書（請求書払いのみ）----
-        // カード払いは決済時に確定するため、ここでは送らない。
-        if (order.payment_method === 'invoice') {
-            try {
-                const invoice = buildInvoiceMail(order, order.funerals, items, settings);
-                await sendMail(
-                    [order.orderer_email],
-                    invoice.subject,
-                    invoice.text,
-                    settings.mail_from,
-                    settings.mail_from_name,
-                );
-                await admin
-                    .from('flower_orders')
-                    .update({ invoice_sent_at: new Date().toISOString() })
-                    .eq('id', orderId);
-            } catch (error) {
-                console.error('invoice mail failed:', error);
-            }
-        }
-    } catch (error) {
-        console.error('order mails failed:', error);
-    }
+    return intent.client_secret;
 };
 
 Deno.serve(async (req: Request) => {
@@ -181,7 +159,25 @@ Deno.serve(async (req: Request) => {
                 .eq('order_number', data.order_number)
                 .single();
 
-            if (created) await sendOrderMails(created.id);
+            // カード払いはここではメールを送らない。
+            // 決済が完了した時点で Webhook から送る。
+            if (body.payment_method === 'card') {
+                if (!created) return json({ error: 'internal_error', detail: 'order not found' }, 500);
+                try {
+                    const clientSecret = await prepareCardPayment(created.id, data.order_number);
+                    return json({
+                        ...data,
+                        client_secret: clientSecret,
+                        publishable_key: env('STRIPE_PUBLISHABLE_KEY'),
+                    });
+                } catch (error) {
+                    console.error('payment intent failed:', error);
+                    // 注文自体は残る。お客様には請求書払いへの切り替えを案内する
+                    return json({ error: 'payment_setup_failed', detail: String(error) }, 502);
+                }
+            }
+
+            if (created) await sendOrderMails(admin, created.id);
 
             return json(data);
         }

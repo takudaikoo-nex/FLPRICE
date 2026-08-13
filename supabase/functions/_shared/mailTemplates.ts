@@ -203,6 +203,62 @@ ${settings.invoice_registration_number ? `登録番号: ${settings.invoice_regis
     };
 };
 
+/** お客様（発注者）宛のご注文確認メール。カード決済が完了した時点で送る */
+export const buildCardReceiptMail = (
+    order: MailOrder,
+    funeral: MailFuneral,
+    items: MailOrderItem[],
+    settings: MailSettings,
+): BuiltMail => {
+    const to = order.orderer_company
+        ? `${order.orderer_company}\n${order.orderer_name} 様`
+        : `${order.orderer_name} 様`;
+
+    const text = `${to}
+
+このたびは供花のお申し込みを賜り、誠にありがとうございました。
+下記のとおり、クレジットカードでのお支払いを承りました。
+
+───────────────
+■ ご注文内容
+───────────────
+  注文番号: ${order.order_number}
+  お申し込み日: ${dateOnly(order.created_at)}
+
+  お届け先: 故 ${funeral.deceased_name} 様
+  式場: ${funeral.venue_name || '—'}
+${funeral.venue_address ? `  住所: ${funeral.venue_address}\n` : ''}  告別式: ${dateTime(funeral.ceremony_at)}
+
+${itemLines(items)}
+
+───────────────
+■ お支払い金額
+───────────────
+  小計（税抜）: ${yen(order.subtotal)}
+${order.discount > 0 ? `  割引:         -${yen(order.discount)}
+` : ''}  消費税:       ${yen(order.tax)}
+  お支払額:     ${yen(order.total)}（税込）
+
+  お支払方法: クレジットカード（決済済み）
+
+  ※ カード会社のご利用明細には、当社名でご請求が記載されます。
+
+───────────────
+${settings.company_name}
+${settings.company_postal_code ? `〒${settings.company_postal_code} ` : ''}${settings.company_address}
+TEL: ${settings.company_tel}
+${settings.invoice_registration_number ? `登録番号: ${settings.invoice_registration_number}` : ''}
+───────────────
+
+末筆ながら、心よりお悔やみ申し上げます。
+`;
+
+    return {
+        subject: '供花のご注文を承りました',
+        text,
+    };
+};
+
 /**
  * 業者宛の発注書メール。
  * 葬儀（＝故人）単位で、その葬儀に入った全注文を1通にまとめる。
