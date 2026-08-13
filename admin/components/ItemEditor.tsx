@@ -201,7 +201,7 @@ const ItemEditor: React.FC<ItemEditorProps> = ({ item, isNew, onSave, onCancel, 
                                         <img
                                             src={storageImageUrl(ITEM_IMAGE_BUCKET, path)}
                                             alt=""
-                                            className="w-24 h-24 object-cover rounded-lg border border-gray-200"
+                                            className="w-28 h-24 object-contain bg-gray-50 rounded-lg border border-gray-200"
                                         />
                                         <button
                                             type="button"
@@ -436,7 +436,7 @@ const ItemEditor: React.FC<ItemEditorProps> = ({ item, isNew, onSave, onCancel, 
                                                             key={path}
                                                             src={storageImageUrl(ITEM_IMAGE_BUCKET, path)}
                                                             alt=""
-                                                            className="w-20 h-20 object-cover rounded border border-emerald-200"
+                                                            className="w-24 h-20 object-contain bg-gray-50 rounded border border-emerald-200"
                                                         />
                                                     ))}
                                                     <span className="text-[10px] text-gray-400">
@@ -453,7 +453,7 @@ const ItemEditor: React.FC<ItemEditorProps> = ({ item, isNew, onSave, onCancel, 
                                                             <img
                                                                 src={storageImageUrl(ITEM_IMAGE_BUCKET, path)}
                                                                 alt=""
-                                                                className="w-20 h-20 object-cover rounded border border-gray-200"
+                                                                className="w-24 h-20 object-contain bg-gray-50 rounded border border-gray-200"
                                                             />
                                                             <button
                                                                 type="button"

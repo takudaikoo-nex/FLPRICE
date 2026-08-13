@@ -160,12 +160,13 @@ const DetailModal: React.FC<DetailModalProps> = ({ item, selectedGrade, planId, 
           {/* Slide Area */}
           <div className="flex-1 overflow-y-auto flex flex-col h-full animate-fade-in">
             {/* Image Section */}
-            <div className="relative aspect-4-3 bg-gray-200 flex-shrink-0">
+            <div className="relative aspect-4-3 bg-gray-100 flex-shrink-0">
+              {/* お棺などの横長画像を切らずに全体を見せる */}
               {currentSlide.image && !(currentSlide.isMain && imageError) ? (
                 <img
                   src={currentSlide.image}
                   alt={currentSlide.title || item.name}
-                  className="absolute inset-0 w-full h-full object-cover"
+                  className="absolute inset-0 w-full h-full object-contain"
                   onError={(e) => {
                     if (currentSlide.isMain) {
                       handleImageError();

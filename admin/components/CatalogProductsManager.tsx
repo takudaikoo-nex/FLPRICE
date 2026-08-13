@@ -476,7 +476,7 @@ const CatalogProductsManager: React.FC = () => {
                                             <img
                                                 src={storageImageUrl(ITEM_IMAGE_BUCKET, product.imagePaths[0])}
                                                 alt=""
-                                                className="w-20 h-20 object-cover rounded-lg border border-gray-200"
+                                                className="w-24 h-20 object-contain bg-gray-50 rounded-lg border border-gray-200"
                                             />
                                         ) : (
                                             <div className="w-20 h-20 flex items-center justify-center bg-gray-100 rounded-lg text-gray-400 text-xs">
@@ -662,7 +662,7 @@ const CatalogProductsManager: React.FC = () => {
                                             <img
                                                 src={storageImageUrl(ITEM_IMAGE_BUCKET, path)}
                                                 alt=""
-                                                className="w-24 h-24 object-cover rounded-lg border border-gray-200"
+                                                className="w-28 h-24 object-contain bg-gray-50 rounded-lg border border-gray-200"
                                             />
                                             <button
                                                 type="button"
@@ -757,7 +757,7 @@ const UnassignedList: React.FC<UnassignedListProps> = ({ groups, products, onCre
                                         <img
                                             src={storageImageUrl(ITEM_IMAGE_BUCKET, group.imagePaths[0])}
                                             alt=""
-                                            className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                                            className="w-20 h-16 object-contain bg-gray-50 rounded-lg border border-gray-200"
                                         />
                                     ) : (
                                         <div className="w-16 h-16 flex items-center justify-center bg-gray-100 rounded-lg text-gray-400 text-[10px]">
