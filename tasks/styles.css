@@ -610,3 +610,58 @@ table.bill tr.sum td {
     cursor: pointer;
     margin-bottom: 8px;
 }
+
+/* ---------- 表示の切り替え ---------- */
+.tabs {
+    display: flex;
+    gap: 6px;
+    margin-top: 18px;
+}
+
+.tabs button {
+    flex: 1;
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 9px 6px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: #fff;
+    color: var(--muted);
+    cursor: pointer;
+}
+
+.tabs button.on {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+
+/* ---------- お願いすることが無いとき ---------- */
+.empty-hero {
+    margin-top: 18px;
+    background: var(--ok-soft);
+    border: 1px solid #C7E5D6;
+    border-radius: var(--radius);
+    padding: 22px 18px;
+    text-align: center;
+}
+
+.empty-hero .mark {
+    font-size: 1.6rem;
+    color: var(--ok);
+}
+
+.empty-hero h2 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--ok);
+    margin-top: 2px;
+}
+
+.empty-hero p {
+    font-size: 0.76rem;
+    color: var(--muted);
+    margin-top: 8px;
+    line-height: 1.8;
+}

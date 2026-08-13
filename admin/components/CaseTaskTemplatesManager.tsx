@@ -3,8 +3,8 @@ import { supabase } from '../../lib/supabase';
 import { Plan, Item } from '../../types';
 import { convertDbItem, convertDbPlan } from '../../lib/converter';
 import {
-    CaseTaskTemplate, OWNER_LABEL, PHASE_LABEL, PHASE_ORDER, TaskOwner, TaskPhase,
-    fetchTaskTemplates,
+    CaseTaskTemplate, MOURNER_VISIBLE_FROM_LABEL, MournerVisibleFrom, OWNER_LABEL,
+    PHASE_LABEL, PHASE_ORDER, TaskOwner, TaskPhase, fetchTaskTemplates,
 } from '../../lib/caseTasks';
 import { fetchTaskSiteBaseUrl, saveTaskSiteBaseUrl } from '../../lib/caseAccess';
 import { Plus, Edit, Trash2, ArrowUp, ArrowDown, EyeOff } from 'lucide-react';
@@ -22,6 +22,7 @@ const emptyTemplate = (sortOrder: number): CaseTaskTemplate => ({
     phase: 'prepare',
     owner: 'both',
     visible_to_mourner: true,
+    mourner_visible_from: 'always',
     target_categories: [],
     target_plan_ids: [],
     related_item_id: null,
@@ -111,6 +112,7 @@ const CaseTaskTemplatesManager: React.FC = () => {
             phase: editing.phase,
             owner: editing.owner,
             visible_to_mourner: editing.visible_to_mourner,
+            mourner_visible_from: editing.mourner_visible_from,
             target_categories: editing.target_categories,
             target_plan_ids: editing.target_plan_ids,
             related_item_id: editing.related_item_id,
@@ -283,6 +285,7 @@ const CaseTaskTemplatesManager: React.FC = () => {
                                 {template.auto_complete_on === 'invoice' && ' / 請求書の発行で自動完了'}
                                 {template.auto_complete_on === 'receipt' && ' / 領収書の発行で自動完了'}
                                 {template.initial_status === 'done' && ' / 完了状態で作成'}
+                                {template.mourner_visible_from === 'after_ceremony' && ' / 喪主には告別式の翌日から'}
                             </div>
                         </div>
 
@@ -505,6 +508,30 @@ const CaseTaskTemplatesManager: React.FC = () => {
                                         <option value="done">完了（搬送・安置など商談時点で済んでいるもの）</option>
                                     </select>
                                 </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    喪主に見せ始めるタイミング
+                                </label>
+                                <select
+                                    value={editing.mourner_visible_from}
+                                    onChange={e => setEditing({
+                                        ...editing,
+                                        mourner_visible_from: e.target.value as MournerVisibleFrom,
+                                    })}
+                                    className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
+                                >
+                                    {(Object.keys(MOURNER_VISIBLE_FROM_LABEL) as MournerVisibleFrom[]).map(value => (
+                                        <option key={value} value={value}>
+                                            {MOURNER_VISIBLE_FROM_LABEL[value]}
+                                        </option>
+                                    ))}
+                                </select>
+                                <p className="text-xs text-gray-400 mt-1">
+                                    支払い関連は「告別式の翌日から」。打ち合わせ中の画面に請求の話を出さないため。
+                                    請求書が発行済みなら日付に関わらず表示します。
+                                </p>
                             </div>
 
                             <div className="flex gap-6">

@@ -142,20 +142,61 @@ const caseSummary = async (estimateId: number) => {
 const mournerTaskFields = [
     'id', 'code', 'title', 'description', 'phase', 'owner', 'status',
     'due_at', 'shared_note', 'mourner_confirmed_at', 'completed_at',
-    'related_item_id', 'sort_order',
+    'related_item_id', 'sort_order', 'mourner_visible_from',
 ].join(', ');
+
+/** 'YYYY-MM-DD' などの葬儀日を、日本時間の0時として解釈する */
+const parseFuneralDate = (value: string): number | null => {
+    const ymd = (value || '').match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+    if (!ymd) return null;
+
+    const [, y, m, d] = ymd;
+    const iso = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T00:00:00+09:00`;
+    const time = Date.parse(iso);
+    return isNaN(time) ? null : time;
+};
+
+/**
+ * 支払い関連（mourner_visible_from = 'after_ceremony'）を喪主に出してよいか。
+ * 打ち合わせ中の画面に請求の話を出さないため、告別式の翌日から表示する。
+ * 請求書を先に発行した場合は、日付に関わらず出す。
+ */
+const afterCeremonyVisible = async (estimateId: number): Promise<boolean> => {
+    const { data } = await admin
+        .from('estimates')
+        .select('customer_info, invoice_issued_at')
+        .eq('id', estimateId)
+        .maybeSingle();
+
+    if (!data) return false;
+    if (data.invoice_issued_at) return true;
+
+    const ceremony = parseFuneralDate(data.customer_info?.funeralDate || '');
+    if (ceremony === null) return false;   // 葬儀日が未入力なら出さない
+
+    return Date.now() >= ceremony + 24 * 60 * 60 * 1000;
+};
 
 const listTasks = async (session: Session, estimateId: number) => {
     if (session.role === 'mourner') {
+        // FL担当のタスクは喪主の画面に出さない（かえって混乱するため）。
+        // 進行状況はスタッフから伝える。
         const { data, error } = await admin
             .from('case_tasks')
             .select(mournerTaskFields)
             .eq('estimate_id', estimateId)
             .eq('visible_to_mourner', true)
+            .in('owner', ['mourner', 'both'])
             .order('sort_order');
 
         if (error) throw error;
-        return data || [];
+
+        const tasks = data || [];
+        if (!tasks.some(t => t.mourner_visible_from === 'after_ceremony')) return tasks;
+
+        const showAfterCeremony = await afterCeremonyVisible(estimateId);
+        return tasks.filter(t =>
+            t.mourner_visible_from !== 'after_ceremony' || showAfterCeremony);
     }
 
     const { data, error } = await admin
@@ -443,6 +484,11 @@ Deno.serve(async (request) => {
 
         if (action === 'billing') {
             if (!estimateId) return json({ error: 'NO_CASE' }, 400);
+
+            // 喪主には、支払いタスクを出す条件が整うまで金額も返さない
+            if (session.role === 'mourner' && !(await afterCeremonyVisible(estimateId))) {
+                return json(null);
+            }
             return json(await billing(estimateId));
         }
 

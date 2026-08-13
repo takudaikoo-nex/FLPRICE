@@ -49,6 +49,8 @@ export interface PublicTask {
     completed_at: string | null;
     related_item_id: number | null;
     sort_order: number;
+    /** 'always' | 'after_ceremony'。after_ceremony は告別式の翌日から届く */
+    mourner_visible_from?: string;
     /** スタッフのレスポンスにだけ含まれる */
     assignee_name?: string;
     staff_note?: string;
@@ -186,6 +188,5 @@ export const isOverdue = (task: PublicTask): boolean =>
     task.status !== 'done' && task.status !== 'skipped'
     && !!task.due_at && new Date(task.due_at).getTime() < Date.now();
 
-/** 喪主が自分でチェックできるタスクか */
-export const isMourneryTask = (task: PublicTask): boolean =>
-    task.owner === 'mourner' || task.owner === 'both';
+// FL担当のタスクはサーバー側で除いているため、ここに届くものは
+// すべて「ご家族にお願いすること」。

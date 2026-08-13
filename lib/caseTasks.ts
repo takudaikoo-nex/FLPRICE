@@ -12,6 +12,13 @@ export type TaskPhase = 'meeting' | 'prepare' | 'day' | 'payment' | 'after';
 export type TaskOwner = 'fl' | 'mourner' | 'both';
 export type TaskStatus = 'todo' | 'doing' | 'done' | 'skipped';
 export type DocumentType = 'quote' | 'invoice' | 'receipt';
+/** 喪主に見せ始めるタイミング */
+export type MournerVisibleFrom = 'always' | 'after_ceremony';
+
+export const MOURNER_VISIBLE_FROM_LABEL: Record<MournerVisibleFrom, string> = {
+    always: '常に表示',
+    after_ceremony: '告別式の翌日から',
+};
 
 export const PHASE_LABEL: Record<TaskPhase, string> = {
     meeting: '打ち合わせ',
@@ -44,6 +51,7 @@ export interface CaseTaskTemplate {
     phase: TaskPhase;
     owner: TaskOwner;
     visible_to_mourner: boolean;
+    mourner_visible_from: MournerVisibleFrom;
     target_categories: string[];
     target_plan_ids: string[];
     related_item_id: number | null;
@@ -65,6 +73,7 @@ export interface CaseTask {
     phase: TaskPhase;
     owner: TaskOwner;
     visible_to_mourner: boolean;
+    mourner_visible_from: MournerVisibleFrom;
     related_item_id: number | null;
     status: TaskStatus;
     due_at: string | null;
@@ -271,6 +280,7 @@ export const generateCaseTasks = async (estimateId: number): Promise<GenerateRes
             phase: t.phase,
             owner: t.owner,
             visible_to_mourner: t.visible_to_mourner,
+            mourner_visible_from: t.mourner_visible_from,
             related_item_id: t.related_item_id,
             status: t.initial_status,
             due_at: dueFromCeremony(ceremonyIso, t.due_offset_days),
