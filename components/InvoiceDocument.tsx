@@ -1,7 +1,7 @@
 import React from 'react';
 import { Plan, Item, MultiGradeSelection } from '../types';
 import { COMPANY_INFO } from '../constants';
-import { getItemPrice, getItemDetailLabel, TAX_RATE, REDUCED_TAX_RATE } from '../lib/pricing';
+import { getItemPrice, getItemDetailLabel, TAX_RATE, REDUCED_TAX_RATE, ProductMap } from '../lib/pricing';
 
 interface InvoiceDocumentProps {
     plan: Plan;
@@ -10,6 +10,8 @@ interface InvoiceDocumentProps {
     selectedGrades: Map<number, string>;
     freeInputValues: Map<number, number>;
     multiGradeValues?: Map<number, MultiGradeSelection>;
+    /** 選択肢の表示名を引くための商品マスタ */
+    products?: ProductMap;
     totalCost: number;
     customerInfo?: any;
     estimateId?: number;
@@ -17,7 +19,7 @@ interface InvoiceDocumentProps {
 }
 
 const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
-    plan, items, selectedOptions, selectedGrades, freeInputValues, multiGradeValues,
+    plan, items, selectedOptions, selectedGrades, freeInputValues, multiGradeValues, products,
     customerInfo, logoType
 }) => {
     const info = COMPANY_INFO[logoType];
@@ -69,7 +71,7 @@ const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
     const finalTotal = taxableSubtotal + taxAmount + reducedOptionsTotal + reducedTaxAmount + nonTaxableTotal;
 
     const getGradeLabel = (item: Item): string =>
-        getItemDetailLabel(item, planId, selectedGrades, multiGradeValues);
+        getItemDetailLabel(item, planId, selectedGrades, multiGradeValues, products);
 
     const includedItems = items.filter(i => i.allowedPlans.includes(planId) && i.includedInPlans.includes(planId));
 

@@ -1,4 +1,8 @@
-import { Item, PlanId, MultiGradeSelection } from '../types';
+import { Item, PlanId, MultiGradeSelection, CatalogProduct, DropdownOption } from '../types';
+import { resolveOption } from './catalogProducts';
+
+/** 選択肢の表示名。商品マスタに紐付いていればマスタ側を使う */
+export type ProductMap = Map<string, CatalogProduct>;
 
 export const TAX_RATE = 0.10;
 export const REDUCED_TAX_RATE = 0.08;
@@ -8,6 +12,10 @@ export const NON_TAXABLE_NAMES = ['火葬料金', '控室料金', '斎場料金'
 export const emptyMultiGrade = (): MultiGradeSelection => ({
     quantities: {}, discountType: 'none', discountValue: 0,
 });
+
+/** 選択肢（グレード）の表示名。マスタ紐付けがあればそちらを正とする */
+export const gradeName = (option: DropdownOption, products?: ProductMap): string =>
+    (products ? resolveOption(option, products).name : option.name);
 
 /** グレードの単価（プランごとの価格があればそちら） */
 export const getGradePrice = (
@@ -50,12 +58,12 @@ export const getMultiGradeTotal = (
 
 /** 数量入力型の内訳ラベル（例: YW-3×2, YW-2×1） */
 export const getMultiGradeLabel = (
-    item: Item, selection?: MultiGradeSelection,
+    item: Item, selection?: MultiGradeSelection, products?: ProductMap,
 ): string => {
     if (!selection || !item.options) return '';
     return item.options
         .filter(opt => (selection.quantities[opt.id] ?? 0) > 0)
-        .map(opt => `${opt.name}×${selection.quantities[opt.id]}`)
+        .map(opt => `${gradeName(opt, products)}×${selection.quantities[opt.id]}`)
         .join(', ');
 };
 
@@ -76,14 +84,18 @@ export const getItemDetailLabel = (
     planId: PlanId,
     selectedGrades: Map<number, string>,
     multiGradeValues?: Map<number, MultiGradeSelection>,
+    products?: ProductMap,
 ): string => {
     if (item.type === 'multi_grade') {
         const selection = multiGradeValues?.get(item.id);
-        return [getMultiGradeLabel(item, selection), getDiscountLabel(item, planId, selection)]
+        return [getMultiGradeLabel(item, selection, products), getDiscountLabel(item, planId, selection)]
             .filter(Boolean).join(' / ');
     }
     const gradeId = selectedGrades.get(item.id);
-    if (gradeId && item.options) return item.options.find(o => o.id === gradeId)?.name || '';
+    if (gradeId && item.options) {
+        const option = item.options.find(o => o.id === gradeId);
+        return option ? gradeName(option, products) : '';
+    }
     return '';
 };
 

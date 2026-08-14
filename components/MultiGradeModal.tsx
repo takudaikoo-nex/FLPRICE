@@ -3,11 +3,13 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { Item, PlanId, MultiGradeSelection, DiscountType } from '../types';
 import { MultiGradeInput } from './MultiGradeInput';
+import { ProductMap } from '../lib/pricing';
 
 interface MultiGradeModalProps {
     item: Item;
     planId: PlanId;
     selection?: MultiGradeSelection;
+    products?: ProductMap;
     onQuantityChange: (gradeId: string, quantity: number) => void;
     onDiscountChange: (discountType: DiscountType, discountValue: number) => void;
     onClose: () => void;
@@ -15,7 +17,7 @@ interface MultiGradeModalProps {
 
 /** 数量入力型（供花など）の入力をモーダルで開く。見積画面の行は合計金額だけを出す */
 export const MultiGradeModal: React.FC<MultiGradeModalProps> = ({
-    item, planId, selection, onQuantityChange, onDiscountChange, onClose,
+    item, planId, selection, products, onQuantityChange, onDiscountChange, onClose,
 }) => {
     const modalContent = (
         <div
@@ -41,6 +43,7 @@ export const MultiGradeModal: React.FC<MultiGradeModalProps> = ({
                         item={item}
                         planId={planId}
                         selection={selection}
+                        products={products}
                         onQuantityChange={onQuantityChange}
                         onDiscountChange={onDiscountChange}
                     />

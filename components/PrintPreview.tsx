@@ -3,7 +3,8 @@ import QuoteDocument from './QuoteDocument';
 import InvoiceDocument from './InvoiceDocument';
 import ReceiptDocument from './ReceiptDocument';
 import { deserializePrintData } from '../lib/serialization';
-import { Plan, Item, MultiGradeSelection } from '../types';
+import { Plan, Item, MultiGradeSelection, CatalogProduct } from '../types';
+import { toProductMap } from '../lib/catalogProducts';
 
 const PrintPreview: React.FC = () => {
     const [data, setData] = useState<{
@@ -13,6 +14,7 @@ const PrintPreview: React.FC = () => {
         selectedGrades: Map<number, string>;
         freeInputValues: Map<number, number>;
         multiGradeValues: Map<number, MultiGradeSelection>;
+        catalogProducts: CatalogProduct[];
         totalCost: number;
         customerInfo?: any;
         estimateId?: number;
@@ -40,6 +42,8 @@ const PrintPreview: React.FC = () => {
         plan: data.plan, items: data.items,
         selectedOptions: data.selectedOptions, selectedGrades: data.selectedGrades,
         freeInputValues: data.freeInputValues, multiGradeValues: data.multiGradeValues,
+        // 帳票は選択肢の表示名をマスタから引くので、印刷時点の内容を渡す
+        products: toProductMap(data.catalogProducts),
         totalCost: data.totalCost,
         customerInfo: data.customerInfo, estimateId: data.estimateId,
         logoType: data.logoType || 'FL' as const,

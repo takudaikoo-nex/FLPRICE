@@ -1,23 +1,24 @@
 import React from 'react';
 import { Pencil } from 'lucide-react';
 import { Item, PlanId, MultiGradeSelection } from '../types';
-import { getMultiGradeLabel, getMultiGradeSubtotal, getMultiGradeTotal } from '../lib/pricing';
+import { getMultiGradeLabel, getMultiGradeSubtotal, getMultiGradeTotal, ProductMap } from '../lib/pricing';
 
 interface MultiGradeButtonProps {
     item: Item;
     planId: PlanId;
     selection?: MultiGradeSelection;
+    products?: ProductMap;
     onClick: () => void;
     className?: string;
 }
 
 /** 数量入力型の合計を出すボタン。押すと入力モーダルが開く */
 export const MultiGradeButton: React.FC<MultiGradeButtonProps> = ({
-    item, planId, selection, onClick, className,
+    item, planId, selection, products, onClick, className,
 }) => {
     const hasInput = getMultiGradeSubtotal(item, planId, selection) > 0;
     const total = getMultiGradeTotal(item, planId, selection);
-    const label = getMultiGradeLabel(item, selection);
+    const label = getMultiGradeLabel(item, selection, products);
 
     return (
         <button

@@ -1,18 +1,19 @@
 import React from 'react';
 import { Item, PlanId, MultiGradeSelection, DiscountType } from '../types';
-import { emptyMultiGrade, getGradePrice, getMultiGradeSubtotal, getMultiGradeDiscount } from '../lib/pricing';
+import { emptyMultiGrade, getGradePrice, getMultiGradeSubtotal, getMultiGradeDiscount, gradeName, ProductMap } from '../lib/pricing';
 
 interface MultiGradeInputProps {
     item: Item;
     planId: PlanId;
     selection?: MultiGradeSelection;
+    products?: ProductMap;
     onQuantityChange: (gradeId: string, quantity: number) => void;
     onDiscountChange: (discountType: DiscountType, discountValue: number) => void;
 }
 
 /** グレードごとに個数を入れて金額を出す入力欄（供花など）。割引も指定できる */
 export const MultiGradeInput: React.FC<MultiGradeInputProps> = ({
-    item, planId, selection, onQuantityChange, onDiscountChange,
+    item, planId, selection, products, onQuantityChange, onDiscountChange,
 }) => {
     const current = selection ?? emptyMultiGrade();
     const options = (item.options || []).filter(o => o.allowedPlans.includes(planId));
@@ -31,7 +32,7 @@ export const MultiGradeInput: React.FC<MultiGradeInputProps> = ({
                                 quantity > 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-gray-50 border-gray-200'
                             }`}>
                             <div className="flex-1 min-w-0">
-                                <div className="font-bold text-gray-800 truncate">{opt.name}</div>
+                                <div className="font-bold text-gray-800 truncate">{gradeName(opt, products)}</div>
                                 <div className="text-sm text-gray-500 font-mono">¥{unitPrice.toLocaleString()}</div>
                             </div>
                             <input

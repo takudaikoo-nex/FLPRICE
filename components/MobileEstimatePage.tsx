@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { PlanCategory } from '../types';
 import DetailModal from './DetailModal';
 import MobileFooter from './MobileFooter';
@@ -8,6 +8,7 @@ import { MoneyInput } from './MoneyInput';
 import { MultiGradeButton } from './MultiGradeButton';
 import { MultiGradeModal } from './MultiGradeModal';
 import { getMultiGradeSubtotal } from '../lib/pricing';
+import { resolveOption, toProductMap } from '../lib/catalogProducts';
 
 interface MobileEstimatePageProps {
     system: ReturnType<typeof useEstimateSystem>;
@@ -36,6 +37,8 @@ const MobileEstimatePage: React.FC<MobileEstimatePageProps> = ({ system, onOutpu
 
     const [isIncludedOpen, setIsIncludedOpen] = useState(false);
     const theme = THEME[category];
+    // 選択肢の表示名は、商品マスタに紐付いていればマスタ側を正とする
+    const productMap = useMemo(() => toProductMap(catalogProducts), [catalogProducts]);
 
     const includedItems = items.filter(i => i.allowedPlans.includes(selectedPlanId) && i.includedInPlans.includes(selectedPlanId));
     const optionItems = items.filter(i => i.allowedPlans.includes(selectedPlanId) && !i.includedInPlans.includes(selectedPlanId));
@@ -95,7 +98,7 @@ const MobileEstimatePage: React.FC<MobileEstimatePageProps> = ({ system, onOutpu
                                                 value={selectedGrades.get(item.id) || ''} onChange={(e) => setGrade(item.id, e.target.value)}>
                                                 <option value="">基本</option>
                                                 {item.options.filter(o => o.allowedPlans.includes(selectedPlanId)).map(opt => (
-                                                    <option key={opt.id} value={opt.id}>{opt.name} (+¥{(opt.planPrices?.[selectedPlanId] ?? opt.price).toLocaleString()})</option>
+                                                    <option key={opt.id} value={opt.id}>{resolveOption(opt, productMap).name} (+¥{(opt.planPrices?.[selectedPlanId] ?? opt.price).toLocaleString()})</option>
                                                 ))}
                                             </select>
                                         ) : (
@@ -139,7 +142,7 @@ const MobileEstimatePage: React.FC<MobileEstimatePageProps> = ({ system, onOutpu
                                                 value={selectedGrades.get(item.id) || ''} onChange={(e) => setGrade(item.id, e.target.value)}>
                                                 <option value="">選択なし</option>
                                                 {item.options.filter(o => o.allowedPlans.includes(selectedPlanId)).map(opt => (
-                                                    <option key={opt.id} value={opt.id}>{opt.name} (¥{(opt.planPrices?.[selectedPlanId] ?? opt.price).toLocaleString()})</option>
+                                                    <option key={opt.id} value={opt.id}>{resolveOption(opt, productMap).name} (¥{(opt.planPrices?.[selectedPlanId] ?? opt.price).toLocaleString()})</option>
                                                 ))}
                                             </select>
                                         )}
@@ -148,6 +151,7 @@ const MobileEstimatePage: React.FC<MobileEstimatePageProps> = ({ system, onOutpu
                                                 item={item}
                                                 planId={selectedPlanId}
                                                 selection={multiGradeValues.get(item.id)}
+                                                products={productMap}
                                                 onClick={() => setMultiGradeModalItem(item)}
                                                 className="w-full p-3"
                                             />
@@ -183,6 +187,7 @@ const MobileEstimatePage: React.FC<MobileEstimatePageProps> = ({ system, onOutpu
                     item={multiGradeModalItem}
                     planId={selectedPlanId}
                     selection={multiGradeValues.get(multiGradeModalItem.id)}
+                    products={productMap}
                     onQuantityChange={(gradeId, qty) => setGradeQuantity(multiGradeModalItem.id, gradeId, qty)}
                     onDiscountChange={(type, value) => setItemDiscount(multiGradeModalItem.id, type, value)}
                     onClose={() => setMultiGradeModalItem(null)}

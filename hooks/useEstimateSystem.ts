@@ -270,7 +270,7 @@ export const useEstimateSystem = () => {
 
             const serialized = serializePrintData(
                 currentPlan, items, selectedOptions, selectedGrades, freeInputValues, multiGradeValues,
-                totalCost, customerInfo, estimateId!, logoType, documentType
+                catalogProducts, totalCost, customerInfo, estimateId!, logoType, documentType
             );
             localStorage.setItem('print_data', serialized);
             const isMobile = new URLSearchParams(window.location.search).get('mobile') === 'true';

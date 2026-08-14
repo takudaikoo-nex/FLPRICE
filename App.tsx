@@ -21,6 +21,7 @@ import { MoneyInput } from './components/MoneyInput';
 import { MultiGradeButton } from './components/MultiGradeButton';
 import { MultiGradeModal } from './components/MultiGradeModal';
 import { getMultiGradeSubtotal } from './lib/pricing';
+import { resolveOption, toProductMap } from './lib/catalogProducts';
 const EMPTY_CUSTOMER_INFO: CustomerInfo = {
   deathDate: '', deceasedName: '', birthDate: '', age: '', address: '', honseki: '',
   applicantName: '', applicantRelation: '', applicantBirthDate: '',
@@ -48,6 +49,9 @@ const App: React.FC = () => {
     setGradeQuantity, setItemDiscount,
     currentPlan, totalCost, toggleLogo, handleSaveAndPrint, executeLoadEstimate
   } = system;
+
+  // 選択肢の表示名・画像は、商品マスタに紐付いていればマスタ側を正とする
+  const productMap = React.useMemo(() => toProductMap(catalogProducts), [catalogProducts]);
 
   const [isMobile, setIsMobile] = useState(false);
   const isCatalogMode = new URLSearchParams(window.location.search).get('catalog') === 'true';
@@ -266,7 +270,7 @@ const App: React.FC = () => {
                                     <option value="">基本（プラン内）</option>
                                     {item.options.filter(o => o.allowedPlans.includes(selectedPlanId)).map(opt => (
                                       <option key={opt.id} value={opt.id}>
-                                        {opt.name}（+¥{(opt.planPrices?.[selectedPlanId] ?? opt.price).toLocaleString()}）
+                                        {resolveOption(opt, productMap).name}（+¥{(opt.planPrices?.[selectedPlanId] ?? opt.price).toLocaleString()}）
                                       </option>
                                     ))}
                                   </select>
@@ -342,7 +346,7 @@ const App: React.FC = () => {
                                     <option value="">-- 選択してください --</option>
                                     {item.options.filter(o => o.allowedPlans.includes(selectedPlanId)).map(opt => (
                                       <option key={opt.id} value={opt.id}>
-                                        {opt.name}（¥{(opt.planPrices?.[selectedPlanId] ?? opt.price).toLocaleString()}）
+                                        {resolveOption(opt, productMap).name}（¥{(opt.planPrices?.[selectedPlanId] ?? opt.price).toLocaleString()}）
                                       </option>
                                     ))}
                                   </select>
@@ -355,6 +359,7 @@ const App: React.FC = () => {
                                   item={item}
                                   planId={selectedPlanId}
                                   selection={multiGradeValues.get(item.id)}
+                                  products={productMap}
                                   onClick={() => setMultiGradeModalItem(item)}
                                   className="min-w-[220px]"
                                 />
@@ -396,6 +401,7 @@ const App: React.FC = () => {
             item={multiGradeModalItem}
             planId={selectedPlanId}
             selection={multiGradeValues.get(multiGradeModalItem.id)}
+            products={productMap}
             onQuantityChange={(gradeId, qty) => setGradeQuantity(multiGradeModalItem.id, gradeId, qty)}
             onDiscountChange={(type, value) => setItemDiscount(multiGradeModalItem.id, type, value)}
             onClose={() => setMultiGradeModalItem(null)}

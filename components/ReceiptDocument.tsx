@@ -1,7 +1,7 @@
 import React from 'react';
 import { Plan, Item, MultiGradeSelection } from '../types';
 import { COMPANY_INFO } from '../constants';
-import { getItemPrice, getItemDetailLabel, TAX_RATE, REDUCED_TAX_RATE } from '../lib/pricing';
+import { getItemPrice, getItemDetailLabel, TAX_RATE, REDUCED_TAX_RATE, ProductMap } from '../lib/pricing';
 
 interface ReceiptDocumentProps {
     plan: Plan;
@@ -10,6 +10,8 @@ interface ReceiptDocumentProps {
     selectedGrades: Map<number, string>;
     freeInputValues: Map<number, number>;
     multiGradeValues?: Map<number, MultiGradeSelection>;
+    /** 選択肢の表示名を引くための商品マスタ */
+    products?: ProductMap;
     totalCost: number;
     customerInfo?: any;
     estimateId?: number;
@@ -20,7 +22,7 @@ const TOTAL_ROWS = 15;
 const NAVY = '#1B3A5C';
 
 const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({
-    plan, items, selectedOptions, selectedGrades, freeInputValues, multiGradeValues,
+    plan, items, selectedOptions, selectedGrades, freeInputValues, multiGradeValues, products,
     customerInfo, logoType
 }) => {
     const info = COMPANY_INFO[logoType];
@@ -65,7 +67,7 @@ const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({
     const finalTotal = taxableSubtotal + taxAmount + reducedOptionsTotal + reducedTaxAmount + nonTaxableTotal;
 
     const getGradeLabel = (item: Item): string =>
-        getItemDetailLabel(item, planId, selectedGrades, multiGradeValues);
+        getItemDetailLabel(item, planId, selectedGrades, multiGradeValues, products);
 
     // Build display rows
     const dataRows: { name: string; quantity: string; unitPrice: number; amount: number }[] = [];
