@@ -15,12 +15,31 @@ import {
     toDateInput, updateCaseTask,
 } from '../../lib/caseTasks';
 import {
-    CaseCredential, IssuedCredential, buildCredentialText, fetchCredential, fetchTaskSiteBaseUrl,
-    issueCredential, setCredentialActive,
+    CaseCredential, IssuedCredential, buildCredentialText, fetchCredential, fetchIssuedEstimateIds,
+    fetchTaskSiteBaseUrl, issueCredential, setCredentialActive,
 } from '../../lib/caseAccess';
 
-/** 進行中とみなす案件のステータス */
+/** 見積のステータスだけで進行中と判断できるもの */
 const ACTIVE_STATUSES: EstimateStatus[] = ['ordered', 'completed', 'invoiced'];
+
+/** 終わった案件。タスクが残っていても進行中には出さない */
+const CLOSED_STATUSES: EstimateStatus[] = ['paid', 'cancelled'];
+
+/**
+ * 進行中の一覧に出すか。
+ *
+ * 受注前（見積提示のまま）でも、タスクを作ったりタスクページを発行したりした案件は
+ * もう動き出しているため出す。ここを見落とすと、発行したのに一覧から消えて見える。
+ */
+const isActiveCase = (
+    estimate: EstimateSummary,
+    progressMap: Map<number, CaseProgress>,
+    issuedIds: Set<number>,
+): boolean => {
+    if (CLOSED_STATUSES.includes(estimate.status)) return false;
+    if (ACTIVE_STATUSES.includes(estimate.status)) return true;
+    return (progressMap.get(estimate.id)?.total ?? 0) > 0 || issuedIds.has(estimate.id);
+};
 
 interface Props {
     onBack: () => void;
@@ -30,6 +49,8 @@ interface Props {
 const CaseTaskPage: React.FC<Props> = ({ onBack, onOpenEstimate }) => {
     const [estimates, setEstimates] = useState<EstimateSummary[]>([]);
     const [progressMap, setProgressMap] = useState<Map<number, CaseProgress>>(new Map());
+    /** タスクページ（喪主ログイン）を発行済みの案件 */
+    const [issuedIds, setIssuedIds] = useState<Set<number>>(new Set());
     const [loading, setLoading] = useState(true);
     const [keyword, setKeyword] = useState('');
     const [activeOnly, setActiveOnly] = useState(true);
@@ -62,7 +83,13 @@ const CaseTaskPage: React.FC<Props> = ({ onBack, onOpenEstimate }) => {
         try {
             const summaries = await fetchEstimateSummaries();
             setEstimates(summaries);
-            setProgressMap(await fetchProgressMap(summaries.map(e => e.id)));
+            const ids = summaries.map(e => e.id);
+            const [progress, issued] = await Promise.all([
+                fetchProgressMap(ids),
+                fetchIssuedEstimateIds(ids),
+            ]);
+            setProgressMap(progress);
+            setIssuedIds(issued);
         } catch (error) {
             console.error('Failed to fetch case tasks:', error);
             alert('タスクの取得に失敗しました');
@@ -190,9 +217,9 @@ ${error?.message ?? error}`);
     };
 
     const results = useMemo(() => estimates.filter(estimate => {
-        if (activeOnly && !ACTIVE_STATUSES.includes(estimate.status)) return false;
+        if (activeOnly && !isActiveCase(estimate, progressMap, issuedIds)) return false;
         return matchesKeyword(estimate, keyword);
-    }), [estimates, keyword, activeOnly]);
+    }), [estimates, keyword, activeOnly, progressMap, issuedIds]);
 
     const openedEstimate = estimates.find(e => e.id === openedId) || null;
 
@@ -468,7 +495,7 @@ ${error?.message ?? error}`);
                 </div>
 
                 <p className="fl-note">
-                    進行中＝受注・施行済・請求済の案件です。最新500件を対象にしています。
+                    進行中＝受注・施行済・請求済、またはタスクやタスクページを用意した案件です。最新500件を対象にしています。
                 </p>
             </div>
         </div>

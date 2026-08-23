@@ -56,6 +56,22 @@ export const fetchCredential = async (estimateId: number): Promise<CaseCredentia
 };
 
 /**
+ * ログイン情報を発行済みの案件ID。
+ * 一覧で「もう動き出している案件」を見分けるのに使う（発行を止めた案件も含む）。
+ */
+export const fetchIssuedEstimateIds = async (estimateIds: number[]): Promise<Set<number>> => {
+    if (estimateIds.length === 0) return new Set();
+
+    const { data, error } = await supabase
+        .from('case_credentials')
+        .select('estimate_id')
+        .in('estimate_id', estimateIds);
+
+    if (error) throw error;
+    return new Set((data || []).map(row => row.estimate_id as number));
+};
+
+/**
  * 発行（再発行も同じ）。
  * 再発行すると旧パスワードは無効になり、開いたままの画面も切れる。
  */
