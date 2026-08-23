@@ -9,6 +9,7 @@ import {
     fetchEstimateSummaries, funeralDateToCeremonyIso, matchesKeyword, formatDate, EstimateSummary,
 } from '../../lib/estimateQueries';
 import { sendOrderMail } from '../../lib/mail';
+import { stripHonorific } from '../../lib/format';
 import { buildPurchaseOrderMail, isPurchaseOrderTarget } from '../../supabase/functions/_shared/mailTemplates';
 import { ChevronLeft, Plus, Edit, Trash2, Link2, Check, FileSearch, Send, X, Eye } from 'lucide-react';
 
@@ -524,6 +525,7 @@ const FlowerFuneralsPage: React.FC<Props> = ({ onBack }) => {
                                         type="text"
                                         value={editing.deceased_name}
                                         onChange={e => setEditing({ ...editing, deceased_name: e.target.value })}
+                                        onBlur={e => setEditing({ ...editing, deceased_name: stripHonorific(e.target.value) })}
                                         className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
                                     />
                                 </div>
@@ -533,6 +535,7 @@ const FlowerFuneralsPage: React.FC<Props> = ({ onBack }) => {
                                         type="text"
                                         value={editing.chief_mourner_name}
                                         onChange={e => setEditing({ ...editing, chief_mourner_name: e.target.value })}
+                                        onBlur={e => setEditing({ ...editing, chief_mourner_name: stripHonorific(e.target.value) })}
                                         className="w-full p-2 border rounded focus:ring-2 focus:ring-emerald-500 outline-none"
                                     />
                                 </div>
