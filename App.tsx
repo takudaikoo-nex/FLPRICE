@@ -2,11 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { CustomerInfo } from './types';
 import DetailModal from './components/DetailModal';
 import Footer from './components/Footer';
-import { Info, Check, ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
+import {
+  Info, Check, ChevronDown, ChevronUp, CheckCircle2,
+  Home, Images, FolderOpen, PlusCircle,
+} from 'lucide-react';
 import PrintPreview from './components/PrintPreview';
 import CustomerInputPage from './components/CustomerInputPage';
 import StartScreen from './components/StartScreen';
 import { useEstimateSystem } from './hooks/useEstimateSystem';
+import { useSupabaseSession } from './hooks/useSupabaseSession';
 import MobileEstimatePage from './components/MobileEstimatePage';
 import TopScreen from './components/TopScreen';
 import CustomerListPage from './components/CustomerListPage';
@@ -16,7 +20,6 @@ import FlowerOrdersPage from './components/flower/FlowerOrdersPage';
 import CaseTaskPage from './components/tasks/CaseTaskPage';
 import LoginGate from './components/LoginGate';
 import OptionCatalogPage from './components/OptionCatalogPage';
-import { supabase } from './lib/supabase';
 import { MoneyInput } from './components/MoneyInput';
 import { MultiGradeButton } from './components/MultiGradeButton';
 import { MultiGradeModal } from './components/MultiGradeModal';
@@ -29,10 +32,6 @@ const EMPTY_CUSTOMER_INFO: CustomerInfo = {
   religion: '', templeName: '', templePhone: '', templeFax: '', remarks: ''
 };
 
-const THEME = {
-  cremation: { bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-700', active: 'bg-purple-600 text-white shadow-md', dot: 'bg-purple-500', selectedBorder: 'border-purple-500 text-purple-700', optionBg: 'bg-purple-50/40' },
-  funeral: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', active: 'bg-emerald-600 text-white shadow-md', dot: 'bg-emerald-500', selectedBorder: 'border-emerald-500 text-emerald-700', optionBg: 'bg-emerald-50/40' },
-} as const;
 
 
 
@@ -56,22 +55,8 @@ const App: React.FC = () => {
   const [isMobile, setIsMobile] = useState(false);
   const isCatalogMode = new URLSearchParams(window.location.search).get('catalog') === 'true';
   const [isIncludedOpen, setIsIncludedOpen] = useState(true);
-  const [session, setSession] = useState<any>(null);
-  const [authLoading, setAuthLoading] = useState(true);
-  const theme = THEME[category];
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setAuthLoading(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, next) => {
-      setSession(next);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  // ログイン状態は管理画面と同じフックで扱う
+  const { session, loading: authLoading } = useSupabaseSession();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -126,9 +111,7 @@ const App: React.FC = () => {
   if (isPrintMode) return <PrintPreview />;
 
   if (authLoading) return (
-    <div className="flex items-center justify-center h-screen bg-gray-50">
-      <div className="text-center"><div className="text-lg font-medium text-gray-600">読み込み中...</div></div>
-    </div>
+    <div className="fl-shell"><div className="fl-empty">読み込み中...</div></div>
   );
   if (!session) return <LoginGate logoType={logoType} />;
 
@@ -136,9 +119,7 @@ const App: React.FC = () => {
   if (isCatalogMode) return <OptionCatalogPage />;
 
   if (loading) return (
-    <div className="flex items-center justify-center h-screen bg-gray-50">
-      <div className="text-center"><div className="text-4xl mb-4">🌿</div><div className="text-lg font-medium text-gray-600">読み込み中...</div></div>
-    </div>
+    <div className="fl-shell"><div className="fl-empty">🌿 読み込み中...</div></div>
   );
   if (viewMode === 'top') return (
     <TopScreen
@@ -165,108 +146,141 @@ const App: React.FC = () => {
   const optionItems = items.filter(i => i.allowedPlans.includes(selectedPlanId) && !i.includedInPlans.includes(selectedPlanId));
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 print:bg-white">
-      <div className="contents print:hidden">
-        {/* Header */}
-        <header className="bg-white border-b border-gray-200 py-3 px-6 flex-shrink-0 relative">
-          <div style={{ position: 'absolute', top: '0.75rem', right: '1rem', display: 'flex', gap: '0.5rem' }}>
-            <button onClick={() => setViewMode('top')} className="text-sm text-gray-400 hover:text-gray-600 border border-gray-200 hover:border-gray-400 rounded-lg px-3 py-1.5 transition-colors">TOP</button>
-            <button onClick={() => window.open('/?catalog=true', '_blank')} className="text-sm text-gray-400 hover:text-gray-600 border border-gray-200 hover:border-gray-400 rounded-lg px-3 py-1.5 transition-colors">オプション画像</button>
-            <button onClick={handleLoadEstimate} className="text-sm text-gray-400 hover:text-gray-600 border border-gray-200 hover:border-gray-400 rounded-lg px-3 py-1.5 transition-colors">呼出</button>
-          </div>
-          <div className="max-w-7xl mx-auto flex items-center gap-3">
-            <div className="cursor-pointer hover:opacity-80 transition-opacity" onClick={toggleLogo} title="Click to switch logo">
-              <img src={`/images/logo${logoType}.png`} alt="Logo" className="h-8 w-auto object-contain" />
-            </div>
-            <h1 className="text-xl font-bold text-gray-800 tracking-wide">葬儀プランお見積り</h1>
+    <div className={`fl-shell fl-est is-${category}`}>
+      <div className="print:hidden">
+        <header className="fl-header">
+          <div className="fl-header-left">
+            <img
+              src={`/images/logo${logoType}.png`}
+              alt="Logo"
+              onClick={toggleLogo}
+              style={{ cursor: 'pointer' }}
+              title="クリックでロゴ切替"
+            />
+            <h1>葬儀プランお見積り</h1>
             {system.loadedEstimateId && (
-              <span className="text-sm text-gray-500">案件 #{system.loadedEstimateId}</span>
+              <span className="fl-badge">案件 #{system.loadedEstimateId}</span>
             )}
+          </div>
+
+          <div className="fl-header-actions">
+            <button type="button" className="fl-header-btn" onClick={() => setViewMode('top')}>
+              <Home size={16} />
+              TOP
+            </button>
+            <button
+              type="button"
+              className="fl-header-btn"
+              onClick={() => window.open('/?catalog=true', '_blank')}
+            >
+              <Images size={16} />
+              オプション画像
+            </button>
+            <button type="button" className="fl-header-btn" onClick={handleLoadEstimate}>
+              <FolderOpen size={16} />
+              呼出
+            </button>
           </div>
         </header>
 
-        <main className="flex-1 max-w-7xl mx-auto w-full p-4 md:p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <main className="fl-est-page">
+          <div className="fl-est-layout">
 
-            {/* ===== Left: Plan Selection ===== */}
-            <div className="lg:col-span-4 flex flex-col gap-4 sticky top-4 h-fit">
-              {/* Category Tabs */}
-              <div className="grid grid-cols-2 gap-2 p-1.5 bg-gray-200 rounded-xl">
-                <button onClick={() => handleCategoryChange('cremation')}
-                  className={`py-2.5 px-4 rounded-lg font-bold transition-all text-base ${category === 'cremation' ? THEME.cremation.active : 'bg-gray-100 text-gray-500 hover:bg-gray-50'}`}>
+            {/* ===== 左：プラン選択 ===== */}
+            <div className="fl-est-side">
+              <div className="fl-tabs">
+                <button
+                  type="button"
+                  className={`fl-tab ${category === 'cremation' ? 'is-active' : ''}`}
+                  onClick={() => handleCategoryChange('cremation')}
+                >
                   火葬式プラン
                 </button>
-                <button onClick={() => handleCategoryChange('funeral')}
-                  className={`py-2.5 px-4 rounded-lg font-bold transition-all text-base ${category === 'funeral' ? THEME.funeral.active : 'bg-gray-100 text-gray-500 hover:bg-gray-50'}`}>
+                <button
+                  type="button"
+                  className={`fl-tab ${category === 'funeral' ? 'is-active' : ''}`}
+                  onClick={() => handleCategoryChange('funeral')}
+                >
                   葬儀プラン
                 </button>
               </div>
 
-              {/* Plan Cards */}
-              <div className={`p-5 rounded-2xl border-2 transition-colors duration-300 ${theme.bg} ${theme.border}`}>
-                <h2 className={`text-base font-bold mb-4 flex items-center gap-2 ${theme.text}`}>
-                  <Check size={18} /> プラン選択
+              <div className="fl-plan-group">
+                <h2 className="fl-plan-group-title">
+                  <Check size={16} />
+                  プラン選択
                 </h2>
-                <div className="space-y-2.5">
+                <div className="fl-plan-list">
                   {plans.filter(p => p.category === category).map(plan => (
-                    <label key={plan.id}
-                      className={`block relative cursor-pointer p-4 rounded-xl border-2 transition-all ${selectedPlanId === plan.id
-                        ? `bg-white shadow-md ${theme.selectedBorder}`
-                        : 'bg-white/60 border-transparent hover:bg-white hover:shadow-sm text-gray-600'}`}>
-                      <input type="radio" name="plan" value={plan.id} checked={selectedPlanId === plan.id} onChange={() => handlePlanChange(plan.id)} className="sr-only" />
-                      <div className="flex justify-between items-center mb-1.5">
-                        <span className="font-bold text-lg">{plan.name}</span>
-                        <span className="font-bold text-xl font-mono">¥{plan.price.toLocaleString()}</span>
+                    <label
+                      key={plan.id}
+                      className={`fl-plan-card ${selectedPlanId === plan.id ? 'is-selected' : ''}`}
+                    >
+                      <input
+                        type="radio"
+                        name="plan"
+                        value={plan.id}
+                        checked={selectedPlanId === plan.id}
+                        onChange={() => handlePlanChange(plan.id)}
+                      />
+                      {/* 金額は選択中のプランだけ。接客中に他プランの額を見せない */}
+                      <div className="fl-plan-card-head">
+                        <span className="fl-plan-name">{plan.name}</span>
+                        {selectedPlanId === plan.id && (
+                          <span className="fl-plan-price">¥{plan.price.toLocaleString()}</span>
+                        )}
                       </div>
-                      <p className="text-sm text-gray-500 leading-snug">{plan.description}</p>
-                      {selectedPlanId === plan.id && <div className={`absolute top-4 right-4 w-3.5 h-3.5 rounded-full ${theme.dot}`}></div>}
+                      <p className="fl-plan-desc">{plan.description}</p>
+                      {selectedPlanId === plan.id && <span className="fl-plan-dot" />}
                     </label>
                   ))}
                 </div>
-                <p className="text-xs text-gray-400 mt-3 text-right">※ 表示価格は税抜です</p>
+                <p className="fl-plan-note">※ 表示価格は税抜です</p>
               </div>
             </div>
 
-            {/* ===== Right: Options ===== */}
-            <div className="lg:col-span-8 flex flex-col">
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col">
-                <div className={`p-4 border-b border-gray-100 ${theme.bg} rounded-t-2xl`}>
-                  <h2 className={`font-bold text-lg ${theme.text}`}>プラン詳細・オプション選択</h2>
-                </div>
+            {/* ===== 右：オプション ===== */}
+            <div className="fl-est-main">
+              <div className="fl-opt-panel">
+                <div className="fl-opt-panel-head">プラン詳細・オプション選択</div>
 
-                <div className="p-4 space-y-2">
+                <div className="fl-opt-panel-body">
 
-                  {/* --- Included Items Accordion --- */}
+                  {/* --- プランに含まれるもの（開閉） --- */}
                   {includedItems.length > 0 && (
-                    <div className="border border-emerald-200 rounded-xl overflow-hidden">
-                      <div className="bg-emerald-50 hover:bg-emerald-100/80 cursor-pointer transition-colors px-4 py-3"
-                        onClick={() => setIsIncludedOpen(!isIncludedOpen)}>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 font-bold text-emerald-700 text-base">
-                            <CheckCircle2 size={20} />
-                            プランに含まれるもの ({includedItems.length}点)
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-normal text-gray-500">{isIncludedOpen ? '閉じる' : '表示'}</span>
-                            {isIncludedOpen ? <ChevronUp size={20} className="text-emerald-600" /> : <ChevronDown size={20} className="text-emerald-600" />}
-                          </div>
-                        </div>
-                      </div>
+                    <div className="fl-opt-group">
+                      <button
+                        type="button"
+                        className="fl-opt-group-head"
+                        onClick={() => setIsIncludedOpen(!isIncludedOpen)}
+                      >
+                        <span className="fl-opt-group-title">
+                          <CheckCircle2 size={18} />
+                          プランに含まれるもの（{includedItems.length}点）
+                        </span>
+                        <span className="fl-opt-group-toggle">
+                          {isIncludedOpen ? '閉じる' : '表示'}
+                          {isIncludedOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        </span>
+                      </button>
 
                       {isIncludedOpen && (
-                        <div className="divide-y divide-emerald-100 bg-white">
+                        <div className="fl-opt-list">
                           {includedItems.map(item => (
-                            <div key={item.id} className="flex items-center justify-between px-5 py-3 hover:bg-emerald-50/30 transition-colors">
-                              <div className="flex items-center gap-3 flex-1 min-w-0">
-                                <div className="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></div>
-                                <span className="text-base font-medium text-gray-800">{item.name}</span>
+                            <div key={item.id} className="fl-opt-row">
+                              <div className="fl-opt-row-main">
+                                <div className="fl-opt-name">
+                                  <span className="fl-opt-name-text">{item.name}</span>
+                                </div>
                               </div>
-                              <div className="flex items-center gap-3 shrink-0">
+
+                              <div className="fl-opt-control">
                                 {item.type === 'dropdown' && item.options ? (
                                   <select
-                                    className="text-sm p-2.5 pr-8 border border-gray-300 rounded-lg bg-white shadow-sm cursor-pointer appearance-none hover:border-emerald-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all min-w-[200px]"
+                                    className="fl-select"
                                     value={selectedGrades.get(item.id) || ''}
-                                    onChange={(e) => setGrade(item.id, e.target.value)}>
+                                    onChange={(e) => setGrade(item.id, e.target.value)}
+                                  >
                                     <option value="">基本（プラン内）</option>
                                     {item.options.filter(o => o.allowedPlans.includes(selectedPlanId)).map(opt => (
                                       <option key={opt.id} value={opt.id}>
@@ -275,10 +289,18 @@ const App: React.FC = () => {
                                     ))}
                                   </select>
                                 ) : (
-                                  <span className="text-sm text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full font-medium">プランに含む</span>
+                                  <span className="fl-opt-included">プランに含む</span>
                                 )}
-                                <button onClick={() => setModalItem(item)} className="text-gray-400 hover:text-emerald-600 transition-colors p-1 rounded-full hover:bg-emerald-50">
-                                  <Info size={18} />
+                              </div>
+
+                              <div className="fl-opt-actions">
+                                <button
+                                  type="button"
+                                  className="fl-info-btn"
+                                  title="詳細を見る"
+                                  onClick={() => setModalItem(item)}
+                                >
+                                  <Info size={16} />
                                 </button>
                               </div>
                             </div>
@@ -288,61 +310,53 @@ const App: React.FC = () => {
                     </div>
                   )}
 
-                  {/* --- Options Section Header --- */}
+                  {/* --- 追加オプション・変動費用 --- */}
                   {optionItems.length > 0 && (
-                    <div className="border border-emerald-200 mt-4 px-4 py-3 bg-emerald-50">
-                      <div className="flex items-center gap-2 font-bold text-emerald-700 text-base">
-                        <ChevronDown size={20} className="text-emerald-600" />
-                        追加オプション・変動費用 ({optionItems.length}点)
+                    <div className="fl-opt-group">
+                      <div className="fl-opt-group-head is-static">
+                        <span className="fl-opt-group-title">
+                          <PlusCircle size={18} />
+                          追加オプション・変動費用（{optionItems.length}点）
+                        </span>
                       </div>
-                    </div>
-                  )}
 
-                  {/* --- Option Items (テーブル形式) --- */}
-                  <table className="w-full">
-                    <tbody>
-                      {optionItems.map(item => {
-                        const isSelected = item.type === 'checkbox' ? selectedOptions.has(item.id)
-                          : item.type === 'dropdown' ? selectedGrades.has(item.id)
-                          : item.type === 'multi_grade' ? getMultiGradeSubtotal(item, selectedPlanId, multiGradeValues.get(item.id)) > 0
-                          : (freeInputValues.get(item.id) ?? 0) !== 0;
+                      <div className="fl-opt-list">
+                        {optionItems.map(item => {
+                          const isSelected = item.type === 'checkbox' ? selectedOptions.has(item.id)
+                            : item.type === 'dropdown' ? selectedGrades.has(item.id)
+                            : item.type === 'multi_grade' ? getMultiGradeSubtotal(item, selectedPlanId, multiGradeValues.get(item.id)) > 0
+                            : (freeInputValues.get(item.id) ?? 0) !== 0;
 
-                        return (
-                          <tr key={item.id}
-                            className={`border-b border-gray-100 last:border-0 transition-colors ${isSelected ? theme.optionBg : 'hover:bg-gray-50'}`}>
-                            {/* 項目名 */}
-                            <td className="py-3 px-4 align-middle">
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-gray-800 text-base whitespace-nowrap">{item.name}</span>
-                                {item.nonTaxable && (
-                                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium whitespace-nowrap">非課税</span>
-                                )}
-                                <button onClick={() => setModalItem(item)}
-                                  className="text-gray-400 hover:text-emerald-600 transition-colors p-0.5 rounded-full hover:bg-gray-100">
-                                  <Info size={17} />
-                                </button>
+                          return (
+                            <div key={item.id} className={`fl-opt-row ${isSelected ? 'is-selected' : ''}`}>
+                              <div className="fl-opt-row-main">
+                                <div className="fl-opt-name">
+                                  <span className="fl-opt-name-text">{item.name}</span>
+                                  {item.nonTaxable && <span className="fl-tag is-tax">非課税</span>}
+                                </div>
+                                {item.type === 'checkbox' && item.basePrice ? (
+                                  <div className="fl-opt-price">¥{item.basePrice.toLocaleString()}</div>
+                                ) : null}
                               </div>
-                              {item.type === 'checkbox' && item.basePrice ? (
-                                <div className="text-sm text-gray-500 font-mono mt-0.5">¥{item.basePrice.toLocaleString()}</div>
-                              ) : null}
-                            </td>
-                            {/* コントロール */}
-                            <td className="py-3 px-4 align-middle text-right whitespace-nowrap">
-                              {item.type === 'checkbox' && (
-                                <label className="inline-flex items-center gap-2.5 cursor-pointer select-none">
-                                  <input type="checkbox" checked={selectedOptions.has(item.id)} onChange={() => toggleOption(item.id)}
-                                    className="rounded text-emerald-600 focus:ring-emerald-500 border-gray-300 cursor-pointer"
-                                    style={{ width: '20px', height: '20px' }} />
-                                  <span className="text-sm font-medium text-gray-600">追加</span>
-                                </label>
-                              )}
 
-                              {item.type === 'dropdown' && item.options && (
-                                <div className="relative inline-block">
+                              <div className="fl-opt-control">
+                                {item.type === 'checkbox' && (
+                                  <label className="fl-check">
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedOptions.has(item.id)}
+                                      onChange={() => toggleOption(item.id)}
+                                    />
+                                    追加する
+                                  </label>
+                                )}
+
+                                {item.type === 'dropdown' && item.options && (
                                   <select
-                                    className="text-sm p-2.5 pr-9 border border-gray-300 rounded-lg bg-white cursor-pointer appearance-none hover:border-emerald-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all min-w-[220px]"
+                                    className="fl-select"
                                     value={selectedGrades.get(item.id) || ''}
-                                    onChange={(e) => setGrade(item.id, e.target.value)}>
+                                    onChange={(e) => setGrade(item.id, e.target.value)}
+                                  >
                                     <option value="">-- 選択してください --</option>
                                     {item.options.filter(o => o.allowedPlans.includes(selectedPlanId)).map(opt => (
                                       <option key={opt.id} value={opt.id}>
@@ -350,40 +364,46 @@ const App: React.FC = () => {
                                       </option>
                                     ))}
                                   </select>
-                                  <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                                </div>
-                              )}
+                                )}
 
-                              {item.type === 'multi_grade' && item.options && (
-                                <MultiGradeButton
-                                  item={item}
-                                  planId={selectedPlanId}
-                                  selection={multiGradeValues.get(item.id)}
-                                  products={productMap}
-                                  onClick={() => setMultiGradeModalItem(item)}
-                                  className="min-w-[220px]"
-                                />
-                              )}
+                                {item.type === 'multi_grade' && item.options && (
+                                  <MultiGradeButton
+                                    item={item}
+                                    planId={selectedPlanId}
+                                    selection={multiGradeValues.get(item.id)}
+                                    products={productMap}
+                                    onClick={() => setMultiGradeModalItem(item)}
+                                  />
+                                )}
 
-                              {item.type === 'free_input' && (
-                                <MoneyInput
-                                  value={freeInputValues.get(item.id) ?? 0}
-                                  onChange={(v) => setFreeInputValue(item.id, v)}
-                                />
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                                {item.type === 'free_input' && (
+                                  <MoneyInput
+                                    value={freeInputValues.get(item.id) ?? 0}
+                                    onChange={(v) => setFreeInputValue(item.id, v)}
+                                  />
+                                )}
+                              </div>
+
+                              <div className="fl-opt-actions">
+                                <button
+                                  type="button"
+                                  className="fl-info-btn"
+                                  title="詳細を見る"
+                                  onClick={() => setModalItem(item)}
+                                >
+                                  <Info size={16} />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
-
-          {/* フッターに隠れないようにスペース確保 */}
-          <div style={{ height: '180px' }} aria-hidden="true"></div>
         </main>
 
         <Footer total={totalCost} onInputClick={goToInputPage} onOutputClick={handleOutputClick} onInvoiceClick={handleInvoiceClick} onReceiptClick={handleReceiptClick} />

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
-import LoginForm from './components/LoginForm';
+import React, { useState } from 'react';
+import LoginGate from '../components/LoginGate';
+import { useSupabaseSession, confirmSignOut } from '../hooks/useSupabaseSession';
 import PlansManager from './components/PlansManager';
 import ItemsManager from './components/ItemsManager';
 import AttendeesManager from './components/AttendeesManager';
@@ -14,39 +14,23 @@ import CaseTaskTemplatesManager from './components/CaseTaskTemplatesManager';
 type AdminTab = 'plans' | 'items' | 'catalogProducts' | 'attendees' | 'backup' | 'taskTemplates' | 'flowerProducts' | 'flowerSettings';
 
 const AdminApp: React.FC = () => {
-    const [session, setSession] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
+    // ログイン状態は見積システムと同じフックで扱う
+    const { session, loading } = useSupabaseSession();
     const [activeTab, setActiveTab] = useState<AdminTab>('plans');
 
-    useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session);
-            setLoading(false);
-        });
-
-        const {
-            data: { subscription },
-        } = supabase.auth.onAuthStateChange((_event, session) => {
-            setSession(session);
-        });
-
-        return () => subscription.unsubscribe();
-    }, []);
-
-    const handleLogout = async () => {
-        await supabase.auth.signOut();
-    };
+    const handleLogout = () => { void confirmSignOut(); };
 
     if (loading) {
-        return (
-            <div className="flex items-center justify-center h-screen bg-gray-50">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
-            </div>
-        );
+        return <div className="fl-shell"><div className="fl-empty">読み込み中...</div></div>;
     }
 
     if (!session) {
-        return <LoginForm />;
+        return (
+            <LoginGate
+                title="管理画面"
+                note="見積システムと同じアカウントでログインできます"
+            />
+        );
     }
 
     return (

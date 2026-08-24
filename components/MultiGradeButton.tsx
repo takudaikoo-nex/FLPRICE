@@ -24,17 +24,11 @@ export const MultiGradeButton: React.FC<MultiGradeButtonProps> = ({
         <button
             type="button"
             onClick={onClick}
-            className={`inline-flex items-center gap-3 p-2.5 border rounded-lg bg-white transition-all text-left hover:border-emerald-400 focus:ring-2 focus:ring-emerald-500 outline-none ${
-                hasInput ? 'border-emerald-300' : 'border-gray-300'
-            } ${className || ''}`}
+            className={`fl-qty-btn ${hasInput ? 'is-filled' : ''} ${className || ''}`}
         >
-            <Pencil size={15} className="text-gray-400 shrink-0" />
-            <span className={`flex-1 text-sm truncate ${hasInput ? 'text-gray-600' : 'text-gray-400'}`}>
-                {hasInput ? label : '数量を入力'}
-            </span>
-            <span className={`font-mono font-bold shrink-0 ${hasInput ? 'text-emerald-700' : 'text-gray-400'}`}>
-                ¥{total.toLocaleString()}
-            </span>
+            <span className="fl-qty-btn-icon"><Pencil size={14} /></span>
+            <span className="fl-qty-btn-label">{hasInput ? label : '数量を入力'}</span>
+            <span className="fl-qty-btn-total">¥{total.toLocaleString()}</span>
         </button>
     );
 };

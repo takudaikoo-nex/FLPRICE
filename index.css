@@ -794,6 +794,16 @@ select {
   animation: fade-in-up 0.3s ease-out;
 }
 
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 0.9s linear infinite;
+}
+
 /* Print styles */
 @media print {
   .no-print {
@@ -958,6 +968,11 @@ select {
 
 .admin-scope .max-w-2xl {
   max-width: 42rem;
+}
+
+/* 発注書モーダルが使う。無いと w-full だけが効いて全幅に広がる */
+.admin-scope .max-w-3xl {
+  max-width: 48rem;
 }
 
 .admin-scope .object-cover {
@@ -2122,4 +2137,1293 @@ select {
   font-size: 0.68rem;
   color: #9ca3af;
   white-space: nowrap;
+}
+
+/* ================================================
+   見積作成画面（2026-08 fl-* へ統一）
+
+   TOP画面・タスク進捗・供花発注と同じ設計に合わせている。
+   ・色は fl-header / fl-tile などと共通（枠 #e5e7eb / 主色 #059669）
+   ・角丸は 8px（部品）／12px（カード）／14px（モーダル）
+   ・フォーカスは 3px の緑リング
+
+   火葬式と葬儀で色を分けるため、ルートに .is-cremation / .is-funeral を
+   付けて --est-* を差し替える。子要素は必ず var(--est-*) を使う。
+   ================================================ */
+.fl-est {
+  --est-accent: #059669;
+  --est-accent-dark: #047857;
+  --est-accent-soft: #ecfdf5;
+  --est-accent-line: #a7f3d0;
+  --est-accent-tint: rgb(236 253 245 / 0.55);
+}
+
+.fl-est.is-cremation {
+  --est-accent: #9333ea;
+  --est-accent-dark: #7e22ce;
+  --est-accent-soft: #faf5ff;
+  --est-accent-line: #e9d5ff;
+  --est-accent-tint: rgb(250 245 255 / 0.7);
+}
+
+/* 下部の合計バーに隠れないだけの余白を確保する */
+.fl-est-page {
+  max-width: 1240px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px 20px 130px;
+}
+
+.fl-est-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.fl-est-side {
+  position: sticky;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.fl-est-main {
+  min-width: 0;
+}
+
+@media (max-width: 1023px) {
+  .fl-est-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .fl-est-side {
+    position: static;
+  }
+}
+
+/* ---------- 火葬式／葬儀のタブ ---------- */
+.fl-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 5px;
+  background: #eef0ef;
+  border-radius: 12px;
+}
+
+.fl-tab {
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  color: #6b7280;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.fl-tab:hover {
+  background: rgb(255 255 255 / 0.6);
+}
+
+.fl-tab.is-active {
+  background: #fff;
+  color: var(--est-accent-dark);
+  border-color: var(--est-accent-line);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.06);
+}
+
+/* ---------- プラン選択 ---------- */
+.fl-plan-group {
+  background: var(--est-accent-soft);
+  border: 1px solid var(--est-accent-line);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.fl-plan-group-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--est-accent-dark);
+  margin-bottom: 12px;
+}
+
+.fl-plan-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fl-plan-card {
+  position: relative;
+  display: block;
+  padding: 14px 16px;
+  background: rgb(255 255 255 / 0.6);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.fl-plan-card:hover {
+  background: #fff;
+}
+
+.fl-plan-card.is-selected {
+  background: #fff;
+  border-color: var(--est-accent);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.06);
+}
+
+/* ラジオは見せず、カード全体を押させる */
+.fl-plan-card input[type="radio"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.fl-plan-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  /* 選択中の丸印と重ならない幅を残す */
+  padding-right: 18px;
+  margin-bottom: 4px;
+}
+
+.fl-plan-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.fl-plan-price {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1f2937;
+  white-space: nowrap;
+}
+
+.fl-plan-desc {
+  font-size: 0.78rem;
+  color: #6b7280;
+  line-height: 1.6;
+  padding-right: 18px;
+}
+
+.fl-plan-dot {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--est-accent);
+}
+
+.fl-plan-note {
+  font-size: 0.72rem;
+  color: #9ca3af;
+  text-align: right;
+  margin-top: 10px;
+}
+
+/* ---------- オプション一覧 ---------- */
+.fl-opt-panel {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.fl-opt-panel-head {
+  padding: 14px 18px;
+  background: var(--est-accent-soft);
+  border-bottom: 1px solid var(--est-accent-line);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--est-accent-dark);
+}
+
+.fl-opt-panel-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* プランに含まれるもの（開閉） */
+.fl-opt-group {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.fl-opt-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  background: #f9fafb;
+  border: 0;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fl-opt-group-head:hover {
+  background: #f3f4f6;
+}
+
+.fl-opt-group-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #374151;
+}
+
+.fl-opt-group-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+/* 開閉しない見出し（追加オプション）。見た目だけ揃える */
+.fl-opt-group-head.is-static,
+.fl-opt-group-head.is-static:hover {
+  cursor: default;
+  background: #f9fafb;
+}
+
+.fl-opt-list {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 名称は伸縮、操作部は固定幅。ここを固定するのが幅を揃える要点 */
+.fl-opt-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.fl-opt-list > .fl-opt-row:first-child {
+  border-top: 0;
+}
+
+.fl-opt-row:hover {
+  background: #fafafa;
+}
+
+.fl-opt-row.is-selected {
+  background: var(--est-accent-tint);
+}
+
+.fl-opt-row-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.fl-opt-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.fl-opt-name-text {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.fl-opt-price {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.fl-opt-control {
+  /* すべての操作部をこの幅に揃える。はみ出しの原因を断つ */
+  width: 264px;
+  flex-shrink: 0;
+  display: flex;
+  /* 左端を通すと、幅の違う部品が縦に並んでも列に見える */
+  justify-content: flex-start;
+}
+
+.fl-opt-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.fl-opt-included {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 0.76rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.fl-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #4b5563;
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.fl-tag.is-tax {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+/* i ボタン。fl-icon-btn の正方形版 */
+.fl-info-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #6b7280;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.fl-info-btn:hover {
+  background: var(--est-accent-soft);
+  color: var(--est-accent-dark);
+  border-color: var(--est-accent-line);
+}
+
+/* ---------- 入力部品 ---------- */
+/* select は素の appearance:none ＋ 矢印画像が全体に効いている。
+   幅を必ず親いっぱいに広げ、長い選択肢は … で省略する */
+.fl-select {
+  width: 100%;
+  min-width: 0;
+  padding: 9px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background-color: #fff;
+  color: #1f2937;
+  font-family: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+  text-overflow: ellipsis;
+}
+
+.fl-select:hover {
+  border-color: var(--est-accent);
+}
+
+.fl-select:focus {
+  outline: none;
+  border-color: var(--est-accent);
+  box-shadow: 0 0 0 3px rgb(5 150 105 / 0.12);
+}
+
+.fl-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #4b5563;
+  cursor: pointer;
+  user-select: none;
+}
+
+.fl-check:hover {
+  border-color: var(--est-accent);
+}
+
+.fl-check input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.fl-money {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.fl-money-mark {
+  font-size: 0.9rem;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.fl-money input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  color: #1f2937;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9rem;
+  text-align: right;
+}
+
+.fl-money input:hover {
+  border-color: var(--est-accent);
+}
+
+.fl-money input:focus {
+  outline: none;
+  border-color: var(--est-accent);
+  box-shadow: 0 0 0 3px rgb(5 150 105 / 0.12);
+}
+
+/* 数量入力型（供花など）を開くボタン。select と同じ見た目に揃える */
+.fl-qty-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fl-qty-btn:hover {
+  border-color: var(--est-accent);
+}
+
+.fl-qty-btn:focus-visible {
+  outline: none;
+  border-color: var(--est-accent);
+  box-shadow: 0 0 0 3px rgb(5 150 105 / 0.12);
+}
+
+.fl-qty-btn.is-filled {
+  border-color: var(--est-accent-line);
+}
+
+.fl-qty-btn-icon {
+  color: #9ca3af;
+  flex-shrink: 0;
+  display: flex;
+}
+
+.fl-qty-btn-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.85rem;
+  color: #9ca3af;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fl-qty-btn.is-filled .fl-qty-btn-label {
+  color: #4b5563;
+}
+
+.fl-qty-btn-total {
+  flex-shrink: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #9ca3af;
+}
+
+.fl-qty-btn.is-filled .fl-qty-btn-total {
+  color: var(--est-accent-dark);
+}
+
+/* ---------- 下部の合計バー ---------- */
+.fl-total-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background: #fff;
+  border-top: 1px solid #e5e7eb;
+  box-shadow: 0 -4px 16px rgb(0 0 0 / 0.06);
+  padding: 14px 20px;
+}
+
+.fl-total-inner {
+  max-width: 1240px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.fl-total-sum {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  min-width: 0;
+}
+
+.fl-total-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #4b5563;
+  white-space: nowrap;
+}
+
+.fl-total-amount {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #047857;
+  white-space: nowrap;
+}
+
+.fl-total-actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+  .fl-total-amount {
+    font-size: 1.7rem;
+  }
+
+  .fl-total-actions .fl-btn {
+    padding: 9px 12px;
+    font-size: 0.82rem;
+  }
+}
+
+/* ---------- 顧客情報入力 ---------- */
+.fl-form-page {
+  max-width: 960px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px 20px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.fl-form-section {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.fl-form-section-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 12px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.fl-form-section-head h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.fl-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 18px;
+}
+
+.fl-form-grid.cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.fl-form-grid .span-2 {
+  grid-column: span 2;
+}
+
+.fl-form-grid.cols-3 .span-3 {
+  grid-column: span 3;
+}
+
+/* 郵便番号のように短くしたい欄 */
+.fl-field.is-short input {
+  max-width: 200px;
+}
+
+.fl-form-subgroup {
+  border-top: 1px solid #f3f4f6;
+  padding-top: 14px;
+  margin-top: 4px;
+}
+
+.fl-form-row {
+  display: flex;
+  gap: 14px;
+  align-items: flex-end;
+}
+
+.fl-form-row > .fl-field {
+  margin-bottom: 0;
+}
+
+.fl-form-row > .fl-field.is-grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.fl-form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+}
+
+.fl-form-actions-right {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+
+  .fl-form-grid,
+  .fl-form-grid.cols-3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .fl-form-grid .span-2,
+  .fl-form-grid.cols-3 .span-3 {
+    grid-column: span 1;
+  }
+
+  .fl-form-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* 和暦・西暦の日付入力 */
+.fl-date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.fl-date select {
+  width: auto;
+  min-width: 92px;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background-color: #fff;
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: #1f2937;
+  cursor: pointer;
+}
+
+.fl-date select:focus {
+  outline: none;
+  border-color: #059669;
+  box-shadow: 0 0 0 3px rgb(5 150 105 / 0.12);
+}
+
+.fl-date-part {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.fl-date-part input {
+  width: 64px;
+  padding: 10px 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: #1f2937;
+  text-align: center;
+}
+
+.fl-date-part input:focus {
+  outline: none;
+  border-color: #059669;
+  box-shadow: 0 0 0 3px rgb(5 150 105 / 0.12);
+}
+
+.fl-date-part span {
+  font-size: 0.85rem;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+/* ---------- モーダルの寸法 ---------- */
+.fl-modal.is-narrow {
+  max-width: 420px;
+}
+
+.fl-modal.is-wide {
+  max-width: 720px;
+}
+
+/* 画像を端まで見せるモーダル。余白は中で持つ */
+.fl-modal.is-flush {
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.fl-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #f3f4f6;
+  flex-shrink: 0;
+}
+
+.fl-modal-head h3 {
+  margin-bottom: 0;
+}
+
+.fl-modal-head-sub {
+  font-size: 0.76rem;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.fl-modal-body {
+  padding: 18px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.fl-modal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 18px;
+  border-top: 1px solid #f3f4f6;
+  background: #f9fafb;
+  flex-shrink: 0;
+}
+
+.fl-modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: #6b7280;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.fl-modal-close:hover {
+  background: #f3f4f6;
+  color: #1f2937;
+}
+
+/* ---------- オプション詳細（画像カルーセル） ---------- */
+.fl-detail-dots {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+  justify-content: center;
+}
+
+.fl-detail-dot {
+  height: 4px;
+  width: 8px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  transition: width 0.2s, background-color 0.2s;
+}
+
+.fl-detail-dot.is-current {
+  width: 28px;
+  background: #059669;
+}
+
+.fl-detail-stage {
+  position: relative;
+  background: #f3f4f6;
+  flex-shrink: 0;
+  /* 4:3 を保ち、横長の棺なども切らずに収める */
+  aspect-ratio: 4 / 3;
+}
+
+.fl-detail-stage img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.fl-detail-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #9ca3af;
+  font-size: 0.76rem;
+}
+
+.fl-detail-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.9);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.12);
+  color: #374151;
+  cursor: pointer;
+}
+
+.fl-detail-nav:hover {
+  background: #fff;
+  color: #047857;
+}
+
+.fl-detail-nav.is-prev {
+  left: 10px;
+}
+
+.fl-detail-nav.is-next {
+  right: 10px;
+}
+
+.fl-detail-caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 8px 12px;
+  background: rgb(0 0 0 / 0.5);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fl-detail-text {
+  padding: 18px;
+}
+
+.fl-detail-text h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 8px;
+}
+
+.fl-detail-text h4 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #047857;
+  margin-bottom: 6px;
+}
+
+.fl-detail-desc {
+  font-size: 0.85rem;
+  color: #4b5563;
+  line-height: 1.9;
+  white-space: pre-wrap;
+}
+
+.fl-detail-desc.is-empty {
+  color: #9ca3af;
+}
+
+/* ---------- 数量入力（供花など） ---------- */
+.fl-qty-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fl-qty-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #f9fafb;
+}
+
+.fl-qty-row.is-filled {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.fl-qty-row-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.fl-qty-row-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1f2937;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fl-qty-row-unit {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.fl-qty-input {
+  width: 72px;
+  flex-shrink: 0;
+  padding: 9px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1rem;
+  color: #1f2937;
+  text-align: right;
+}
+
+.fl-qty-input:focus {
+  outline: none;
+  border-color: #059669;
+  box-shadow: 0 0 0 3px rgb(5 150 105 / 0.12);
+}
+
+.fl-qty-suffix {
+  font-size: 0.78rem;
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.fl-qty-amount {
+  width: 104px;
+  flex-shrink: 0;
+  text-align: right;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9rem;
+  color: #d1d5db;
+}
+
+.fl-qty-row.is-filled .fl-qty-amount {
+  color: #1f2937;
+  font-weight: 700;
+}
+
+.fl-qty-foot {
+  border-top: 1px solid #e5e7eb;
+  margin-top: 16px;
+  padding-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fl-qty-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+.fl-qty-line-value {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1rem;
+}
+
+.fl-qty-discount {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.fl-qty-discount select {
+  width: auto;
+  padding: 9px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background-color: #fff;
+  font-family: inherit;
+  font-size: 0.88rem;
+  color: #1f2937;
+  cursor: pointer;
+}
+
+.fl-qty-discount select:focus,
+.fl-qty-discount input:focus {
+  outline: none;
+  border-color: #059669;
+  box-shadow: 0 0 0 3px rgb(5 150 105 / 0.12);
+}
+
+.fl-qty-discount input {
+  width: 104px;
+  padding: 9px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9rem;
+  text-align: right;
+}
+
+.fl-qty-discount-value {
+  margin-left: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9rem;
+  color: #b91c1c;
+}
+
+.fl-qty-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 12px;
+}
+
+.fl-qty-total-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.fl-qty-total-value {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #047857;
+}
+
+@media (max-width: 600px) {
+  .fl-qty-amount {
+    width: 80px;
+    font-size: 0.82rem;
+  }
+}
+
+/* ---------- スマートフォン版の見積画面 ---------- */
+.fl-est-mobile .fl-est-page {
+  max-width: 560px;
+  padding: 16px 16px 190px;
+}
+
+.fl-est-mobile-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.fl-est-mobile .fl-opt-panel-body {
+  padding: 12px;
+}
+
+/* 縦積みにして、操作部を横幅いっぱいに使う */
+.fl-est-mobile .fl-opt-row {
+  flex-wrap: wrap;
+  padding: 12px 14px;
+}
+
+.fl-est-mobile .fl-opt-control {
+  width: 100%;
+  justify-content: stretch;
+}
+
+.fl-est-mobile .fl-opt-control > * {
+  width: 100%;
+}
+
+.fl-est-mobile .fl-opt-row-main {
+  flex-basis: 100%;
+}
+
+.fl-est-mobile .fl-check {
+  justify-content: center;
+}
+
+.fl-est-mobile .fl-total-bar {
+  padding: 12px 14px;
+}
+
+.fl-est-mobile .fl-total-inner {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.fl-est-mobile .fl-total-sum {
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.fl-est-mobile .fl-total-amount {
+  font-size: 1.8rem;
+}
+
+.fl-est-mobile .fl-total-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.fl-est-mobile .fl-total-actions .fl-btn {
+  justify-content: center;
+  padding: 10px 4px;
+  font-size: 0.78rem;
+}
+
+/* ---------- 見積番号の呼び出し（開始画面） ---------- */
+.fl-start-load {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.fl-start-load input {
+  flex: 1;
+  min-width: 0;
+}
+
+.fl-start-load .fl-btn {
+  flex-shrink: 0;
+  padding: 10px 16px;
+}
+
+.fl-start-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #9ca3af;
+  font-size: 0.76rem;
+}
+
+.fl-start-divider::before,
+.fl-start-divider::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid #e5e7eb;
+}
+
+.fl-start-new {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 16px;
+  border: 2px dashed #d1d5db;
+  border-radius: 12px;
+  background: #fff;
+  color: #4b5563;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background-color 0.15s;
+}
+
+.fl-start-new:hover {
+  border-color: #059669;
+  background: #ecfdf5;
+  color: #047857;
+}
+
+/* 印刷時は画面用の枠を全部消す */
+@media print {
+
+  .fl-total-bar,
+  .fl-est-layout,
+  .fl-header {
+    display: none !important;
+  }
 }

@@ -21,19 +21,16 @@ export const MultiGradeInput: React.FC<MultiGradeInputProps> = ({
     const discount = getMultiGradeDiscount(item, planId, current);
 
     return (
-        <div className="w-full">
-            <div className="space-y-2">
+        <div>
+            <div className="fl-qty-list">
                 {options.map(opt => {
                     const unitPrice = getGradePrice(item, planId, opt.id);
                     const quantity = current.quantities[opt.id] ?? 0;
                     return (
-                        <div key={opt.id}
-                            className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${
-                                quantity > 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-gray-50 border-gray-200'
-                            }`}>
-                            <div className="flex-1 min-w-0">
-                                <div className="font-bold text-gray-800 truncate">{gradeName(opt, products)}</div>
-                                <div className="text-sm text-gray-500 font-mono">¥{unitPrice.toLocaleString()}</div>
+                        <div key={opt.id} className={`fl-qty-row ${quantity > 0 ? 'is-filled' : ''}`}>
+                            <div className="fl-qty-row-main">
+                                <div className="fl-qty-row-name">{gradeName(opt, products)}</div>
+                                <div className="fl-qty-row-unit">¥{unitPrice.toLocaleString()}</div>
                             </div>
                             <input
                                 type="number"
@@ -42,37 +39,34 @@ export const MultiGradeInput: React.FC<MultiGradeInputProps> = ({
                                 value={quantity === 0 ? '' : quantity}
                                 placeholder="0"
                                 onChange={e => onQuantityChange(opt.id, Math.max(0, parseInt(e.target.value) || 0))}
-                                className="w-20 p-3 border border-gray-300 rounded-lg text-right text-lg font-mono bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+                                className="fl-qty-input"
                             />
-                            <span className="text-sm text-gray-400 w-4">個</span>
-                            <span className={`w-28 text-right font-mono ${quantity > 0 ? 'text-gray-800 font-bold' : 'text-gray-300'}`}>
-                                ¥{(unitPrice * quantity).toLocaleString()}
-                            </span>
+                            <span className="fl-qty-suffix">個</span>
+                            <span className="fl-qty-amount">¥{(unitPrice * quantity).toLocaleString()}</span>
                         </div>
                     );
                 })}
             </div>
 
-            <div className="border-t border-gray-200 mt-4 pt-4 space-y-3">
-                <div className="flex items-center justify-between text-gray-600">
-                    <span className="font-medium">小計</span>
-                    <span className="font-mono text-lg">¥{subtotal.toLocaleString()}</span>
+            <div className="fl-qty-foot">
+                <div className="fl-qty-line">
+                    <span>小計</span>
+                    <span className="fl-qty-line-value">¥{subtotal.toLocaleString()}</span>
                 </div>
 
-                <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-medium text-gray-600">割引</span>
+                <div className="fl-qty-discount">
+                    <span>割引</span>
                     <select
                         value={current.discountType}
                         onChange={e => onDiscountChange(e.target.value as DiscountType, current.discountValue)}
-                        className="p-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-emerald-500 outline-none"
                     >
                         <option value="none">なし</option>
                         <option value="amount">金額</option>
                         <option value="percent">％</option>
                     </select>
                     {current.discountType !== 'none' && (
-                        <div className="flex items-center gap-1.5">
-                            {current.discountType === 'amount' && <span className="text-gray-500">¥</span>}
+                        <>
+                            {current.discountType === 'amount' && <span>¥</span>}
                             <input
                                 type="number"
                                 min={0}
@@ -84,19 +78,18 @@ export const MultiGradeInput: React.FC<MultiGradeInputProps> = ({
                                     const raw = Math.max(0, parseInt(e.target.value) || 0);
                                     onDiscountChange(current.discountType, current.discountType === 'percent' ? Math.min(100, raw) : raw);
                                 }}
-                                className="w-28 p-2.5 border border-gray-300 rounded-lg text-right font-mono focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
                             />
-                            {current.discountType === 'percent' && <span className="text-gray-500">%</span>}
-                        </div>
+                            {current.discountType === 'percent' && <span>%</span>}
+                        </>
                     )}
-                    <span className="ml-auto font-mono text-red-600">
+                    <span className="fl-qty-discount-value">
                         {discount > 0 ? `-¥${discount.toLocaleString()}` : ''}
                     </span>
                 </div>
 
-                <div className="flex items-center justify-between border-t border-gray-200 pt-3">
-                    <span className="font-bold text-gray-800">合計</span>
-                    <span className="font-mono font-bold text-2xl text-emerald-700">¥{(subtotal - discount).toLocaleString()}</span>
+                <div className="fl-qty-total">
+                    <span className="fl-qty-total-label">合計</span>
+                    <span className="fl-qty-total-value">¥{(subtotal - discount).toLocaleString()}</span>
                 </div>
             </div>
         </div>

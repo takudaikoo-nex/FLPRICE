@@ -91,30 +91,27 @@ export const DateInput: React.FC<DateInputProps> = ({ value, mode, onChange, lab
 
     return (
         <div className={className}>
-            {label && <label className="block text-sm font-bold text-gray-700 mb-1.5">{label}</label>}
-            <div className="flex gap-2 items-center">
+            {label && <label>{label}</label>}
+            <div className="fl-date">
                 <select
                     value={era}
                     onChange={(e) => handleChange(e.target.value, year, month, day)}
-                    className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all min-w-[100px]"
                 >
                     {ERAS.map(e => <option key={e.value} value={e.value}>{e.name}</option>)}
-                    {/* Add Showa/Taisho/Meiji explicitly if ERAS list didn't cover it? No, ERAS covers it. */}
                 </select>
 
-                <div className="flex items-center gap-1">
+                <div className="fl-date-part">
                     <input
                         type="number"
                         min="1"
                         value={year}
                         onChange={(e) => handleChange(era, e.target.value, month, day)}
                         placeholder="年"
-                        className="w-20 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all text-center"
                     />
-                    <span className="text-gray-600 font-bold">年</span>
+                    <span>年</span>
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div className="fl-date-part">
                     <input
                         type="number"
                         min="1"
@@ -122,12 +119,11 @@ export const DateInput: React.FC<DateInputProps> = ({ value, mode, onChange, lab
                         value={month}
                         onChange={(e) => handleChange(era, year, e.target.value, day)}
                         placeholder="月"
-                        className="w-16 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all text-center"
                     />
-                    <span className="text-gray-600 font-bold">月</span>
+                    <span>月</span>
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div className="fl-date-part">
                     <input
                         type="number"
                         min="1"
@@ -135,9 +131,8 @@ export const DateInput: React.FC<DateInputProps> = ({ value, mode, onChange, lab
                         value={day}
                         onChange={(e) => handleChange(era, year, month, e.target.value)}
                         placeholder="日"
-                        className="w-16 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all text-center"
                     />
-                    <span className="text-gray-600 font-bold">日</span>
+                    <span>日</span>
                 </div>
             </div>
         </div>

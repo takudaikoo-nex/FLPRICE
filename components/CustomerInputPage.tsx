@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { stripHonorific } from '../lib/format';
 import { CustomerInfo } from '../types';
 import { DateInput, DateMode } from './DateInput';
-import { ArrowLeft, Printer, Save } from 'lucide-react';
+import { ArrowLeft, Printer } from 'lucide-react';
 
 interface CustomerInputPageProps {
     onBack: () => void;
@@ -190,72 +190,65 @@ const CustomerInputPage: React.FC<CustomerInputPageProps> = ({ onBack, onSaveAnd
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
-            {/* Header */}
-            <header className="bg-white border-b border-gray-200 py-4 px-6 sticky top-0 z-30 shadow-sm">
-                <div className="max-w-4xl mx-auto flex items-center justify-between">
-                    <button
-                        onClick={onBack}
-                        className="flex items-center gap-2 text-gray-600 hover:text-emerald-700 transition-colors font-bold"
-                    >
-                        <ArrowLeft size={20} />
-                        <span>見積り選択へ戻る</span>
+        <div className="fl-shell">
+            <header className="fl-header">
+                <div className="fl-header-left">
+                    <button type="button" className="fl-back" onClick={onBack}>
+                        <ArrowLeft size={16} />
+                        見積り選択へ戻る
                     </button>
-                    <h1 className="text-xl font-bold text-gray-800">顧客情報・見積書情報入力</h1>
+                    <h1>顧客情報・見積書情報入力</h1>
                 </div>
             </header>
 
-            {/* Content */}
-            <main className="flex-1 w-full max-w-4xl mx-auto p-4 md:p-8">
-                <form id="customer-form" className="space-y-8">
+            <main>
+                <form id="customer-form" className="fl-form-page">
 
-                    {/* Deceased Info */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                        <div className="flex items-center gap-2 mb-6 border-b pb-2">
-                            <span className="text-2xl">🕊️</span>
-                            <h3 className="font-bold text-lg text-gray-800">故人様について</h3>
+                    {/* ---------- 故人様 ---------- */}
+                    <section className="fl-form-section">
+                        <div className="fl-form-section-head">
+                            <span>🕊️</span>
+                            <h3>故人様について</h3>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1.5">死亡月日</label>
+                        <div className="fl-form-grid">
+                            <div className="fl-field">
+                                <label>死亡月日</label>
                                 <DateInput
                                     value={formData.deathDate}
                                     mode={formData.deathDateMode || 'western'}
                                     onChange={(val, mode) => handleDateChange('deathDate', 'deathDateMode', val, mode)}
                                 />
                             </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1.5">お葬式の日程（葬祭日）</label>
+                            <div className="fl-field">
+                                <label>お葬式の日程（葬祭日）</label>
                                 <DateInput
                                     value={formData.funeralDate || ''}
                                     mode={formData.funeralDateMode || 'western'}
                                     onChange={(val, mode) => handleDateChange('funeralDate', 'funeralDateMode', val, mode)}
                                 />
                             </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1.5">式場名</label>
+                            <div className="fl-field">
+                                <label>式場名</label>
                                 <input
                                     type="text"
                                     name="venueName"
                                     value={formData.venueName || ''}
                                     onChange={handleChange}
                                     placeholder="例: ファーストリーフホール鎌倉"
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all"
                                 />
                             </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1.5">式場住所</label>
+                            <div className="fl-field">
+                                <label>式場住所</label>
                                 <input
                                     type="text"
                                     name="venueAddress"
                                     value={formData.venueAddress || ''}
                                     onChange={handleChange}
                                     placeholder="例: 神奈川県鎌倉市〇〇 1-2-3"
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all"
                                 />
                             </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1.5">故人様氏名</label>
+                            <div className="fl-field">
+                                <label>故人様氏名</label>
                                 <input
                                     type="text"
                                     name="deceasedName"
@@ -263,305 +256,282 @@ const CustomerInputPage: React.FC<CustomerInputPageProps> = ({ onBack, onSaveAnd
                                     onChange={handleChange}
                                     onBlur={handleNameBlur}
                                     placeholder="例: 佐藤 太郎"
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all"
                                 />
                             </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1.5">生年月日</label>
+                            <div className="fl-field">
+                                <label>生年月日</label>
                                 <DateInput
                                     value={formData.birthDate}
                                     mode={formData.birthDateMode || 'western'}
                                     onChange={(val, mode) => handleDateChange('birthDate', 'birthDateMode', val, mode)}
                                 />
                             </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1.5">享年 (才)</label>
+                            <div className="fl-field is-short">
+                                <label>享年（才）</label>
                                 <input
                                     type="text"
                                     name="age"
                                     value={formData.age}
                                     onChange={handleChange}
                                     placeholder="自動計算"
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all"
                                 />
                             </div>
-                            <div className="md:col-span-2 space-y-4">
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-1.5">郵便番号</label>
-                                    <input
-                                        type="text"
-                                        value={postalCodeInput}
-                                        onChange={handlePostalCodeChange}
-                                        placeholder="例: 2530085 (ハイフンなし)"
-                                        maxLength={7}
-                                        className="w-48 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-1.5">現住所</label>
-                                    <input
-                                        type="text"
-                                        name="address"
-                                        value={formData.address}
-                                        onChange={handleChange}
-                                        placeholder="自動入力または手動入力"
-                                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all"
-                                    />
-                                </div>
+                            <div className="fl-field is-short">
+                                <label>郵便番号</label>
+                                <input
+                                    type="text"
+                                    value={postalCodeInput}
+                                    onChange={handlePostalCodeChange}
+                                    placeholder="例: 2530085（ハイフンなし）"
+                                    maxLength={7}
+                                />
                             </div>
-                            <div className="md:col-span-2">
-                                <label className="block text-sm font-bold text-gray-700 mb-1.5">本籍</label>
+                            <div className="fl-field span-2">
+                                <label>現住所</label>
+                                <input
+                                    type="text"
+                                    name="address"
+                                    value={formData.address}
+                                    onChange={handleChange}
+                                    placeholder="郵便番号から自動入力されます"
+                                />
+                            </div>
+                            <div className="fl-field span-2">
+                                <label>本籍</label>
                                 <input
                                     type="text"
                                     name="honseki"
                                     value={formData.honseki}
                                     onChange={handleChange}
                                     placeholder="例: 神奈川県茅ヶ崎市..."
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all"
                                 />
                             </div>
                         </div>
-                    </div>
+                    </section>
 
-                    {/* Applicant Info */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                        <div className="flex items-center gap-2 mb-6 border-b pb-2">
-                            <span className="text-2xl">📋</span>
-                            <h3 className="font-bold text-lg text-gray-800">申込者・喪主様について</h3>
+                    {/* ---------- 申込者・喪主様 ---------- */}
+                    <section className="fl-form-section">
+                        <div className="fl-form-section-head">
+                            <span>📋</span>
+                            <h3>申込者・喪主様について</h3>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="md:col-span-1">
-                                <label className="block text-sm font-bold text-gray-700 mb-1.5">申込者氏名</label>
+                        <div className="fl-form-grid cols-3">
+                            <div className="fl-field">
+                                <label>申込者氏名</label>
                                 <input
                                     type="text"
                                     name="applicantName"
                                     value={formData.applicantName}
                                     onChange={handleChange}
                                     onBlur={handleNameBlur}
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all"
                                 />
                             </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1.5">続柄</label>
+                            <div className="fl-field">
+                                <label>続柄</label>
                                 <input
                                     type="text"
                                     name="applicantRelation"
                                     value={formData.applicantRelation}
                                     onChange={handleChange}
                                     placeholder="例: 長男"
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all"
                                 />
                             </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1.5">生年月日</label>
+                            <div className="fl-field">
+                                <label>生年月日</label>
                                 <DateInput
                                     value={formData.applicantBirthDate}
                                     mode={formData.applicantBirthDateMode || 'western'}
                                     onChange={(val, mode) => handleDateChange('applicantBirthDate', 'applicantBirthDateMode', val, mode)}
                                 />
                             </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1.5">年齢 (才)</label>
+                            <div className="fl-field is-short">
+                                <label>年齢（才）</label>
                                 <input
                                     type="text"
                                     name="applicantAge"
                                     value={formData.applicantAge || ''}
                                     onChange={handleChange}
                                     placeholder="自動計算"
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all"
                                 />
                             </div>
-                            <div className="md:col-span-3 space-y-4 border-t border-gray-100 pt-4 mt-2 mb-2">
-                                <div className="flex flex-col md:flex-row gap-4">
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-1.5">申込者郵便番号</label>
+
+                            <div className="span-3 fl-form-subgroup">
+                                <div className="fl-form-row">
+                                    <div className="fl-field is-short">
+                                        <label>申込者郵便番号</label>
                                         <input
                                             type="text"
                                             value={applicantPostalCodeInput}
                                             onChange={handleApplicantPostalCodeChange}
                                             placeholder="例: 2530085"
                                             maxLength={7}
-                                            className="w-48 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all"
                                         />
                                     </div>
-                                    <div className="flex-1">
-                                        <label className="block text-sm font-bold text-gray-700 mb-1.5">申込者住所</label>
+                                    <div className="fl-field is-grow">
+                                        <label>申込者住所</label>
                                         <input
                                             type="text"
                                             name="applicantAddress"
                                             value={formData.applicantAddress || ''}
                                             onChange={handleChange}
-                                            placeholder="自動入力または手動入力"
-                                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all"
+                                            placeholder="郵便番号から自動入力されます"
                                         />
                                     </div>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-1.5">申込者電話番号</label>
+                                <div className="fl-field" style={{ marginTop: '14px', marginBottom: 0 }}>
+                                    <label>申込者電話番号</label>
                                     <input
                                         type="tel"
                                         name="applicantPhone"
                                         value={formData.applicantPhone || ''}
                                         onChange={handleChange}
                                         placeholder="例: 090-1234-5678"
-                                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all"
                                     />
                                 </div>
                             </div>
-                            <div className="md:col-span-1">
-                                <label className="block text-sm font-bold text-gray-700 mb-1.5">喪主様氏名</label>
+
+                            <div className="fl-field">
+                                <label>喪主様氏名</label>
                                 <input
                                     type="text"
                                     name="chiefMournerName"
                                     value={formData.chiefMournerName}
                                     onChange={handleChange}
                                     onBlur={handleNameBlur}
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all"
                                 />
                             </div>
-                            <div className="md:col-span-2">
-                                <label className="block text-sm font-bold text-gray-700 mb-1.5">喪主様住所 (上記と異なる場合)</label>
+                            <div className="fl-field span-2">
+                                <label>喪主様住所（上記と異なる場合）</label>
                                 <input
                                     type="text"
                                     name="chiefMournerAddress"
                                     value={formData.chiefMournerAddress}
                                     onChange={handleChange}
-                                    placeholder="申込み者と同じ場合は空欄で構いません"
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all"
+                                    placeholder="申込者と同じ場合は空欄で構いません"
                                 />
                             </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1.5">電話番号</label>
+                            <div className="fl-field">
+                                <label>電話番号</label>
                                 <input
                                     type="tel"
                                     name="chiefMournerPhone"
                                     value={formData.chiefMournerPhone}
                                     onChange={handleChange}
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all"
                                 />
                             </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1.5">携帯番号</label>
+                            <div className="fl-field">
+                                <label>携帯番号</label>
                                 <input
                                     type="tel"
                                     name="chiefMournerMobile"
                                     value={formData.chiefMournerMobile}
                                     onChange={handleChange}
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all"
                                 />
                             </div>
                         </div>
-                    </div>
+                    </section>
 
-                    {/* Other Info */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                        <div className="flex items-center gap-2 mb-6 border-b pb-2">
-                            <span className="text-2xl">🙏</span>
-                            <h3 className="font-bold text-lg text-gray-800">宗教・寺院について</h3>
+                    {/* ---------- 宗教・寺院 ---------- */}
+                    <section className="fl-form-section">
+                        <div className="fl-form-section-head">
+                            <span>🙏</span>
+                            <h3>宗教・寺院について</h3>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1.5">宗派</label>
+                        <div className="fl-form-grid">
+                            <div className="fl-field">
+                                <label>宗派</label>
                                 <input
                                     type="text"
                                     name="religion"
                                     value={formData.religion}
                                     onChange={handleChange}
                                     placeholder="例: 浄土真宗本願寺派"
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all"
                                 />
                             </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1.5">菩提寺名称</label>
+                            <div className="fl-field">
+                                <label>菩提寺名称</label>
                                 <input
                                     type="text"
                                     name="templeName"
                                     value={formData.templeName}
                                     onChange={handleChange}
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all"
                                 />
                             </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1.5">菩提寺電話</label>
+                            <div className="fl-field">
+                                <label>菩提寺電話</label>
                                 <input
                                     type="tel"
                                     name="templePhone"
                                     value={formData.templePhone}
                                     onChange={handleChange}
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all"
                                 />
                             </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1.5">菩提寺FAX</label>
+                            <div className="fl-field">
+                                <label>菩提寺FAX</label>
                                 <input
                                     type="tel"
                                     name="templeFax"
                                     value={formData.templeFax}
                                     onChange={handleChange}
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all"
                                 />
                             </div>
                         </div>
-                    </div>
+                    </section>
 
-
-                    {/* Remarks */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                        <div className="flex items-center gap-2 mb-6 border-b pb-2">
-                            <span className="text-2xl">📝</span>
-                            <h3 className="font-bold text-lg text-gray-800">備考</h3>
+                    {/* ---------- 備考 ---------- */}
+                    <section className="fl-form-section">
+                        <div className="fl-form-section-head">
+                            <span>📝</span>
+                            <h3>備考</h3>
                         </div>
-                        <div>
+                        <div className="fl-field" style={{ marginBottom: 0 }}>
                             <textarea
                                 name="remarks"
                                 value={formData.remarks || ''}
                                 onChange={(e) => setFormData(prev => ({ ...prev, remarks: e.target.value }))}
                                 placeholder="備考事項があればご記入ください"
-                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-gray-50 transition-all min-h-[100px]"
                             />
                         </div>
-                    </div>
+                    </section>
 
-                    {/* Footer Actions */}
-                    <div className="flex flex-wrap justify-end gap-4 pt-4 border-t border-gray-200">
-                        <button
-                            type="button"
-                            onClick={onBack}
-                            className="px-6 py-3 rounded-full border-2 border-gray-300 text-gray-600 hover:bg-gray-100 font-bold transition-all"
-                        >
+                    <div className="fl-form-actions">
+                        <button type="button" className="fl-btn fl-btn-ghost" onClick={onBack}>
                             戻る
                         </button>
-                        <div className="flex gap-2">
+                        <div className="fl-form-actions-right">
                             <button
                                 type="button"
+                                className="fl-btn fl-btn-primary"
                                 disabled={isSaving}
                                 onClick={(e) => handlePrintClick(e, 'quote')}
-                                className="px-6 py-3 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 font-bold shadow-lg transition-all flex items-center gap-2"
                             >
-                                <Printer size={20} />見積書
+                                <Printer size={18} />
+                                見積書
                             </button>
                             <button
                                 type="button"
+                                className="fl-btn fl-btn-primary"
                                 disabled={isSaving}
                                 onClick={(e) => handlePrintClick(e, 'invoice')}
-                                className="px-6 py-3 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 font-bold shadow-lg transition-all flex items-center gap-2"
                             >
-                                <Printer size={20} />請求書
+                                <Printer size={18} />
+                                請求書
                             </button>
                             <button
                                 type="button"
+                                className="fl-btn fl-btn-primary"
                                 disabled={isSaving}
                                 onClick={(e) => handlePrintClick(e, 'receipt')}
-                                className="px-6 py-3 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 font-bold shadow-lg transition-all flex items-center gap-2"
                             >
-                                <Printer size={20} />領収書
+                                <Printer size={18} />
+                                領収書
                             </button>
                         </div>
                     </div>
 
                 </form>
             </main>
-        </div >
+        </div>
     );
 };
 

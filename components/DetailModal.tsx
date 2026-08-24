@@ -106,119 +106,97 @@ const DetailModal: React.FC<DetailModalProps> = ({ item, selectedGrade, planId, 
   const currentSlide = slides[currentSlideIndex];
 
   const modalContent = (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm transition-opacity no-print"
-      onClick={onClose}
-    >
+    <div className="fl-modal-backdrop no-print" onClick={onClose}>
       <div
-        className="bg-white rounded-xl shadow-2xl w-full overflow-hidden animate-fade-in-up flex flex-col max-h-[85vh] h-[600px]"
-        style={{ maxWidth: '400px' }}
+        className="fl-modal is-narrow is-flush animate-fade-in-up"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header (Top Bar) */}
-        <div className="flex justify-between items-center p-4 border-b border-gray-100 bg-white z-10">
-          <div className="flex gap-1 justify-center flex-1">
+        {/* 何枚目を見ているかの目印 */}
+        <div className="fl-modal-head">
+          <div className="fl-detail-dots">
             {slides.map((_, idx) => (
-              <div
+              <span
                 key={idx}
-                className={`h-1 rounded-full transition-all duration-300 ${idx === currentSlideIndex ? 'w-8 bg-emerald-500' : 'w-2 bg-gray-200'
-                  }`}
+                className={`fl-detail-dot ${idx === currentSlideIndex ? 'is-current' : ''}`}
               />
             ))}
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-full hover:bg-gray-100 transition-colors"
-          >
-            <X size={24} className="text-gray-500" />
+          <button type="button" className="fl-modal-close" onClick={onClose} title="閉じる">
+            <X size={20} />
           </button>
         </div>
 
-        {/* Carousel Content */}
-        <div className="flex-1 relative overflow-hidden flex flex-col bg-gray-50">
-          {/* Navigation Buttons */}
-          {currentSlideIndex > 0 && (
-            <button
-              onClick={prevSlide}
-              className="absolute left-2 top-1/2 -translate-y-1/2 z-20 bg-white/80 p-2 rounded-full shadow hover:bg-white text-gray-700 hover:text-emerald-600 transition-all"
-              title="前へ"
-            >
-              <ChevronLeft size={24} />
-            </button>
-          )}
+        <div className="fl-modal-body animate-fade-in">
+          <div className="fl-detail-stage">
+            {currentSlideIndex > 0 && (
+              <button
+                type="button"
+                className="fl-detail-nav is-prev"
+                onClick={prevSlide}
+                title="前へ"
+              >
+                <ChevronLeft size={20} />
+              </button>
+            )}
 
-          {currentSlideIndex < slides.length - 1 && (
-            <button
-              onClick={nextSlide}
-              className="absolute right-2 top-1/2 -translate-y-1/2 z-20 bg-white/80 p-2 rounded-full shadow hover:bg-white text-gray-700 hover:text-emerald-600 transition-all"
-              title="次へ"
-            >
-              <ChevronRight size={24} />
-            </button>
-          )}
+            {currentSlideIndex < slides.length - 1 && (
+              <button
+                type="button"
+                className="fl-detail-nav is-next"
+                onClick={nextSlide}
+                title="次へ"
+              >
+                <ChevronRight size={20} />
+              </button>
+            )}
 
-          {/* Slide Area */}
-          <div className="flex-1 overflow-y-auto flex flex-col h-full animate-fade-in">
-            {/* Image Section */}
-            <div className="relative aspect-4-3 bg-gray-100 flex-shrink-0">
-              {/* お棺などの横長画像を切らずに全体を見せる */}
-              {currentSlide.image && !(currentSlide.isMain && imageError) ? (
-                <img
-                  src={currentSlide.image}
-                  alt={currentSlide.title || item.name}
-                  className="absolute inset-0 w-full h-full object-contain"
-                  onError={(e) => {
-                    if (currentSlide.isMain) {
-                      handleImageError();
-                    } else {
-                      (e.target as HTMLImageElement).style.display = 'none';
-                    }
-                  }}
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center flex-col text-gray-400">
-                  <div className="text-4xl mb-2">🌿</div>
-                  <span className="text-xs">No Image</span>
-                </div>
-              )}
+            {/* お棺などの横長画像を切らずに全体を見せる */}
+            {currentSlide.image && !(currentSlide.isMain && imageError) ? (
+              <img
+                src={currentSlide.image}
+                alt={currentSlide.title || item.name}
+                onError={(e) => {
+                  if (currentSlide.isMain) {
+                    handleImageError();
+                  } else {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }
+                }}
+              />
+            ) : (
+              <div className="fl-detail-empty">
+                <span style={{ fontSize: '1.8rem' }}>🌿</span>
+                No Image
+              </div>
+            )}
 
-              {/* Title Overlay (Optional) */}
-              {currentSlide.title && !currentSlide.isMain && (
-                <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-2">
-                  <p className="font-bold text-sm truncate">{currentSlide.title}</p>
-                </div>
-              )}
-            </div>
+            {currentSlide.title && !currentSlide.isMain && (
+              <p className="fl-detail-caption">{currentSlide.title}</p>
+            )}
+          </div>
 
-            {/* Text Content Section */}
-            <div className="p-6 bg-white flex-1">
-              {currentSlide.isMain && (
-                <h3 className="text-xl font-bold text-gray-800 mb-3">{item.name}</h3>
-              )}
-              {currentSlide.title && !currentSlide.isMain && (
-                <h4 className="font-bold text-emerald-600 mb-2">{currentSlide.title}</h4>
-              )}
+          <div className="fl-detail-text">
+            {currentSlide.isMain && <h3>{item.name}</h3>}
+            {currentSlide.title && !currentSlide.isMain && <h4>{currentSlide.title}</h4>}
 
-              <p className="text-gray-600 leading-relaxed whitespace-pre-wrap text-sm">
-                {currentSlide.description || (
-                  <span className="text-gray-400 italic">説明はありません</span>
+            <p className={`fl-detail-desc ${currentSlide.description ? '' : 'is-empty'}`}>
+              {currentSlide.description || '説明はありません'}
+            </p>
+
+            {currentSlide.isMain && hasCatalogImages && (
+              <button
+                type="button"
+                className="fl-btn fl-btn-ghost"
+                style={{ marginTop: '14px' }}
+                onClick={() => window.open(
+                  `/?catalog=true&item=${item.id}${planId ? `&plan=${encodeURIComponent(planId)}` : ''}`,
+                  '_blank',
                 )}
-              </p>
-
-              {currentSlide.isMain && hasCatalogImages && (
-                <button
-                  type="button"
-                  onClick={() => window.open(
-                    `/?catalog=true&item=${item.id}${planId ? `&plan=${encodeURIComponent(planId)}` : ''}`,
-                    '_blank',
-                  )}
-                  className="mt-4 inline-flex items-center gap-2 px-4 py-3 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 text-sm font-bold"
-                >
-                  <Images size={16} />
-                  画像を一覧で見る
-                </button>
-              )}
-            </div>
+              >
+                <Images size={16} />
+                画像を一覧で見る
+              </button>
+            )}
           </div>
         </div>
       </div>

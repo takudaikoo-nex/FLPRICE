@@ -19,17 +19,16 @@ export const MoneyInput: React.FC<{ value: number; onChange: (v: number) => void
   };
 
   return (
-    <div className={`flex items-center gap-1.5 ${className || ''}`}>
-      <span className="text-base text-gray-500 font-medium">¥</span>
+    <div className={`fl-money ${className || ''}`}>
+      <span className="fl-money-mark">¥</span>
       <input
-        type={editing ? 'text' : 'text'}
+        type="text"
         value={editing ? raw : (value ? value.toLocaleString() : '')}
         placeholder="0"
         onFocus={handleFocus}
         onBlur={handleBlur}
         onChange={editing ? handleChange : undefined}
         readOnly={!editing}
-        className="w-full sm:w-36 text-base p-2.5 border border-gray-300 rounded-lg text-right focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 font-mono bg-white transition-shadow hover:border-gray-400 cursor-text"
       />
     </div>
   );

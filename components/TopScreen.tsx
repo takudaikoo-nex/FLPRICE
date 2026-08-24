@@ -1,6 +1,6 @@
 import React from 'react';
 import { Users, PlusCircle, Search, Settings, LogOut, Link2, ClipboardList, Images, ListChecks } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { confirmSignOut } from '../hooks/useSupabaseSession';
 
 interface TopScreenProps {
     logoType: 'FL' | 'LS';
@@ -21,11 +21,8 @@ const TopScreen: React.FC<TopScreenProps> = ({
         window.open('/admin/', '_blank');
     };
 
-    const handleLogout = async () => {
-        if (!confirm('ログアウトしますか？')) return;
-        await supabase.auth.signOut();
-        alert('ログアウトしました。');
-    };
+    // 確認とサインアウトは管理画面と共通。画面はログイン画面へ自動で戻る
+    const handleLogout = () => { void confirmSignOut(); };
 
     return (
         <div className="fl-shell">
