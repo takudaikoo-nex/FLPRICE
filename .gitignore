@@ -30,3 +30,7 @@ dist-tasks
 
 # Supabase CLI が接続先の情報を書き出す一時ファイル
 supabase/.temp/
+
+# Claude Code が取得するスキルとそのロックファイル
+.agents/
+skills-lock.json
